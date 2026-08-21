@@ -263,17 +263,20 @@
     }
 
     .beorjji-window {
-      width: min(100%, 230px);
-      height: 390px;
+      width: min(100%, 255px);
+      height: 420px;
       overflow: hidden;
+      border: 6px solid #fff9e9;
+      clip-path: polygon(3% 1%, 96% 0, 100% 6%, 98% 96%, 92% 100%, 4% 98%, 0 91%, 1% 6%);
+      background: #fff9e9;
       filter: drop-shadow(0 12px 9px #0007);
       animation: actorBob 4s ease-in-out infinite;
     }
 
     .beorjji-sheet {
-      width: 300%;
+      width: 625%;
       max-width: none;
-      transform: translate(-1%, -1%);
+      transform: translate(-28.2%, -1.5%);
     }
 
     .zzeebi-img {
@@ -364,7 +367,7 @@
       .menu { position: absolute; z-index: 11; left: 50%; bottom: 11%; width: min(280px, 77%); translate: -50% 0; }
       .menu-button { padding: 10px 12px; }
       .actor { height: 51%; min-height: 230px; opacity: .92; }
-      .beorjji-window { width: 145px; height: 245px; }
+      .beorjji-window { width: 145px; height: 305px; border-width: 4px; }
       .zzeebi-img { width: 155px; }
       .name-card { display: none; }
       .curtain { width: 29%; }
@@ -410,7 +413,7 @@
 
         <div class="actor beorjji">
           <div class="beorjji-window">
-            <img class="beorjji-sheet" src="assets/beorjji-sprites.png" alt="AI 상대 버찌">
+            <img class="beorjji-sheet" src="assets/beorjji-reference.webp" alt="AI 상대 버찌">
           </div>
           <span class="name-card">AI · 버찌</span>
         </div>
