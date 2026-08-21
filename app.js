@@ -30,12 +30,12 @@
 
   function createBoard() {
     const board = {};
-    for (let index = 0; index < 8; index =+ 1) {
+    for (let index = 0; index < 8; index += 1) {
       const file = FILES[index];
-      board[`${file}0`] = { color: "w", type: BACK_RANK[index] };
-      board[`${file}1`] = { color: "w", type: "p" };
-      board[`${file}6`] = { color: "b", type: "p" };
-      board[`${file}7`] = { color: "b", type: BACK_RANK[index] };
+      board[`${file}1`] = { color: "w", type: BACK_RANK[index] };
+      board[`${file}2`] = { color: "w", type: "p" };
+      board[`${file}7`] = { color: "b", type: "p" };
+      board[`${file}8`] = { color: "b", type: BACK_RANK[index] };
     }
     return board;
   }
