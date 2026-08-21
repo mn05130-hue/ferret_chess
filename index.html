@@ -4,468 +4,76 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#25170f">
+  <meta name="description" content="버찌와 쩨비가 펼치는 작은 AI 체스 인형극">
   <title>버찌 체스</title>
-  <meta name="description" content="버찌와 쩨비가 펼치는 작은 체스 인형극">
-  <style>
-    :root {
-      color-scheme: dark;
-      font-family: "Trebuchet MS", "Noto Sans KR", system-ui, sans-serif;
-      --wood-dark: #25170f;
-      --wood: #6f4028;
-      --wood-light: #a86b44;
-      --stage: #101b30;
-      --mint: #a9d8bd;
-      --mint-dark: #568e70;
-      --paper: #fff9e9;
-      --ink: #44352d;
-      --gold: #f4d889;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      min-height: 100svh;
-      margin: 0;
-      display: grid;
-      place-items: center;
-      overflow: hidden;
-      background:
-        radial-gradient(circle at 50% -10%, #7e4d31 0, transparent 38%),
-        repeating-linear-gradient(90deg, #20130d 0 3px, #2b1a12 3px 10px);
-      color: var(--paper);
-    }
-
-    button { font: inherit; }
-
-    .theatre {
-      position: relative;
-      width: min(1180px, 100vw);
-      height: min(760px, 100svh);
-      min-height: 620px;
-      padding: clamp(22px, 4vw, 48px);
-      isolation: isolate;
-    }
-
-    .frame {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      border: clamp(15px, 2.4vw, 31px) solid var(--wood);
-      border-radius: 42px 42px 30px 30px;
-      background: var(--stage);
-      box-shadow:
-        inset 0 0 0 7px #351f15,
-        inset 0 0 0 12px var(--wood-light),
-        0 25px 70px #000b;
-    }
-
-    .frame::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      z-index: -1;
-      background:
-        radial-gradient(ellipse at 50% 10%, #273959 0, transparent 50%),
-        linear-gradient(#111d33, #08101f 72%);
-    }
-
-    .frame::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      background-image: radial-gradient(#fff8 0.7px, transparent 0.7px);
-      background-size: 17px 17px;
-      opacity: 0.08;
-    }
-
-    .medallion {
-      position: absolute;
-      z-index: 20;
-      top: -13px;
-      left: 50%;
-      width: 105px;
-      height: 76px;
-      translate: -50% 0;
-      display: grid;
-      place-items: center;
-      border: 7px solid #3b2418;
-      border-radius: 0 0 54px 54px;
-      background: linear-gradient(#9a5f3e, #653a25);
-      color: var(--paper);
-      box-shadow: 0 8px 15px #0008;
-      font-size: 2.3rem;
-    }
-
-    .curtain {
-      position: absolute;
-      z-index: 12;
-      top: 0;
-      bottom: 0;
-      width: 24%;
-      background:
-        repeating-linear-gradient(90deg, #4f8267 0 14%, #8fc6a5 14% 28%, #5c9474 28% 40%),
-        var(--mint-dark);
-      filter: drop-shadow(0 0 13px #0009);
-      transition: transform 850ms cubic-bezier(.7,0,.2,1);
-    }
-
-    .curtain.left {
-      left: 0;
-      clip-path: polygon(0 0, 100% 0, 78% 20%, 91% 42%, 72% 61%, 89% 81%, 67% 100%, 0 100%);
-      transform: translateX(-78%);
-    }
-
-    .curtain.right {
-      right: 0;
-      clip-path: polygon(0 0, 100% 0, 100% 100%, 33% 100%, 11% 81%, 28% 61%, 9% 42%, 22% 20%);
-      transform: translateX(78%);
-    }
-
-    .curtain.top {
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: auto;
-      width: 100%;
-      height: 18%;
-      transform: none;
-      clip-path: polygon(0 0, 100% 0, 100% 63%, 92% 86%, 82% 62%, 72% 89%, 61% 64%, 50% 92%, 39% 64%, 28% 89%, 18% 62%, 8% 86%, 0 63%);
-      background: repeating-linear-gradient(90deg, #49795f 0 7%, #8fc6a5 7% 14%, #5c9474 14% 20%);
-    }
-
-    .stage-content {
-      position: relative;
-      z-index: 5;
-      height: 100%;
-      display: grid;
-      grid-template-columns: minmax(145px, 0.9fr) minmax(260px, 1.35fr) minmax(145px, 0.9fr);
-      align-items: end;
-      gap: clamp(10px, 2vw, 32px);
-      padding: 15% 5% 9%;
-    }
-
-    .logo-area {
-      align-self: start;
-      display: grid;
-      justify-items: center;
-      gap: 20px;
-      padding-top: 3%;
-    }
-
-    .logo {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      filter: drop-shadow(0 10px 2px #0006);
-      animation: float 3.4s ease-in-out infinite;
-    }
-
-    .letter {
-      display: grid;
-      place-items: center;
-      min-width: clamp(47px, 5.3vw, 69px);
-      height: clamp(62px, 7vw, 86px);
-      margin-inline: -4px;
-      padding: 7px;
-      color: #5590a6;
-      background: var(--paper);
-      border: 2px solid #e4d9c2;
-      clip-path: polygon(8% 4%, 88% 0, 100% 18%, 93% 88%, 77% 100%, 5% 93%, 0 19%);
-      font-family: "Arial Rounded MT Bold", "Noto Sans KR", sans-serif;
-      font-size: clamp(2rem, 4vw, 3.5rem);
-      font-weight: 1000;
-      text-shadow: 2px 2px #cbe0e7;
-    }
-
-    .letter:nth-child(odd) { rotate: -4deg; translate: 0 4px; }
-    .letter:nth-child(even) { rotate: 4deg; translate: 0 -3px; }
-    .letter.space { margin-left: 9px; }
-
-    .tagline {
-      margin: 0;
-      color: #d8e6ef;
-      font-size: clamp(.8rem, 1.5vw, 1rem);
-      letter-spacing: .16em;
-      text-align: center;
-    }
-
-    .menu {
-      width: min(330px, 100%);
-      display: grid;
-      gap: 10px;
-    }
-
-    .menu-button {
-      position: relative;
-      border: 0;
-      border-radius: 5px;
-      padding: 13px 20px;
-      cursor: pointer;
-      color: var(--ink);
-      background: linear-gradient(105deg, #fffdf3, #ede3c9);
-      box-shadow: 0 6px 0 #8f704f, 0 9px 18px #0007;
-      font-weight: 900;
-      letter-spacing: .08em;
-      transition: translate 150ms, box-shadow 150ms, rotate 150ms;
-    }
-
-    .menu-button::before,
-    .menu-button::after {
-      content: "";
-      position: absolute;
-      top: -5px;
-      width: 34px;
-      height: 13px;
-      background: #d7c9a6cc;
-      rotate: -8deg;
-    }
-
-    .menu-button::before { left: 13px; }
-    .menu-button::after { right: 13px; rotate: 8deg; }
-    .menu-button.primary { color: #fff; background: linear-gradient(105deg, #70ab89, #9acbb0); box-shadow: 0 7px 0 #3e6e55, 0 9px 18px #0007; font-size: 1.1rem; }
-    .menu-button:hover, .menu-button:focus-visible { translate: 0 -3px; rotate: -1deg; outline: 3px solid var(--gold); outline-offset: 4px; }
-    .menu-button:active { translate: 0 5px; box-shadow: 0 2px 0 #6e5439; }
-
-    .actor {
-      position: relative;
-      display: grid;
-      place-items: end center;
-      height: 78%;
-      min-height: 320px;
-    }
-
-    .actor::after {
-      content: "";
-      position: absolute;
-      z-index: -1;
-      bottom: 0;
-      width: 74%;
-      height: 7%;
-      border-radius: 50%;
-      background: #0008;
-      filter: blur(7px);
-    }
-
-    .name-card {
-      position: absolute;
-      z-index: 3;
-      bottom: -3%;
-      padding: 8px 24px;
-      border: 2px solid #d8c49f;
-      border-radius: 4px;
-      color: var(--ink);
-      background: var(--paper);
-      box-shadow: 0 6px 0 #5f432e;
-      font-weight: 900;
-      rotate: -2deg;
-    }
-
-    .beorjji-window {
-      width: min(100%, 255px);
-      height: 420px;
-      overflow: hidden;
-      border: 6px solid #fff9e9;
-      clip-path: polygon(3% 1%, 96% 0, 100% 6%, 98% 96%, 92% 100%, 4% 98%, 0 91%, 1% 6%);
-      background: #fff9e9;
-      filter: drop-shadow(0 12px 9px #0007);
-      animation: actorBob 4s ease-in-out infinite;
-    }
-
-    .beorjji-sheet {
-      width: 625%;
-      max-width: none;
-      transform: translate(-28.2%, -1.5%);
-    }
-
-    .zzeebi-img {
-      width: min(100%, 285px);
-      filter: drop-shadow(0 12px 9px #0008);
-      animation: actorBob 3.6s .3s ease-in-out infinite;
-    }
-
-    .floor {
-      position: absolute;
-      z-index: 1;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 12%;
-      border-top: 6px solid #b47749;
-      background: repeating-linear-gradient(90deg, #58311f 0 9%, #6c3c25 9% 18%);
-      box-shadow: 0 -9px 24px #0009;
-    }
-
-    .spotlight {
-      position: absolute;
-      z-index: 0;
-      top: 0;
-      bottom: 8%;
-      width: 36%;
-      opacity: .15;
-      background: linear-gradient(100deg, transparent 0 15%, #fff3bd 47%, transparent 80%);
-      clip-path: polygon(43% 0, 57% 0, 100% 100%, 0 100%);
-      pointer-events: none;
-    }
-
-    .spotlight.one { left: 1%; rotate: 5deg; }
-    .spotlight.two { right: 1%; rotate: -5deg; }
-
-    .modal-backdrop {
-      position: absolute;
-      z-index: 30;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      background: #08101fe8;
-      opacity: 0;
-      visibility: hidden;
-      transition: 220ms;
-    }
-
-    .modal-backdrop.open { opacity: 1; visibility: visible; }
-
-    .modal {
-      width: min(510px, 100%);
-      padding: clamp(24px, 5vw, 42px);
-      border: 10px solid var(--wood);
-      border-radius: 18px;
-      color: var(--ink);
-      background:
-        linear-gradient(#0000 95%, #b6d8e255 95%) 0 0 / 100% 28px,
-        var(--paper);
-      box-shadow: 0 24px 70px #000b;
-      text-align: center;
-      transform: scale(.9) rotate(-1deg);
-      transition: transform 220ms;
-    }
-
-    .open .modal { transform: scale(1) rotate(0); }
-    .modal h2 { margin-top: 0; color: #4f876a; font-size: 2rem; }
-    .modal p { line-height: 1.75; }
-    .modal .menu-button { margin-top: 12px; min-width: 150px; }
-
-    .closing .curtain.left,
-    .closing .curtain.right { transform: translateX(0); }
-
-    @keyframes float { 50% { translate: 0 -7px; rotate: 1deg; } }
-    @keyframes actorBob { 50% { translate: 0 -7px; rotate: .6deg; } }
-
-    @media (max-width: 720px) {
-      .theatre { min-height: 610px; padding: 9px; }
-      .frame { border-width: 15px; border-radius: 25px; }
-      .medallion { width: 76px; height: 57px; font-size: 1.65rem; }
-      .stage-content {
-        grid-template-columns: 1fr 1.3fr 1fr;
-        gap: 0;
-        padding: 20% 1% 14%;
-      }
-      .logo-area { position: absolute; z-index: 9; top: 18%; left: 50%; width: 92%; translate: -50% 0; gap: 11px; }
-      .letter { min-width: clamp(38px, 13vw, 57px); height: clamp(52px, 16vw, 72px); font-size: clamp(1.7rem, 10vw, 2.6rem); }
-      .menu { position: absolute; z-index: 11; left: 50%; bottom: 11%; width: min(280px, 77%); translate: -50% 0; }
-      .menu-button { padding: 10px 12px; }
-      .actor { height: 51%; min-height: 230px; opacity: .92; }
-      .beorjji-window { width: 145px; height: 305px; border-width: 4px; }
-      .zzeebi-img { width: 155px; }
-      .name-card { display: none; }
-      .curtain { width: 29%; }
-      .curtain.left { transform: translateX(-71%); }
-      .curtain.right { transform: translateX(71%); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main class="theatre" id="theatre">
     <div class="frame">
-      <div class="medallion" aria-hidden="true">♬</div>
+      <button class="medallion" type="button" aria-label="음악 장식">♪</button>
       <div class="curtain top" aria-hidden="true"></div>
-      <div class="curtain left" aria-hidden="true"></div>
-      <div class="curtain right" aria-hidden="true"></div>
+      <div class="curtain left" aria-hidden="true"><i></i></div>
+      <div class="curtain right" aria-hidden="true"><i></i></div>
       <div class="spotlight one" aria-hidden="true"></div>
       <div class="spotlight two" aria-hidden="true"></div>
 
-      <section class="stage-content" aria-label="버찌 체스 타이틀 무대">
-        <div class="actor zzeebi">
-          <img class="zzeebi-img" src="assets/zzeebi.png" alt="플레이어의 분신 쩨비">
-          <span class="name-card">플레이어 · 쩨비</span>
+      <section class="screen title-screen active" id="title-screen" aria-label="버찌 체스 타이틀 무대">
+        <div class="title-actor title-zzeebi">
+          <div class="zzeebi-crop" role="img" aria-label="플레이어의 분신 쩨비"></div>
         </div>
 
-        <div class="logo-area">
+        <div class="title-center">
           <div class="logo" aria-label="버찌 체스">
-            <span class="letter">버</span>
-            <span class="letter">찌</span>
-            <span class="letter space">체</span>
-            <span class="letter">스</span>
+            <span>버</span><span>찌</span><span class="gap">체</span><span>스</span>
           </div>
           <p class="tagline">A LITTLE CHESS THEATRE</p>
           <nav class="menu" aria-label="주 메뉴">
-            <button class="menu-button primary" data-modal="start">AI 대국 시작</button>
-            <button class="menu-button" data-modal="how">게임 방법</button>
-            <button class="menu-button" data-modal="credits">크레딧</button>
+            <button class="paper-button primary" id="start-game" type="button">AI 대국 시작</button>
+            <button class="paper-button" data-modal="how" type="button">게임 방법</button>
+            <button class="paper-button" data-modal="credits" type="button">크레딧</button>
           </nav>
         </div>
 
-        <div class="actor beorjji">
-          <div class="beorjji-window">
-            <img class="beorjji-sheet" src="assets/beorjji-reference.webp" alt="AI 상대 버찌">
-          </div>
-          <span class="name-card">AI · 버찌</span>
+        <div class="title-actor title-beorjji">
+          <div class="beorjji-crop" role="img" aria-label="AI 상대 버찌"></div>
         </div>
+      </section>
+
+      <section class="screen game-screen" id="game-screen" aria-label="쩨비와 버찌의 체스 대국" aria-hidden="true">
+        <div class="game-status paper-card" id="game-status" role="status" aria-live="polite">쩨비의 차례</div>
+
+        <aside class="player-panel zzeebi-panel" aria-label="왼쪽 플레이어 쩨비">
+          <div class="zzeebi-crop game-zzeebi" role="img" aria-label="쩨비"></div>
+          <span class="name-card">쩨비 · 백</span>
+        </aside>
+
+        <div class="board-wrap">
+          <div class="chessboard" id="chessboard" role="grid" aria-label="가로 방향 8×8 체스판"></div>
+          <div class="game-actions" aria-label="대국 메뉴">
+            <button class="paper-button compact" id="hint" type="button">힌트</button>
+            <button class="paper-button compact" id="restart" type="button">다시 시작</button>
+            <button class="paper-button compact" id="back-title" type="button">타이틀로</button>
+          </div>
+        </div>
+
+        <aside class="player-panel beorjji-panel" aria-label="오른쪽 AI 버찌">
+          <div class="beorjji-crop game-beorjji" role="img" aria-label="버찌"></div>
+          <span class="name-card">버찌 · 흑</span>
+        </aside>
       </section>
 
       <div class="floor" aria-hidden="true"></div>
 
-      <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true">
         <div class="modal">
-          <h2 id="modal-title">다음 막을 준비 중</h2>
-          <p id="modal-copy">버찌와의 AI 대국은 다음 무대에서 시작됩니다.</p>
-          <button class="menu-button primary" id="close-modal">무대로 돌아가기</button>
+          <h2 id="modal-title">게임 방법</h2>
+          <div id="modal-copy"></div>
+          <button class="paper-button primary" id="close-modal" type="button">무대로 돌아가기</button>
         </div>
       </div>
     </div>
   </main>
-
-  <script>
-    const theatre = document.querySelector('#theatre');
-    const modal = document.querySelector('#modal');
-    const title = document.querySelector('#modal-title');
-    const copy = document.querySelector('#modal-copy');
-    const close = document.querySelector('#close-modal');
-
-    const content = {
-      start: ['다음 막을 준비 중', '버찌와의 AI 대국은 다음 무대에서 시작됩니다.'],
-      how: ['게임 방법', '쩨비는 흰색 기물로 먼저 움직입니다. 버찌의 왕을 체크메이트하면 공연의 주인공이 됩니다.'],
-      credits: ['크레딧', '《버찌 체스》는 버찌를 테마로 만든 비공식 팬게임입니다. 캐릭터와 원작의 권리는 각 권리자에게 있습니다.']
-    };
-
-    function openModal(kind) {
-      const [heading, text] = content[kind];
-      if (kind === 'start') theatre.classList.add('closing');
-      window.setTimeout(() => {
-        title.textContent = heading;
-        copy.textContent = text;
-        modal.classList.add('open');
-        close.focus();
-      }, kind === 'start' ? 620 : 0);
-    }
-
-    function closeModal() {
-      modal.classList.remove('open');
-      theatre.classList.remove('closing');
-    }
-
-    document.querySelectorAll('[data-modal]').forEach(button => {
-      button.addEventListener('click', () => openModal(button.dataset.modal));
-    });
-    close.addEventListener('click', closeModal);
-    modal.addEventListener('click', event => { if (event.target === modal) closeModal(); });
-    document.addEventListener('keydown', event => { if (event.key === 'Escape') closeModal(); });
-  </script>
+  <script src="app.js"></script>
 </body>
 </html>
