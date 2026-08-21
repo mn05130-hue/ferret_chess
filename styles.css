@@ -324,7 +324,7 @@ button { font: inherit; }
 .beorjji-crop {
   width: min(100%, 285px);
   aspect-ratio: .56;
-  background: url("assets/beorjji-sprites.png") 65% 97.7% / 396% auto no-repeat;
+  background: url("assets/beorjji-sprites.png") 0 47.9% / 400% auto no-repeat;
   filter: drop-shadow(0 12px 8px #0008);
   animation: actor-bob 4s ease-in-out infinite;
 }
