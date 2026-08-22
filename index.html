@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#25170f">
   <meta name="description" content="버찌와 쩨비가 펼치는 작은 AI 체스 인형극">
   <title>버찌 체스</title>
-  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body>
   <main class="theatre" id="theatre">
@@ -18,7 +18,7 @@
       <div class="spotlight one" aria-hidden="true"></div>
       <div class="spotlight two" aria-hidden="true"></div>
 
-      <section class="screen title-screen active" id="title-screen" aria-label="버찌 체스 타이틀 무대">
+      <section class="screen title-screen active" id="title-screen" tabindex="-1" aria-label="버찌 체스 타이틀 무대">
         <div class="title-actor title-zzeebi">
           <div class="zzeebi-crop" role="img" aria-label="플레이어의 분신 쩨비"></div>
         </div>
@@ -29,6 +29,21 @@
           </div>
           <p class="tagline">A LITTLE CHESS THEATRE</p>
           <nav class="menu" aria-label="주 메뉴">
+            <fieldset class="difficulty-picker">
+              <legend>AI 난이도</legend>
+              <label class="difficulty-option">
+                <input type="radio" name="difficulty" value="low">
+                <span>하</span>
+              </label>
+              <label class="difficulty-option">
+                <input type="radio" name="difficulty" value="medium" checked>
+                <span>중</span>
+              </label>
+              <label class="difficulty-option">
+                <input type="radio" name="difficulty" value="high">
+                <span>상</span>
+              </label>
+            </fieldset>
             <button class="paper-button primary" id="start-game" type="button">AI 대국 시작</button>
             <button class="paper-button" data-modal="how" type="button">게임 방법</button>
             <button class="paper-button" data-modal="credits" type="button">크레딧</button>
@@ -40,7 +55,7 @@
         </div>
       </section>
 
-      <section class="screen game-screen" id="game-screen" aria-label="쩨비와 버찌의 체스 대국" aria-hidden="true">
+      <section class="screen game-screen" id="game-screen" tabindex="-1" aria-label="쩨비와 버찌의 체스 대국" aria-hidden="true" inert>
         <div class="game-status paper-card" id="game-status" role="status" aria-live="polite">쩨비의 차례</div>
 
         <aside class="player-panel zzeebi-panel" aria-label="왼쪽 플레이어 쩨비">
@@ -65,7 +80,7 @@
 
       <div class="floor" aria-hidden="true"></div>
 
-      <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true">
+      <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true" inert>
         <div class="modal">
           <h2 id="modal-title">게임 방법</h2>
           <div id="modal-copy"></div>
@@ -74,6 +89,8 @@
       </div>
     </div>
   </main>
-  <script src="app.js?v=3"></script>
+  <script src="chess-engine.js?v=1"></script>
+  <script src="chess-ai.js?v=1"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

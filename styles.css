@@ -180,6 +180,8 @@ button { font: inherit; }
   pointer-events: auto;
 }
 
+.screen:focus { outline: none; }
+
 .title-screen {
   display: grid;
   grid-template-columns: minmax(150px, .8fr) minmax(390px, 1.35fr) minmax(180px, .85fr);
@@ -235,6 +237,67 @@ button { font: inherit; }
   width: min(360px, 90%);
   display: grid;
   gap: 11px;
+}
+
+.difficulty-picker {
+  margin: 0;
+  padding: 5px 7px 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  border: 2px solid #d8c49f;
+  border-radius: 7px;
+  background: #0d1a2db8;
+  box-shadow: 0 5px 14px #0006;
+}
+
+.difficulty-picker legend {
+  padding: 0 7px;
+  color: #dbe9ef;
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.difficulty-option {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.difficulty-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.difficulty-option span {
+  min-height: 32px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #d6c8a8;
+  border-radius: 4px;
+  color: var(--ink);
+  background: linear-gradient(105deg, #fffdf3, #eadfc5);
+  box-shadow: 0 3px 0 #76583f;
+  font-weight: 900;
+  transition: translate 140ms, box-shadow 140ms, background 140ms;
+}
+
+.difficulty-option:hover span { translate: 0 -2px; }
+
+.difficulty-option input:checked + span {
+  color: #263e32;
+  border-color: #d6eadc;
+  background: linear-gradient(105deg, #8bc5a5, #b2dec7);
+  box-shadow: 0 3px 0 #416e57, inset 0 0 0 2px #eff8dc;
+}
+
+.difficulty-option input:focus-visible + span {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
 }
 
 .paper-button,
@@ -316,7 +379,7 @@ button { font: inherit; }
 .zzeebi-crop {
   width: min(100%, 245px);
   aspect-ratio: .84;
-  background: url("assets/zzeebi.png") left top / 205% auto no-repeat;
+  background: url("assets/zzeebi.png") 0 47.9% / 400% auto no-repeat;
   filter: drop-shadow(0 12px 8px #0008);
   animation: actor-bob 3.7s .2s ease-in-out infinite;
 }
@@ -324,7 +387,7 @@ button { font: inherit; }
 .beorjji-crop {
   width: min(100%, 285px);
   aspect-ratio: .56;
-  background: url("assets/beorjji-sprites.png") 0 47.9% / 400% auto no-repeat;
+  background: url("assets/beorjji-sprites.png") 0 100% / 400% auto no-repeat;
   filter: drop-shadow(0 12px 8px #0008);
   animation: actor-bob 4s ease-in-out infinite;
 }
@@ -519,7 +582,7 @@ button { font: inherit; }
 @keyframes actor-bob { 50% { translate: 0 -6px; rotate: .5deg; } }
 
 @media (max-width: 1050px) {
-  .game-screen { grid-template-columns: minmax(110px, .55fr) minmax(460px, 1.8fr) minmax(125px, .6fr); padding-inline: 4%; }
+  .game-screen { grid-template-columns: minmax(92px, .48fr) minmax(0, 1.9fr) minmax(102px, .52fr); padding-inline: 4%; }
   .game-beorjji { width: min(100%, 210px); }
   .game-zzeebi { width: min(100%, 180px); }
 }
@@ -537,25 +600,50 @@ button { font: inherit; }
   .title-center { align-self: start; margin-top: 12%; }
   .logo span { min-width: clamp(34px, 10vw, 52px); height: clamp(46px, 13vw, 67px); font-size: clamp(1.55rem, 8vw, 2.35rem); }
   .tagline { font-size: .58rem; }
-  .menu { position: absolute; left: 50%; bottom: 10%; translate: -50% 0; width: min(270px, 70%); z-index: 12; }
+  .menu { position: absolute; left: 50%; bottom: 8%; translate: -50% 0; width: min(270px, 74%); gap: 8px; z-index: 12; }
+  .difficulty-picker { padding: 3px 5px 6px; gap: 5px; }
+  .difficulty-picker legend { font-size: .68rem; }
+  .difficulty-option span { min-height: 27px; font-size: .8rem; }
   .paper-button { min-height: 39px; padding: 9px 11px; }
   .title-actor { min-height: 210px; height: 43%; opacity: .9; }
   .title-zzeebi .zzeebi-crop { width: 115px; }
   .title-beorjji .beorjji-crop { width: 120px; }
 
   .game-screen {
-    grid-template-columns: 72px minmax(260px, 1fr) 78px;
-    grid-template-rows: auto 1fr;
-    column-gap: 3px;
-    padding: 13% 2% 8%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: start;
+    column-gap: 0;
+    row-gap: 7px;
+    padding: 13% 3% 8%;
   }
-  .game-status { min-width: 170px; padding: 8px 15px; font-size: .85rem; }
-  .player-panel { min-height: 195px; height: 48%; opacity: .9; }
-  .game-zzeebi { width: 85px; }
-  .game-beorjji { width: 90px; }
+  .game-status { grid-column: 1; grid-row: 1; min-width: 170px; padding: 8px 15px; font-size: .85rem; }
+  .player-panel {
+    position: absolute;
+    top: 10.5%;
+    width: 70px;
+    height: 82px;
+    min-height: 0;
+    align-self: auto;
+    opacity: .72;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .zzeebi-panel { left: 1%; }
+  .beorjji-panel { right: 1%; }
+  .game-zzeebi { width: 62px; }
+  .game-beorjji { width: 55px; }
   .name-card { display: none; }
-  .board-wrap { gap: 7px; }
-  .chessboard { width: min(100%, 67vh); border-width: 5px; }
+  .board-wrap {
+    grid-column: 1;
+    grid-row: 2;
+    width: min(100%, 67vh);
+    min-width: 0;
+    align-self: start;
+    gap: 7px;
+    z-index: 3;
+  }
+  .chessboard { width: 100%; border-width: 5px; }
   .piece { border-width: 1px; font-size: clamp(1rem, 5vw, 2rem); }
   .piece.pawn { font-size: clamp(.8rem, 4vw, 1.6rem); }
   .game-actions { gap: 4px; }
