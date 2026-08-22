@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#25170f">
   <meta name="description" content="버찌와 쩨비가 펼치는 작은 AI 체스 인형극">
   <title>버찌 체스</title>
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
   <main class="theatre" id="theatre">
@@ -80,6 +80,17 @@
 
       <div class="floor" aria-hidden="true"></div>
 
+      <div class="cutscene-layer" id="cutscene-layer" role="dialog" aria-modal="true" aria-labelledby="cutscene-title" aria-describedby="cutscene-copy" aria-hidden="true" inert>
+        <div class="cutscene-speedlines" aria-hidden="true"></div>
+        <div class="cutscene-actor" id="cutscene-actor" data-side="w" aria-hidden="true"></div>
+        <div class="cutscene-card">
+          <p class="cutscene-eyebrow" id="cutscene-eyebrow">SPECIAL MOVE</p>
+          <h2 id="cutscene-title">특수 상황!</h2>
+          <p id="cutscene-copy">임시 컷신 장면입니다.</p>
+          <button class="paper-button compact" id="cutscene-skip" type="button">건너뛰기</button>
+        </div>
+      </div>
+
       <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true" inert>
         <div class="modal">
           <h2 id="modal-title">게임 방법</h2>
@@ -91,6 +102,7 @@
   </main>
   <script src="chess-engine.js?v=1"></script>
   <script src="chess-ai.js?v=1"></script>
-  <script src="app.js?v=5"></script>
+  <script src="cutscene-manager.js?v=1"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

@@ -540,6 +540,126 @@ button { font: inherit; }
 
 .paper-button.compact { min-height: 40px; padding: 9px 10px; font-size: clamp(.78rem, 1.1vw, 1rem); }
 
+.cutscene-layer {
+  position: absolute;
+  z-index: 55;
+  inset: 0;
+  overflow: hidden;
+  color: var(--paper);
+  background:
+    radial-gradient(circle at 28% 55%, #f5d77f42 0 12%, transparent 36%),
+    linear-gradient(115deg, #171326f5, #553512f2);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 220ms ease, visibility 220ms;
+}
+
+.cutscene-layer[data-tone="mint"] {
+  background:
+    radial-gradient(circle at 28% 55%, #b2dec75c 0 12%, transparent 38%),
+    linear-gradient(115deg, #0b1b27f5, #315f50f2);
+}
+
+.cutscene-layer[data-tone="red"] {
+  background:
+    radial-gradient(circle at 28% 55%, #ffcf9652 0 12%, transparent 38%),
+    linear-gradient(115deg, #180d18f7, #811b24f2);
+}
+
+.cutscene-layer.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.cutscene-speedlines {
+  position: absolute;
+  inset: -35%;
+  opacity: .42;
+  background: repeating-conic-gradient(from 15deg at 50% 50%, transparent 0 7deg, #fff3 7.5deg 8deg);
+  animation: cutscene-lines 5s linear infinite;
+}
+
+.cutscene-actor {
+  position: absolute;
+  z-index: 1;
+  left: 7%;
+  bottom: -5%;
+  width: clamp(180px, 30vw, 390px);
+  aspect-ratio: .84;
+  opacity: 0;
+  background: url("assets/zzeebi.png") left top / 205% auto no-repeat;
+  filter: drop-shadow(0 22px 13px #000b);
+  transform: translateX(-24%) rotate(-5deg) scale(.9);
+  transition: opacity 260ms ease, transform 420ms cubic-bezier(.2,.9,.25,1.15);
+}
+
+.cutscene-actor[data-side="b"] {
+  left: auto;
+  right: 7%;
+  width: clamp(160px, 25vw, 330px);
+  aspect-ratio: .56;
+  background: url("assets/beorjji-sprites.png") 0 47.9% / 400% auto no-repeat;
+  transform: translateX(24%) rotate(5deg) scale(.9);
+}
+
+.open .cutscene-actor {
+  opacity: 1;
+  transform: translateX(0) rotate(2deg) scale(1);
+}
+
+.cutscene-card {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  right: 8%;
+  width: min(520px, 52%);
+  padding: clamp(23px, 4vw, 46px);
+  color: var(--ink);
+  background: linear-gradient(110deg, #fffdf3, #eadfc5);
+  box-shadow: 0 24px 60px #000a;
+  clip-path: polygon(2% 5%, 96% 0, 100% 91%, 91% 98%, 6% 100%, 0 12%);
+  opacity: 0;
+  transform: translate(16%, -50%) rotate(4deg) scale(.86);
+  transition: opacity 230ms ease 80ms, transform 400ms cubic-bezier(.2,.9,.25,1.15) 70ms;
+}
+
+.cutscene-layer[data-side="b"] .cutscene-card {
+  left: 8%;
+  right: auto;
+  transform: translate(-16%, -50%) rotate(-4deg) scale(.86);
+}
+
+.open .cutscene-card,
+.cutscene-layer.open[data-side="b"] .cutscene-card {
+  opacity: 1;
+  transform: translate(0, -50%) rotate(-1deg) scale(1);
+}
+
+.cutscene-eyebrow {
+  margin: 0 0 5px;
+  color: var(--mint-dark);
+  font-size: clamp(.72rem, 1.3vw, 1rem);
+  font-weight: 1000;
+  letter-spacing: .18em;
+}
+
+.cutscene-card h2 {
+  margin: 0 0 12px;
+  color: #8d171e;
+  font-size: clamp(2rem, 5vw, 4.7rem);
+  line-height: 1;
+  text-wrap: balance;
+}
+
+.cutscene-card > p:not(.cutscene-eyebrow) {
+  margin: 0;
+  font-size: clamp(.9rem, 1.5vw, 1.15rem);
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.cutscene-card .paper-button { margin-top: 20px; min-width: 120px; }
+
 .modal-backdrop {
   position: absolute;
   z-index: 60;
@@ -580,6 +700,7 @@ button { font: inherit; }
 
 @keyframes logo-float { 50% { translate: 0 -7px; rotate: 1deg; } }
 @keyframes actor-bob { 50% { translate: 0 -6px; rotate: .5deg; } }
+@keyframes cutscene-lines { to { rotate: 8deg; scale: 1.06; } }
 
 @media (max-width: 1050px) {
   .game-screen { grid-template-columns: minmax(92px, .48fr) minmax(0, 1.9fr) minmax(102px, .52fr); padding-inline: 4%; }
@@ -650,6 +771,33 @@ button { font: inherit; }
   .paper-button.compact { min-height: 34px; padding: 6px 3px; font-size: .67rem; letter-spacing: 0; }
   .paper-button.compact::before,
   .paper-button.compact::after { width: 19px; height: 7px; }
+
+  .cutscene-actor,
+  .cutscene-actor[data-side="b"] {
+    left: 50%;
+    right: auto;
+    bottom: 20%;
+    width: min(54vw, 210px);
+    opacity: .42;
+    transform: translate(-50%, 10%) scale(.88);
+  }
+  .cutscene-actor[data-side="b"] { width: min(43vw, 170px); }
+  .open .cutscene-actor { opacity: .55; transform: translate(-50%, 0) scale(1); }
+  .cutscene-card,
+  .cutscene-layer[data-side="b"] .cutscene-card {
+    top: auto;
+    left: 7%;
+    right: 7%;
+    bottom: 9%;
+    width: auto;
+    padding: 22px 20px;
+    text-align: center;
+    transform: translateY(18%) rotate(-1deg) scale(.9);
+  }
+  .open .cutscene-card,
+  .cutscene-layer.open[data-side="b"] .cutscene-card { transform: translateY(0) rotate(-1deg) scale(1); }
+  .cutscene-card h2 { font-size: clamp(2rem, 11vw, 3.5rem); }
+  .cutscene-card .paper-button { margin-top: 13px; }
 }
 
 @media (max-height: 650px) and (min-width: 761px) {

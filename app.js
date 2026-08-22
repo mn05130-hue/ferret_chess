@@ -3,6 +3,7 @@
 
   const Engine = window.FerretChessEngine;
   const ChessAI = window.FerretChessAI;
+  const Cutscenes = window.FerretChessCutscenes;
   const {
     FILES,
     PIECE_NAME,
@@ -32,8 +33,11 @@
   let selectedMoves = [];
   let hintSquares = [];
   let aiTimer = null;
+  let hintTimer = null;
   let modalReturnFocus = null;
   let aiDepth = DIFFICULTY_DEPTH.medium;
+  let presenting = false;
+  let gameSession = 0;
 
   function selectedAiDepth() {
     const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked');
@@ -79,19 +83,69 @@
     }
   }
 
-  function handleSquare(square) {
-    if (game.over || game.thinking || game.turn !== "w") return;
+  function cutsceneRequestsFor(move, moverColor) {
+    const requests = [];
+    if (move.castle) {
+      requests.push({
+        id: "castle",
+        side: moverColor,
+        copy: `${move.castle === "K" ? "킹사이드" : "퀸사이드"} 캐슬링으로 킹과 룩이 함께 이동했습니다.`
+      });
+    }
+    if (move.promotion) requests.push({ id: "promotion", side: moverColor });
+
+    const defender = game.turn;
+    const checked = isInCheck(game, defender);
+    const checkmated = checked && legalMovesFor(game, defender).length === 0;
+    if (checkmated) {
+      requests.push({
+        id: "checkmate",
+        side: moverColor,
+        copy: `${moverColor === "w" ? "쩨비" : "버찌"}의 마지막 수가 승부를 결정했습니다.`
+      });
+    } else if (checked && !game.over) {
+      requests.push({ id: "check", side: moverColor });
+    }
+    return requests;
+  }
+
+  function focusScreen(screen) {
+    window.requestAnimationFrame(() => screen.focus({ preventScroll: true }));
+  }
+
+  async function playMoveCutscenes(move, moverColor, session) {
+    const requests = cutsceneRequestsFor(move, moverColor);
+    if (!requests.length || session !== gameSession) return;
+
+    presenting = true;
+    hintButton.disabled = true;
+    gameScreen.inert = true;
+    try {
+      await Cutscenes.playSequence(requests);
+    } finally {
+      if (session !== gameSession) return;
+      presenting = false;
+      gameScreen.inert = !gameScreen.classList.contains("active");
+      hintButton.disabled = game.over || game.thinking || game.turn !== "w";
+      if (gameScreen.classList.contains("active")) focusScreen(gameScreen);
+    }
+  }
+
+  async function handleSquare(square) {
+    if (game.over || game.thinking || presenting || game.turn !== "w") return;
     const piece = game.board[square];
     const chosenMove = selectedMoves.find(move => move.to === square);
     hintSquares = [];
 
     if (selected && chosenMove) {
+      const session = gameSession;
       applyMove(game, chosenMove);
       selected = null;
       selectedMoves = [];
       renderBoard();
-      if (updateStatus()) return;
-      queueAiMove();
+      const ended = updateStatus();
+      await playMoveCutscenes(chosenMove, "w", session);
+      if (session === gameSession && !ended) queueAiMove();
       return;
     }
 
@@ -140,36 +194,55 @@
   }
 
   function queueAiMove() {
+    const session = gameSession;
     game.thinking = true;
     hintButton.disabled = true;
     updateStatus();
     window.clearTimeout(aiTimer);
-    aiTimer = window.setTimeout(() => {
+    aiTimer = window.setTimeout(async () => {
+      if (session !== gameSession) return;
       const move = ChessAI.chooseMove(game, "b", aiDepth);
-      if (move) applyMove(game, move);
+      if (!move || session !== gameSession) {
+        game.thinking = false;
+        updateStatus();
+        return;
+      }
+
+      applyMove(game, move);
       game.thinking = false;
-      hintButton.disabled = false;
+      hintButton.disabled = true;
       renderBoard();
-      updateStatus();
+      const ended = updateStatus();
+      await playMoveCutscenes(move, "b", session);
+      if (session === gameSession && !ended) hintButton.disabled = false;
     }, 650);
   }
 
   function resetGame() {
+    gameSession += 1;
     window.clearTimeout(aiTimer);
+    window.clearTimeout(hintTimer);
+    Cutscenes.cancelAll();
+    presenting = false;
     game = createGame();
     selected = null;
     selectedMoves = [];
     hintSquares = [];
     hintButton.disabled = false;
+    gameScreen.inert = !gameScreen.classList.contains("active");
     renderBoard();
     updateStatus();
   }
 
-  function focusScreen(screen) {
-    window.requestAnimationFrame(() => screen.focus({ preventScroll: true }));
-  }
-
   function switchScreen(showGame) {
+    if (!showGame) {
+      gameSession += 1;
+      window.clearTimeout(aiTimer);
+      window.clearTimeout(hintTimer);
+      Cutscenes.cancelAll();
+      presenting = false;
+    }
+
     theatre.classList.add("curtain-call");
     window.setTimeout(() => {
       titleScreen.classList.toggle("active", !showGame);
@@ -188,13 +261,16 @@
   }
 
   function showHint() {
-    if (game.over || game.thinking || game.turn !== "w") return;
+    if (game.over || game.thinking || presenting || game.turn !== "w") return;
+    const session = gameSession;
     const move = ChessAI.chooseMove(game, "w");
-    if (!move) return;
+    if (!move || session !== gameSession) return;
     hintSquares = [move.from, move.to];
     renderBoard();
     statusElement.textContent = "초록색 두 칸을 살펴봐!";
-    window.setTimeout(() => {
+    window.clearTimeout(hintTimer);
+    hintTimer = window.setTimeout(() => {
+      if (session !== gameSession) return;
       hintSquares = [];
       renderBoard();
       updateStatus();
