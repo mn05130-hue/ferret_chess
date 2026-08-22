@@ -35,11 +35,11 @@
   let modalReturnFocus = null;
   let aiDepth = DIFFICULTY_DEPTH.medium;
 
-<<<<<<< HEAD
   function selectedAiDepth() {
     const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked');
     return DIFFICULTY_DEPTH[selectedDifficulty?.value] || DIFFICULTY_DEPTH.medium;
-=======
+  }
+
   function createBoard() {
     const board = {};
     for (let index = 0; index < 8; index += 1) {
@@ -293,14 +293,11 @@
       applyMove(simulation, move);
       return !isInCheck(simulation, color);
     });
->>>>>>> main
   }
 
   function legalMovesFrom(square) {
     return legalMovesFor(game, game.turn).filter(move => move.from === square);
   }
-<<<<<<< HEAD
-=======
   const MATE_SCORE = 1_000_000;
   const SEARCH_DEPTH = 3;
   const QUIESCENCE_DEPTH = 2;
@@ -543,7 +540,6 @@
     }
     return bestMove;
   }
->>>>>>> main
 
   function renderBoard() {
     boardElement.replaceChildren();
