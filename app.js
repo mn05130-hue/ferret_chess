@@ -76,9 +76,18 @@
   }
 
   function pushMove(moves, state, from, to, extras = {}) {
-    const target = state.board[to];
-    moves.push({ from, to, capture: target ? { ...target } : null, ...extras });
-  }
+  const target = state.board[to];
+
+  // 체스에서는 킹을 직접 잡지 않고 체크메이트로 끝낸다.
+  if (target?.type === "k") return;
+
+  moves.push({
+    from,
+    to,
+    capture: target ? { ...target } : null,
+    ...extras
+  });
+}
 
   function generatePseudoMoves(state, color) {
     const moves = [];
@@ -273,28 +282,240 @@
   function legalMovesFrom(square) {
     return legalMovesFor(game, game.turn).filter(move => move.from === square);
   }
+const MATE_SCORE = 1_000_000;
 
-  function moveScore(state, move, color) {
-    let score = move.capture ? VALUE[move.capture.type] * 12 : 0;
-    if (move.promotion) score += VALUE.q * 8;
-    if (move.castle) score += 180;
-    const simulation = cloneGame(state);
-    applyMove(simulation, move);
-    const enemy = color === "w" ? "b" : "w";
-    if (isInCheck(simulation, enemy)) score += 75;
-    const [, targetRank] = coords(move.to);
-    score += color === "w" ? targetRank * 3 : (9 - targetRank) * 3;
-    score += Math.random() * 45;
-    return score;
+// 2: 빠름, 3: 일반, 4: 강하지만 브라우저가 멈출 수 있음
+const SEARCH_DEPTH = 3;
+
+function positionalScore(square, piece) {
+  const [file, rank] = coords(square);
+
+  // 중앙에 가까울수록 높은 값
+  const center =
+    7 - (Math.abs(file - 3.5) + Math.abs(rank - 4.5));
+
+  if (piece.type === "p") {
+    const advancement =
+      piece.color === "w"
+        ? rank - 2
+        : 7 - rank;
+
+    return advancement * 8 + center * 2;
   }
 
-  function chooseMove(color) {
-    const moves = legalMovesFor(game, color);
-    if (!moves.length) return null;
-    return moves
-      .map(move => ({ move, score: moveScore(game, move, color) }))
-      .sort((a, b) => b.score - a.score)[0].move;
+  if (piece.type === "n") return center * 10;
+  if (piece.type === "b") return center * 5;
+  if (piece.type === "r") return center * 2;
+  if (piece.type === "q") return center * 2;
+
+  if (piece.type === "k") {
+    const homeRank = piece.color === "w" ? 1 : 8;
+
+    // 캐슬링한 킹에 보너스
+    if (
+      square === `g${homeRank}` ||
+      square === `c${homeRank}`
+    ) {
+      return 35;
+    }
   }
+
+  return 0;
+}
+
+function evaluatePosition(state, aiColor) {
+  const enemyColor = aiColor === "w" ? "b" : "w";
+  let score = 0;
+
+  // 기물 가치와 위치 평가
+  Object.entries(state.board).forEach(([square, piece]) => {
+    const material =
+      piece.type === "k" ? 0 : VALUE[piece.type];
+
+    const value =
+      material + positionalScore(square, piece);
+
+    if (piece.color === aiColor) {
+      score += value;
+    } else {
+      score -= value;
+    }
+  });
+
+  // 움직일 수 있는 수가 많을수록 보너스
+  const myMobility =
+    legalMovesFor(state, aiColor).length;
+
+  const enemyMobility =
+    legalMovesFor(state, enemyColor).length;
+
+  score += (myMobility - enemyMobility) * 2;
+
+  // 체크 보너스와 페널티
+  if (isInCheck(state, enemyColor)) score += 35;
+  if (isInCheck(state, aiColor)) score -= 35;
+
+  return score;
+}
+
+// 알파베타 가지치기가 잘 되도록 좋은 수부터 검사한다.
+function moveOrderScore(state, move) {
+  const movingPiece = state.board[move.from];
+  let score = 0;
+
+  if (move.capture) {
+    score += VALUE[move.capture.type] * 10;
+    score -= VALUE[movingPiece.type];
+  }
+
+  if (move.promotion) {
+    score += VALUE.q * 8;
+  }
+
+  if (move.castle) {
+    score += 150;
+  }
+
+  const simulation = cloneGame(state);
+  applyMove(simulation, move);
+
+  // 상대에게 체크하는 수
+  if (isInCheck(simulation, simulation.turn)) {
+    score += 80;
+  }
+
+  return score;
+}
+
+function orderedMoves(state, color) {
+  const moves = legalMovesFor(state, color);
+
+  return moves.sort(
+    (a, b) =>
+      moveOrderScore(state, b) -
+      moveOrderScore(state, a)
+  );
+}
+
+function minimax(
+  state,
+  depth,
+  alpha,
+  beta,
+  aiColor,
+  ply
+) {
+  const color = state.turn;
+  const moves = orderedMoves(state, color);
+
+  // 둘 수 있는 수가 없으면 체크메이트 또는 스테일메이트
+  if (!moves.length) {
+    if (isInCheck(state, color)) {
+      // AI가 체크메이트당한 경우
+      if (color === aiColor) {
+        return -MATE_SCORE + ply;
+      }
+
+      // 상대를 체크메이트한 경우
+      return MATE_SCORE - ply;
+    }
+
+    // 스테일메이트
+    return 0;
+  }
+
+  if (depth === 0) {
+    return evaluatePosition(state, aiColor);
+  }
+
+  // AI 차례: 가장 높은 점수를 선택
+  if (color === aiColor) {
+    let bestScore = -Infinity;
+
+    for (const move of moves) {
+      const next = cloneGame(state);
+      applyMove(next, move);
+
+      const score = minimax(
+        next,
+        depth - 1,
+        alpha,
+        beta,
+        aiColor,
+        ply + 1
+      );
+
+      bestScore = Math.max(bestScore, score);
+      alpha = Math.max(alpha, bestScore);
+
+      // 베타 가지치기
+      if (alpha >= beta) break;
+    }
+
+    return bestScore;
+  }
+
+  // 사람 차례: AI에게 가장 불리한 수를 선택한다고 가정
+  let bestScore = Infinity;
+
+  for (const move of moves) {
+    const next = cloneGame(state);
+    applyMove(next, move);
+
+    const score = minimax(
+      next,
+      depth - 1,
+      alpha,
+      beta,
+      aiColor,
+      ply + 1
+    );
+
+    bestScore = Math.min(bestScore, score);
+    beta = Math.min(beta, bestScore);
+
+    // 알파 가지치기
+    if (alpha >= beta) break;
+  }
+
+  return bestScore;
+}
+
+function chooseMove(color, depth = SEARCH_DEPTH) {
+  const moves = orderedMoves(game, color);
+
+  if (!moves.length) {
+    return null;
+  }
+
+  let bestMove = moves[0];
+  let bestScore = -Infinity;
+  let alpha = -Infinity;
+  const beta = Infinity;
+
+  for (const move of moves) {
+    const next = cloneGame(game);
+    applyMove(next, move);
+
+    const score = minimax(
+      next,
+      depth - 1,
+      alpha,
+      beta,
+      color,
+      1
+    );
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestMove = move;
+    }
+
+    alpha = Math.max(alpha, bestScore);
+  }
+
+  return bestMove;
+}
 
   function renderBoard() {
     boardElement.replaceChildren();
