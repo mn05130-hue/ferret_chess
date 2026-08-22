@@ -49,7 +49,8 @@
       lastMove: null,
       over: false,
       thinking: false,
-      moveNumber: 1
+      moveNumber: 1,
+      history: []
     };
   }
 
@@ -62,7 +63,8 @@
       ...source,
       board,
       castling: { ...source.castling },
-      lastMove: source.lastMove ? { ...source.lastMove } : null
+      lastMove: source.lastMove ? { ...source.lastMove } : null,
+      history: [...(source.history || [])]
     };
   }
 
@@ -261,6 +263,8 @@
     }
 
     state.lastMove = { from: move.from, to: move.to };
+    state.history = state.history || [];
+    state.history.push(`${move.from}${move.to}${move.promotion || ""}`);
     if (piece.color === "b") state.moveNumber += 1;
     state.turn = piece.color === "w" ? "b" : "w";
   }
@@ -282,240 +286,248 @@
   function legalMovesFrom(square) {
     return legalMovesFor(game, game.turn).filter(move => move.from === square);
   }
-const MATE_SCORE = 1_000_000;
+  const MATE_SCORE = 1_000_000;
+  const SEARCH_DEPTH = 3;
+  const QUIESCENCE_DEPTH = 2;
+  const BOOK_VERIFY_DEPTH = 1;
+  const BOOK_LOSS_LIMIT = -180;
 
-// 2: 빠름, 3: 일반, 4: 강하지만 브라우저가 멈출 수 있음
-const SEARCH_DEPTH = 3;
+  // 좌표 수순으로 저장한 안전한 흑 오프닝 북.
+  // 유명한 초반 함정은 정석 방어 수순을 우선한다.
+  const OPENING_BOOK = new Map([
+    ["e2e4", ["e7e5", "c7c5"]],
+    ["e2e4 e7e5 g1f3", ["b8c6"]],
+    ["e2e4 e7e5 f1c4", ["g8f6"]],
+    ["e2e4 e7e5 d1h5", ["b8c6"]],
+    ["e2e4 e7e5 d1h5 b8c6 f1c4", ["g7g6"]],
+    ["e2e4 e7e5 d1h5 b8c6 f1c4 g7g6 d1f3", ["g8f6"]],
+    ["e2e4 e7e5 g1f3 b8c6 f1c4", ["g8f6"]],
+    ["e2e4 e7e5 g1f3 b8c6 f1c4 g8f6 f3g5", ["d7d5"]],
+    ["e2e4 e7e5 g1f3 b8c6 f1c4 g8f6 f3g5 d7d5 e4d5", ["b8a5"]],
+    ["d2d4", ["d7d5", "g8f6"]],
+    ["d2d4 d7d5 c2c4", ["e7e6"]],
+    ["d2d4 d7d5 c2c4 e7e6 b1c3", ["g8f6"]],
+    ["c2c4", ["e7e5"]],
+    ["g1f3", ["d7d5"]],
+    ["b1c3", ["d7d5"]],
+    ["f2f3", ["e7e5"]],
+    ["f2f3 e7e5 g2g4", ["d8h4"]]
+  ]);
 
-function positionalScore(square, piece) {
-  const [file, rank] = coords(square);
+  function positionalScore(square, piece) {
+    const [file, rank] = coords(square);
+    const center = 7 - (Math.abs(file - 3.5) + Math.abs(rank - 4.5));
 
-  // 중앙에 가까울수록 높은 값
-  const center =
-    7 - (Math.abs(file - 3.5) + Math.abs(rank - 4.5));
-
-  if (piece.type === "p") {
-    const advancement =
-      piece.color === "w"
-        ? rank - 2
-        : 7 - rank;
-
-    return advancement * 8 + center * 2;
-  }
-
-  if (piece.type === "n") return center * 10;
-  if (piece.type === "b") return center * 5;
-  if (piece.type === "r") return center * 2;
-  if (piece.type === "q") return center * 2;
-
-  if (piece.type === "k") {
-    const homeRank = piece.color === "w" ? 1 : 8;
-
-    // 캐슬링한 킹에 보너스
-    if (
-      square === `g${homeRank}` ||
-      square === `c${homeRank}`
-    ) {
-      return 35;
+    if (piece.type === "p") {
+      const advancement = piece.color === "w" ? rank - 2 : 7 - rank;
+      return advancement * 8 + center * 2;
     }
-  }
+    if (piece.type === "n") return center * 10;
+    if (piece.type === "b") return center * 5;
+    if (piece.type === "r" || piece.type === "q") return center * 2;
 
-  return 0;
-}
-
-function evaluatePosition(state, aiColor) {
-  const enemyColor = aiColor === "w" ? "b" : "w";
-  let score = 0;
-
-  // 기물 가치와 위치 평가
-  Object.entries(state.board).forEach(([square, piece]) => {
-    const material =
-      piece.type === "k" ? 0 : VALUE[piece.type];
-
-    const value =
-      material + positionalScore(square, piece);
-
-    if (piece.color === aiColor) {
-      score += value;
-    } else {
-      score -= value;
+    if (piece.type === "k") {
+      const homeRank = piece.color === "w" ? 1 : 8;
+      if (square === `g${homeRank}` || square === `c${homeRank}`) return 35;
     }
-  });
-
-  // 움직일 수 있는 수가 많을수록 보너스
-  const myMobility =
-    legalMovesFor(state, aiColor).length;
-
-  const enemyMobility =
-    legalMovesFor(state, enemyColor).length;
-
-  score += (myMobility - enemyMobility) * 2;
-
-  // 체크 보너스와 페널티
-  if (isInCheck(state, enemyColor)) score += 35;
-  if (isInCheck(state, aiColor)) score -= 35;
-
-  return score;
-}
-
-// 알파베타 가지치기가 잘 되도록 좋은 수부터 검사한다.
-function moveOrderScore(state, move) {
-  const movingPiece = state.board[move.from];
-  let score = 0;
-
-  if (move.capture) {
-    score += VALUE[move.capture.type] * 10;
-    score -= VALUE[movingPiece.type];
-  }
-
-  if (move.promotion) {
-    score += VALUE.q * 8;
-  }
-
-  if (move.castle) {
-    score += 150;
-  }
-
-  const simulation = cloneGame(state);
-  applyMove(simulation, move);
-
-  // 상대에게 체크하는 수
-  if (isInCheck(simulation, simulation.turn)) {
-    score += 80;
-  }
-
-  return score;
-}
-
-function orderedMoves(state, color) {
-  const moves = legalMovesFor(state, color);
-
-  return moves.sort(
-    (a, b) =>
-      moveOrderScore(state, b) -
-      moveOrderScore(state, a)
-  );
-}
-
-function minimax(
-  state,
-  depth,
-  alpha,
-  beta,
-  aiColor,
-  ply
-) {
-  const color = state.turn;
-  const moves = orderedMoves(state, color);
-
-  // 둘 수 있는 수가 없으면 체크메이트 또는 스테일메이트
-  if (!moves.length) {
-    if (isInCheck(state, color)) {
-      // AI가 체크메이트당한 경우
-      if (color === aiColor) {
-        return -MATE_SCORE + ply;
-      }
-
-      // 상대를 체크메이트한 경우
-      return MATE_SCORE - ply;
-    }
-
-    // 스테일메이트
     return 0;
   }
 
-  if (depth === 0) {
-    return evaluatePosition(state, aiColor);
+  function evaluatePosition(state, aiColor) {
+    const enemyColor = aiColor === "w" ? "b" : "w";
+    let score = 0;
+
+    Object.entries(state.board).forEach(([square, piece]) => {
+      const material = piece.type === "k" ? 0 : VALUE[piece.type];
+      const value = material + positionalScore(square, piece);
+      score += piece.color === aiColor ? value : -value;
+    });
+
+    const myMobility = legalMovesFor(state, aiColor).length;
+    const enemyMobility = legalMovesFor(state, enemyColor).length;
+    score += (myMobility - enemyMobility) * 2;
+
+    if (isInCheck(state, enemyColor)) score += 35;
+    if (isInCheck(state, aiColor)) score -= 35;
+    return score;
   }
 
-  // AI 차례: 가장 높은 점수를 선택
-  if (color === aiColor) {
-    let bestScore = -Infinity;
+  function moveOrderScore(state, move) {
+    const movingPiece = state.board[move.from];
+    let score = 0;
 
-    for (const move of moves) {
+    if (move.capture) {
+      score += VALUE[move.capture.type] * 10;
+      score -= VALUE[movingPiece.type];
+    }
+    if (move.promotion) score += VALUE.q * 8;
+    if (move.castle) score += 150;
+
+    const simulation = cloneGame(state);
+    applyMove(simulation, move);
+    if (isInCheck(simulation, simulation.turn)) score += 80;
+    return score;
+  }
+
+  function orderedMoves(state, color) {
+    return legalMovesFor(state, color).sort(
+      (a, b) => moveOrderScore(state, b) - moveOrderScore(state, a)
+    );
+  }
+
+  function terminalScore(state, color, aiColor, ply) {
+    if (!isInCheck(state, color)) return 0;
+    return color === aiColor ? -MATE_SCORE + ply : MATE_SCORE - ply;
+  }
+
+  function isForcingMove(state, move) {
+    if (move.capture || move.promotion) return true;
+    const next = cloneGame(state);
+    applyMove(next, move);
+    return isInCheck(next, next.turn);
+  }
+
+  // 일반 탐색이 끝난 뒤에도 체크·잡는 수·프로모션을 더 살펴본다.
+  // 전술이 진행 중인 순간에 평가를 멈추는 수평선 효과를 줄인다.
+  function quiescence(state, alpha, beta, aiColor, ply, remaining = QUIESCENCE_DEPTH) {
+    const color = state.turn;
+    const moves = orderedMoves(state, color);
+    if (!moves.length) return terminalScore(state, color, aiColor, ply);
+
+    const standPat = evaluatePosition(state, aiColor);
+    if (remaining <= 0) return standPat;
+
+    const maximizing = color === aiColor;
+    const checked = isInCheck(state, color);
+
+    if (!checked) {
+      if (maximizing) {
+        if (standPat >= beta) return standPat;
+        alpha = Math.max(alpha, standPat);
+      } else {
+        if (standPat <= alpha) return standPat;
+        beta = Math.min(beta, standPat);
+      }
+    }
+
+    const forcingMoves = checked ? moves : moves.filter(move => isForcingMove(state, move));
+    if (!forcingMoves.length) return standPat;
+
+    let bestScore = checked ? (maximizing ? -Infinity : Infinity) : standPat;
+    for (const move of forcingMoves) {
       const next = cloneGame(state);
       applyMove(next, move);
-
-      const score = minimax(
+      const score = quiescence(
         next,
-        depth - 1,
         alpha,
         beta,
         aiColor,
-        ply + 1
+        ply + 1,
+        remaining - 1
       );
 
-      bestScore = Math.max(bestScore, score);
-      alpha = Math.max(alpha, bestScore);
-
-      // 베타 가지치기
+      if (maximizing) {
+        bestScore = Math.max(bestScore, score);
+        alpha = Math.max(alpha, bestScore);
+      } else {
+        bestScore = Math.min(bestScore, score);
+        beta = Math.min(beta, bestScore);
+      }
       if (alpha >= beta) break;
     }
-
     return bestScore;
   }
 
-  // 사람 차례: AI에게 가장 불리한 수를 선택한다고 가정
-  let bestScore = Infinity;
+  function minimax(state, depth, alpha, beta, aiColor, ply) {
+    if (depth <= 0) {
+      return quiescence(state, alpha, beta, aiColor, ply);
+    }
 
-  for (const move of moves) {
-    const next = cloneGame(state);
-    applyMove(next, move);
+    const color = state.turn;
+    const moves = orderedMoves(state, color);
+    if (!moves.length) return terminalScore(state, color, aiColor, ply);
 
-    const score = minimax(
-      next,
-      depth - 1,
-      alpha,
-      beta,
-      aiColor,
-      ply + 1
-    );
+    if (color === aiColor) {
+      let bestScore = -Infinity;
+      for (const move of moves) {
+        const next = cloneGame(state);
+        applyMove(next, move);
+        const score = minimax(next, depth - 1, alpha, beta, aiColor, ply + 1);
+        bestScore = Math.max(bestScore, score);
+        alpha = Math.max(alpha, bestScore);
+        if (alpha >= beta) break;
+      }
+      return bestScore;
+    }
 
-    bestScore = Math.min(bestScore, score);
-    beta = Math.min(beta, bestScore);
-
-    // 알파 가지치기
-    if (alpha >= beta) break;
+    let bestScore = Infinity;
+    for (const move of moves) {
+      const next = cloneGame(state);
+      applyMove(next, move);
+      const score = minimax(next, depth - 1, alpha, beta, aiColor, ply + 1);
+      bestScore = Math.min(bestScore, score);
+      beta = Math.min(beta, bestScore);
+      if (alpha >= beta) break;
+    }
+    return bestScore;
   }
 
-  return bestScore;
-}
+  function findMoveByKey(moves, key) {
+    return moves.find(move => `${move.from}${move.to}${move.promotion || ""}` === key);
+  }
 
-function chooseMove(color, depth = SEARCH_DEPTH) {
-  const moves = orderedMoves(game, color);
+  // 오프닝 북 수라도 짧은 전술 검사를 통과한 경우에만 사용한다.
+  function chooseBookMove(color) {
+    if (color !== "b") return null;
 
-  if (!moves.length) {
+    const candidates = OPENING_BOOK.get((game.history || []).join(" "));
+    if (!candidates) return null;
+
+    const legalMoves = orderedMoves(game, color);
+    for (const key of candidates) {
+      const move = findMoveByKey(legalMoves, key);
+      if (!move) continue;
+
+      const next = cloneGame(game);
+      applyMove(next, move);
+      const safetyScore = minimax(
+        next,
+        BOOK_VERIFY_DEPTH,
+        -Infinity,
+        Infinity,
+        color,
+        1
+      );
+      if (safetyScore >= BOOK_LOSS_LIMIT) return move;
+    }
     return null;
   }
 
-  let bestMove = moves[0];
-  let bestScore = -Infinity;
-  let alpha = -Infinity;
-  const beta = Infinity;
+  function chooseMove(color, depth = SEARCH_DEPTH) {
+    const bookMove = chooseBookMove(color);
+    if (bookMove) return bookMove;
 
-  for (const move of moves) {
-    const next = cloneGame(game);
-    applyMove(next, move);
+    const moves = orderedMoves(game, color);
+    if (!moves.length) return null;
 
-    const score = minimax(
-      next,
-      depth - 1,
-      alpha,
-      beta,
-      color,
-      1
-    );
+    let bestMove = moves[0];
+    let bestScore = -Infinity;
+    let alpha = -Infinity;
+    const beta = Infinity;
 
-    if (score > bestScore) {
-      bestScore = score;
-      bestMove = move;
+    for (const move of moves) {
+      const next = cloneGame(game);
+      applyMove(next, move);
+      const score = minimax(next, depth - 1, alpha, beta, color, 1);
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = move;
+      }
+      alpha = Math.max(alpha, bestScore);
     }
-
-    alpha = Math.max(alpha, bestScore);
+    return bestMove;
   }
-
-  return bestMove;
-}
 
   function renderBoard() {
     boardElement.replaceChildren();
