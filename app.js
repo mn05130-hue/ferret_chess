@@ -45,7 +45,7 @@
   const moveListScroll = document.querySelector("#move-list-scroll");
   const moveCount = document.querySelector("#move-count");
   const openingName = document.querySelector("#opening-name");
-  const DIFFICULTY_DEPTH = Object.freeze({ low: 2, medium: 3, high: 3 });
+  const DIFFICULTY_DEPTH = Object.freeze({ low: 2, medium: 3, high: 4 });
   const HINT_DEPTH = 3;
   const MINIMUM_AI_DELAY_MS = 650;
   const VARIANT_META = Object.freeze({
@@ -113,7 +113,7 @@
     if (workerUnavailable || !("Worker" in window)) return null;
 
     try {
-      const worker = new Worker("ai-worker.js?v=7");
+      const worker = new Worker("ai-worker.js?v=8");
       worker.addEventListener("message", handleWorkerMessage);
       worker.addEventListener("error", event => handleWorkerError(worker, event));
       aiWorker = worker;
@@ -721,7 +721,7 @@
   const modalContent = {
     how: {
       title: "게임 방법",
-      html: "<p>쩨비는 왼쪽의 흰색 기물로 먼저 움직입니다. 기물을 누른 뒤 표시된 이동 칸 또는 빨간 공격 대상을 선택하세요.</p><p>표준 체스에서는 버찌의 킹을 체크메이트하면 승리합니다.</p><p>냉병기 전술에서는 한 턴에 병력 하나가 이동하거나 공격합니다. 병력마다 HP와 공격 방향이 다르며 공격자는 공격 후 원래 칸에 남습니다.</p><p>궁병은 전방 세 사격선으로 최대 4칸을 공격하고 다른 기물을 관통하지 못합니다. 경기병은 장기 말처럼 길목이 막히며, 이동 후 인접한 적을 공격할 수 있습니다.</p><p>상대 장군의 HP를 0으로 만들면 즉시 승리합니다. 체크와 체크메이트는 없습니다.</p><p>냉병기 전술에서는 쩨비와 버찌가 각자의 스킬을 대국당 한 번 사용할 수 있습니다.</p>"
+      html: "<p>쩨비는 왼쪽의 흰색 기물로 먼저 움직입니다. 기물을 누른 뒤 표시된 이동 칸 또는 빨간 공격 대상을 선택하세요.</p><p>표준 체스에서는 버찌의 킹을 체크메이트하면 승리합니다.</p><p>언덕의 왕은 킹을 중앙 네 칸에 도착시키면 승리하고, 3-체크는 상대 킹에게 세 번째 체크를 주면 승리합니다.</p><p>냉병기 전술에서는 한 턴에 병력 하나가 이동하거나 공격합니다. 병력마다 HP와 공격 방향이 다르며 공격자는 공격 후 원래 칸에 남습니다.</p><p>궁병은 전방 세 사격선으로 최대 4칸을 공격하고 다른 기물을 관통하지 못합니다. 경기병은 장기 말처럼 길목이 막히며, 이동 후 인접한 적을 공격할 수 있습니다.</p><p>상대 장군의 HP를 0으로 만들면 즉시 승리합니다. 체크와 체크메이트는 없습니다.</p><p>모든 변형 체스에서는 쩨비와 버찌가 각자의 스킬을 대국당 한 번 사용할 수 있습니다.</p>"
     },
     credits: {
       title: "크레딧 · 팬게임 표기",
