@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#25170f">
   <meta name="description" content="버찌와 쩨비가 펼치는 작은 AI 체스 인형극">
   <title>버찌 체스</title>
-  <link rel="stylesheet" href="styles.css?v=9">
+  <link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
   <main class="theatre" id="theatre">
@@ -76,6 +76,21 @@
           <div class="beorjji-crop game-beorjji" role="img" aria-label="버찌"></div>
           <span class="name-card">버찌 · 흑</span>
         </aside>
+
+        <aside class="move-history paper-card" aria-labelledby="move-history-title">
+          <div class="move-history-heading">
+            <h2 id="move-history-title">기보</h2>
+            <span id="move-count">0수</span>
+          </div>
+          <div class="move-list-scroll" id="move-list-scroll" tabindex="0" aria-label="지금까지 둔 수">
+            <table class="move-table">
+              <thead>
+                <tr><th scope="col">#</th><th scope="col">쩨비</th><th scope="col">버찌</th></tr>
+              </thead>
+              <tbody id="move-list" aria-live="polite"></tbody>
+            </table>
+          </div>
+        </aside>
       </section>
 
       <div class="floor" aria-hidden="true"></div>
@@ -100,9 +115,9 @@
       </div>
     </div>
   </main>
-  <script src="chess-engine.js?v=1"></script>
-  <script src="chess-ai.js?v=1"></script>
+  <script src="chess-engine.js?v=3"></script>
+  <script src="chess-ai.js?v=2"></script>
   <script src="cutscene-manager.js?v=1"></script>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>

@@ -9,6 +9,7 @@
     b: { p: "♟", n: "♞", b: "♝", r: "♜", q: "♛", k: "♚" }
   };
   const VALUE = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+  const SAN_PIECE = { n: "N", b: "B", r: "R", q: "Q", k: "K" };
 
   function createBoard() {
     const board = {};
@@ -303,6 +304,44 @@
     });
   }
 
+  function moveToSan(state, move) {
+    const piece = state.board[move.from];
+    if (!piece) return `${move.from}-${move.to}`;
+
+    let notation;
+    if (move.castle) {
+      notation = move.castle === "K" ? "O-O" : "O-O-O";
+    } else {
+      const capture = Boolean(move.capture || move.enPassant || state.board[move.to]);
+      let prefix = piece.type === "p" ? (capture ? move.from[0] : "") : SAN_PIECE[piece.type];
+
+      if (piece.type !== "p") {
+        const alternatives = legalMovesFor(state, piece.color).filter(candidate => {
+          const candidatePiece = state.board[candidate.from];
+          return candidate.from !== move.from && candidate.to === move.to && candidatePiece?.type === piece.type;
+        });
+        if (alternatives.length) {
+          const sameFile = alternatives.some(candidate => candidate.from[0] === move.from[0]);
+          const sameRank = alternatives.some(candidate => candidate.from[1] === move.from[1]);
+          if (!sameFile) prefix += move.from[0];
+          else if (!sameRank) prefix += move.from[1];
+          else prefix += move.from;
+        }
+      }
+
+      notation = `${prefix}${capture ? "x" : ""}${move.to}`;
+      if (move.promotion) notation += `=${SAN_PIECE[move.promotion] || move.promotion.toUpperCase()}`;
+    }
+
+    const simulation = cloneGame(state);
+    applyMove(simulation, move);
+    const defender = simulation.turn;
+    if (isInCheck(simulation, defender)) {
+      notation += legalMovesFor(simulation, defender).length ? "+" : "#";
+    }
+    return notation;
+  }
+
   function isInsufficientMaterial(state) {
     const nonKings = Object.entries(state.board)
       .filter(([, piece]) => piece.type !== "k");
@@ -326,7 +365,7 @@
     return null;
   }
 
-  window.FerretChessEngine = Object.freeze({
+  globalThis.FerretChessEngine = Object.freeze({
     FILES,
     PIECE_NAME,
     PIECE_SYMBOL,
@@ -336,6 +375,7 @@
     coords,
     applyMove,
     legalMovesFor,
+    moveToSan,
     isInCheck,
     getDrawReason
   });

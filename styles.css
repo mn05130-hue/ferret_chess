@@ -540,6 +540,88 @@ button { font: inherit; }
 
 .paper-button.compact { min-height: 40px; padding: 9px 10px; font-size: clamp(.78rem, 1.1vw, 1rem); }
 
+.move-history {
+  grid-column: 3;
+  grid-row: 2;
+  width: 100%;
+  max-height: min(235px, 29vh);
+  align-self: start;
+  justify-self: stretch;
+  margin-top: 4%;
+  padding: 13px 12px 10px;
+  overflow: hidden;
+  z-index: 7;
+  rotate: 1deg;
+}
+
+.move-history-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.move-history-heading h2 {
+  margin: 0;
+  color: #4f876a;
+  font-size: clamp(.95rem, 1.3vw, 1.2rem);
+}
+
+.move-history-heading span {
+  color: #806957;
+  font-size: .72rem;
+  font-weight: 900;
+}
+
+.move-list-scroll {
+  max-height: min(178px, 22vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #806957 #eadfc5;
+  scrollbar-width: thin;
+}
+
+.move-list-scroll:focus-visible {
+  outline: 3px solid var(--mint-dark);
+  outline-offset: 2px;
+}
+
+.move-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+  font-variant-numeric: tabular-nums;
+  table-layout: fixed;
+}
+
+.move-table th,
+.move-table td {
+  padding: 4px 3px;
+  border-bottom: 1px dashed #bda98a;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.move-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: #735d4c;
+  background: #f7edd5;
+  font-family: "Trebuchet MS", "Noto Sans KR", sans-serif;
+  font-size: .7rem;
+}
+
+.move-table th:first-child { width: 24%; }
+.move-table tbody th { color: #8c735e; font-size: .78rem; }
+.move-table td { font-size: clamp(.76rem, 1vw, .94rem); font-weight: 700; }
+.move-table .latest-move { color: #35694f; background: #acd9c14d; }
+.move-table .move-empty td { padding: 14px 3px; color: #8c735e; font-family: "Trebuchet MS", "Noto Sans KR", sans-serif; font-size: .7rem; white-space: normal; }
+
 .cutscene-layer {
   position: absolute;
   z-index: 55;
@@ -706,6 +788,9 @@ button { font: inherit; }
   .game-screen { grid-template-columns: minmax(92px, .48fr) minmax(0, 1.9fr) minmax(102px, .52fr); padding-inline: 4%; }
   .game-beorjji { width: min(100%, 210px); }
   .game-zzeebi { width: min(100%, 180px); }
+  .move-history { padding-inline: 7px; }
+  .move-table th,
+  .move-table td { padding-inline: 1px; }
 }
 
 @media (max-width: 760px) {
@@ -732,7 +817,7 @@ button { font: inherit; }
 
   .game-screen {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
     align-items: start;
     column-gap: 0;
     row-gap: 7px;
@@ -758,7 +843,7 @@ button { font: inherit; }
   .board-wrap {
     grid-column: 1;
     grid-row: 2;
-    width: min(100%, 67vh);
+    width: min(100%, 67vh, calc(100svh - 270px));
     min-width: 0;
     align-self: start;
     gap: 7px;
@@ -771,6 +856,29 @@ button { font: inherit; }
   .paper-button.compact { min-height: 34px; padding: 6px 3px; font-size: .67rem; letter-spacing: 0; }
   .paper-button.compact::before,
   .paper-button.compact::after { width: 19px; height: 7px; }
+
+  .move-history {
+    grid-column: 1;
+    grid-row: 3;
+    width: min(100%, 460px);
+    max-height: 84px;
+    align-self: end;
+    justify-self: center;
+    margin: 0;
+    padding: 6px 9px 5px;
+    rotate: 0deg;
+    z-index: 4;
+  }
+  .move-history::before,
+  .move-history::after { width: 21px; height: 7px; }
+  .move-history-heading { margin-bottom: 2px; }
+  .move-history-heading h2 { font-size: .78rem; }
+  .move-history-heading span { font-size: .62rem; }
+  .move-list-scroll { max-height: 48px; }
+  .move-table thead th { font-size: .58rem; }
+  .move-table tbody th,
+  .move-table td { padding-block: 2px; font-size: .66rem; }
+  .move-table .move-empty td { padding: 7px 2px; font-size: .62rem; }
 
   .cutscene-actor,
   .cutscene-actor[data-side="b"] {
@@ -806,6 +914,8 @@ button { font: inherit; }
   .chessboard { width: min(100%, 58vh); }
   .game-status { padding-block: 7px; }
   .player-panel { min-height: 260px; }
+  .move-history { max-height: 145px; }
+  .move-list-scroll { max-height: 92px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const Engine = window.FerretChessEngine;
+  const Engine = globalThis.FerretChessEngine;
   const {
     VALUE,
     cloneGame,
@@ -133,5 +133,5 @@
     return bestMove;
   }
 
-  window.FerretChessAI = Object.freeze({ chooseMove, SEARCH_DEPTH });
+  globalThis.FerretChessAI = Object.freeze({ chooseMove, SEARCH_DEPTH });
 })();

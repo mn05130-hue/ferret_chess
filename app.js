@@ -11,6 +11,7 @@
     createGame,
     applyMove,
     legalMovesFor,
+    moveToSan,
     isInCheck,
     getDrawReason
   } = Engine;
@@ -26,26 +27,153 @@
   const closeModalButton = document.querySelector("#close-modal");
   const hintButton = document.querySelector("#hint");
   const restartButton = document.querySelector("#restart");
-  const DIFFICULTY_DEPTH = Object.freeze({ low: 1, medium: 2, high: 3 });
+  const moveList = document.querySelector("#move-list");
+  const moveListScroll = document.querySelector("#move-list-scroll");
+  const moveCount = document.querySelector("#move-count");
+  const DIFFICULTY_DEPTH = Object.freeze({ low: 2, medium: 3, high: 3 });
+  const HINT_DEPTH = 3;
+  const MINIMUM_AI_DELAY_MS = 650;
 
   let game = createGame();
   let selected = null;
   let selectedMoves = [];
   let hintSquares = [];
-  let aiTimer = null;
+  let moveHistory = [];
   let hintTimer = null;
   let modalReturnFocus = null;
   let aiDepth = DIFFICULTY_DEPTH.medium;
   let presenting = false;
+  let hintThinking = false;
   let gameSession = 0;
+  let aiWorker = null;
+  let workerUnavailable = false;
+  let aiRequestSequence = 0;
+  const pendingAiRequests = new Map();
 
   function selectedAiDepth() {
     const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked');
     return DIFFICULTY_DEPTH[selectedDifficulty?.value] || DIFFICULTY_DEPTH.medium;
   }
 
+  function abortError() {
+    return new DOMException("AI request was cancelled", "AbortError");
+  }
+
+  function rejectPendingAiRequests(error) {
+    pendingAiRequests.forEach(({ reject }) => reject(error));
+    pendingAiRequests.clear();
+  }
+
+  function handleWorkerMessage(event) {
+    const { requestId, move, error } = event.data || {};
+    const pending = pendingAiRequests.get(requestId);
+    if (!pending) return;
+    pendingAiRequests.delete(requestId);
+    if (error) pending.reject(new Error(error));
+    else pending.resolve(move || null);
+  }
+
+  function handleWorkerError(worker, event) {
+    if (worker !== aiWorker) return;
+    event.preventDefault();
+    worker.terminate();
+    aiWorker = null;
+    workerUnavailable = true;
+    rejectPendingAiRequests(new Error(event.message || "AI Worker를 불러오지 못했습니다."));
+  }
+
+  function ensureAiWorker() {
+    if (aiWorker) return aiWorker;
+    if (workerUnavailable || !("Worker" in window)) return null;
+
+    try {
+      const worker = new Worker("ai-worker.js?v=2");
+      worker.addEventListener("message", handleWorkerMessage);
+      worker.addEventListener("error", event => handleWorkerError(worker, event));
+      aiWorker = worker;
+      return worker;
+    } catch (error) {
+      workerUnavailable = true;
+      return null;
+    }
+  }
+
+  function cancelAiWork() {
+    if (aiWorker) aiWorker.terminate();
+    aiWorker = null;
+    rejectPendingAiRequests(abortError());
+  }
+
+  function requestWorkerMove(state, color, depth, session, purpose) {
+    const worker = ensureAiWorker();
+    if (!worker) return Promise.reject(new Error("AI Worker를 사용할 수 없습니다."));
+
+    const requestId = ++aiRequestSequence;
+    return new Promise((resolve, reject) => {
+      pendingAiRequests.set(requestId, { resolve, reject });
+      worker.postMessage({ requestId, session, purpose, game: state, color, depth });
+    });
+  }
+
+  async function requestAiMove(state, color, depth, session, purpose) {
+    try {
+      return await requestWorkerMove(state, color, depth, session, purpose);
+    } catch (error) {
+      if (error?.name === "AbortError" || session !== gameSession) throw error;
+
+      // file://처럼 Worker가 막히는 환경에서도 같은 탐색 깊이를 유지한다.
+      workerUnavailable = true;
+      await new Promise(resolve => window.setTimeout(resolve, 0));
+      if (session !== gameSession) throw abortError();
+      return ChessAI.chooseMove(state, color, depth);
+    }
+  }
+
+  function minimumAiDelay() {
+    return new Promise(resolve => window.setTimeout(resolve, MINIMUM_AI_DELAY_MS));
+  }
+
   function legalMovesFrom(square) {
     return legalMovesFor(game, game.turn).filter(move => move.from === square);
+  }
+
+  function renderMoveHistory() {
+    moveList.replaceChildren();
+    moveCount.textContent = `${moveHistory.length}수`;
+
+    if (!moveHistory.length) {
+      const emptyRow = document.createElement("tr");
+      emptyRow.className = "move-empty";
+      const emptyCell = document.createElement("td");
+      emptyCell.colSpan = 3;
+      emptyCell.textContent = "아직 둔 수가 없습니다.";
+      emptyRow.append(emptyCell);
+      moveList.append(emptyRow);
+      return;
+    }
+
+    for (let index = 0; index < moveHistory.length; index += 2) {
+      const row = document.createElement("tr");
+      const numberCell = document.createElement("th");
+      const whiteCell = document.createElement("td");
+      const blackCell = document.createElement("td");
+      numberCell.scope = "row";
+      numberCell.textContent = `${Math.floor(index / 2) + 1}.`;
+      whiteCell.textContent = moveHistory[index] || "";
+      blackCell.textContent = moveHistory[index + 1] || "";
+      if (index + 1 >= moveHistory.length) whiteCell.classList.add("latest-move");
+      else if (index + 2 >= moveHistory.length) blackCell.classList.add("latest-move");
+      row.append(numberCell, whiteCell, blackCell);
+      moveList.append(row);
+    }
+
+    window.requestAnimationFrame(() => {
+      moveListScroll.scrollTop = moveListScroll.scrollHeight;
+    });
+  }
+
+  function recordMove(move) {
+    moveHistory.push(moveToSan(game, move));
   }
 
   function renderBoard() {
@@ -132,17 +260,19 @@
   }
 
   async function handleSquare(square) {
-    if (game.over || game.thinking || presenting || game.turn !== "w") return;
+    if (game.over || game.thinking || presenting || hintThinking || game.turn !== "w") return;
     const piece = game.board[square];
     const chosenMove = selectedMoves.find(move => move.to === square);
     hintSquares = [];
 
     if (selected && chosenMove) {
       const session = gameSession;
+      recordMove(chosenMove);
       applyMove(game, chosenMove);
       selected = null;
       selectedMoves = [];
       renderBoard();
+      renderMoveHistory();
       const ended = updateStatus();
       await playMoveCutscenes(chosenMove, "w", session);
       if (session === gameSession && !ended) queueAiMove();
@@ -193,54 +323,67 @@
     return false;
   }
 
-  function queueAiMove() {
+  async function queueAiMove() {
     const session = gameSession;
     game.thinking = true;
     hintButton.disabled = true;
     updateStatus();
-    window.clearTimeout(aiTimer);
-    aiTimer = window.setTimeout(async () => {
+
+    try {
+      const [move] = await Promise.all([
+        requestAiMove(game, "b", aiDepth, session, "move"),
+        minimumAiDelay()
+      ]);
       if (session !== gameSession) return;
-      const move = ChessAI.chooseMove(game, "b", aiDepth);
-      if (!move || session !== gameSession) {
+      if (!move) {
         game.thinking = false;
         updateStatus();
         return;
       }
 
+      recordMove(move);
       applyMove(game, move);
       game.thinking = false;
       hintButton.disabled = true;
       renderBoard();
+      renderMoveHistory();
       const ended = updateStatus();
       await playMoveCutscenes(move, "b", session);
       if (session === gameSession && !ended) hintButton.disabled = false;
-    }, 650);
+    } catch (error) {
+      if (error?.name === "AbortError" || session !== gameSession) return;
+      game.thinking = false;
+      statusElement.textContent = "버찌가 수를 찾지 못했어요 · 다시 시작해 주세요";
+    }
   }
 
   function resetGame() {
     gameSession += 1;
-    window.clearTimeout(aiTimer);
+    cancelAiWork();
     window.clearTimeout(hintTimer);
     Cutscenes.cancelAll();
     presenting = false;
+    hintThinking = false;
     game = createGame();
     selected = null;
     selectedMoves = [];
     hintSquares = [];
+    moveHistory = [];
     hintButton.disabled = false;
     gameScreen.inert = !gameScreen.classList.contains("active");
     renderBoard();
+    renderMoveHistory();
     updateStatus();
   }
 
   function switchScreen(showGame) {
     if (!showGame) {
       gameSession += 1;
-      window.clearTimeout(aiTimer);
+      cancelAiWork();
       window.clearTimeout(hintTimer);
       Cutscenes.cancelAll();
       presenting = false;
+      hintThinking = false;
     }
 
     theatre.classList.add("curtain-call");
@@ -260,21 +403,39 @@
     }, 520);
   }
 
-  function showHint() {
-    if (game.over || game.thinking || presenting || game.turn !== "w") return;
+  async function showHint() {
+    if (game.over || game.thinking || presenting || hintThinking || game.turn !== "w") return;
     const session = gameSession;
-    const move = ChessAI.chooseMove(game, "w");
-    if (!move || session !== gameSession) return;
-    hintSquares = [move.from, move.to];
-    renderBoard();
-    statusElement.textContent = "초록색 두 칸을 살펴봐!";
+    hintThinking = true;
+    hintButton.disabled = true;
+    statusElement.textContent = "힌트를 생각 중…";
     window.clearTimeout(hintTimer);
-    hintTimer = window.setTimeout(() => {
+
+    try {
+      const move = await requestAiMove(game, "w", HINT_DEPTH, session, "hint");
       if (session !== gameSession) return;
-      hintSquares = [];
+      if (!move) {
+        updateStatus();
+        return;
+      }
+
+      hintSquares = [move.from, move.to];
       renderBoard();
-      updateStatus();
-    }, 2200);
+      statusElement.textContent = "초록색 두 칸을 살펴봐!";
+      hintTimer = window.setTimeout(() => {
+        if (session !== gameSession) return;
+        hintSquares = [];
+        renderBoard();
+        updateStatus();
+      }, 2200);
+    } catch (error) {
+      if (error?.name !== "AbortError" && session === gameSession) updateStatus();
+    } finally {
+      if (session === gameSession) {
+        hintThinking = false;
+        hintButton.disabled = game.over || game.thinking || presenting || game.turn !== "w";
+      }
+    }
   }
 
   const modalContent = {
@@ -323,5 +484,6 @@
   document.addEventListener("keydown", event => { if (event.key === "Escape") closeModal(); });
 
   renderBoard();
+  renderMoveHistory();
   updateStatus();
 })();
