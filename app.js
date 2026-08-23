@@ -812,4 +812,4 @@
 
   renderBoard();
   updateStatus();
-})();
+};
