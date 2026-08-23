@@ -980,8 +980,13 @@ button { font: inherit; }
 
 .variant-option:active { translate: 0 3px; box-shadow: 0 2px 0 #866647; }
 
-.tactical-option-wrap { grid-template-columns: 1fr; margin-block: 17px; }
-.tactical-option { min-height: 108px; text-align: center; }
+.variant-option.tactical-option { grid-column: 1 / -1; min-height: 108px; text-align: center; }
+
+.tactical-rules-title {
+  margin: 23px 0 10px;
+  color: #8a5520;
+  font-size: 1.08rem;
+}
 
 .tactical-rule-grid {
   display: grid;

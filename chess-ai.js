@@ -35,7 +35,11 @@
     return (TACTICAL_VALUE[piece.type] || 200) * (.35 + hpRatio * .65);
   }
 
-  function evaluateTacticalPosition(state, aiColor) {
+  function mobilityCount(state, color, knownMobility) {
+    return knownMobility?.[color] ?? legalMovesFor(state, color).length;
+  }
+
+  function evaluateTacticalPosition(state, aiColor, knownMobility = null) {
     const enemyColor = aiColor === "w" ? "b" : "w";
     let score = 0;
     Object.entries(state.board).forEach(([square, piece]) => {
@@ -50,8 +54,8 @@
       score += piece.color === aiColor ? value : -value;
     });
 
-    const myActions = legalMovesFor(state, aiColor).length;
-    const enemyActions = legalMovesFor(state, enemyColor).length;
+    const myActions = mobilityCount(state, aiColor, knownMobility);
+    const enemyActions = mobilityCount(state, enemyColor, knownMobility);
     score += (myActions - enemyActions) * 2.5;
 
     const shielded = state.effects?.shield && state.board[state.effects.shield.square];
@@ -79,8 +83,8 @@
     return 0;
   }
 
-  function evaluatePosition(state, aiColor) {
-    if (state.variant === VARIANT.TACTICAL) return evaluateTacticalPosition(state, aiColor);
+  function evaluatePosition(state, aiColor, knownMobility = null) {
+    if (state.variant === VARIANT.TACTICAL) return evaluateTacticalPosition(state, aiColor, knownMobility);
     const enemyColor = aiColor === "w" ? "b" : "w";
     let score = 0;
 
@@ -90,8 +94,8 @@
       score += piece.color === aiColor ? value : -value;
     });
 
-    const myMobility = legalMovesFor(state, aiColor).length;
-    const enemyMobility = legalMovesFor(state, enemyColor).length;
+    const myMobility = mobilityCount(state, aiColor, knownMobility);
+    const enemyMobility = mobilityCount(state, enemyColor, knownMobility);
     score += (myMobility - enemyMobility) * 2;
     if (isInCheck(state, enemyColor)) score += 35;
     if (isInCheck(state, aiColor)) score -= 35;
@@ -172,22 +176,33 @@
     );
   }
 
+  function noMoveScore(state, color, aiColor, ply) {
+    if (state.variant === VARIANT.TACTICAL) {
+      return evaluatePosition(state, aiColor, { [color]: 0 });
+    }
+    if (state.variant !== VARIANT.STANDARD) return 0;
+    if (isInCheck(state, color)) {
+      return color === aiColor ? -MATE_SCORE + ply : MATE_SCORE - ply;
+    }
+    return 0;
+  }
+
   function minimax(state, depth, alpha, beta, aiColor, ply) {
     const variantScore = variantWinScore(state, aiColor, ply);
     if (variantScore !== null) return variantScore;
 
     const color = state.turn;
-    const moves = orderedMoves(state, color);
+    const drawReason = getDrawReason(state);
 
-    if (!moves.length) {
-      if (state.variant === VARIANT.TACTICAL) return evaluatePosition(state, aiColor);
-      if (isInCheck(state, color)) {
-        return color === aiColor ? -MATE_SCORE + ply : MATE_SCORE - ply;
-      }
-      return 0;
+    if (depth === 0 || drawReason) {
+      const moves = legalMovesFor(state, color);
+      if (!moves.length) return noMoveScore(state, color, aiColor, ply);
+      if (drawReason) return 0;
+      return evaluatePosition(state, aiColor, { [color]: moves.length });
     }
-    if (getDrawReason(state)) return 0;
-    if (depth === 0) return evaluatePosition(state, aiColor);
+
+    const moves = orderedMoves(state, color);
+    if (!moves.length) return noMoveScore(state, color, aiColor, ply);
 
     if (color === aiColor) {
       let bestScore = -Infinity;
