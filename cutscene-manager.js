@@ -41,10 +41,18 @@
       sound: "checkmate",
       duration: 2400
     },
+    variantWin: {
+      eyebrow: "VARIANT FINALE",
+      title: "특별 규칙 달성!",
+      copy: "변형 체스의 승리 조건을 먼저 달성했습니다.",
+      tone: "gold",
+      sound: "checkmate",
+      duration: 2400
+    },
     skill: {
       eyebrow: "SPECIAL SKILL",
       title: "스킬 발동!",
-      copy: "이 장면은 추후 스킬 연출로 교체할 수 있습니다.",
+      copy: "변형 체스의 특별한 힘이 체스판에 펼쳐집니다.",
       tone: "mint",
       sound: "skill",
       duration: 1800
