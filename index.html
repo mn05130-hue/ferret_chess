@@ -14,14 +14,30 @@
       <svg class="pin-icon" aria-hidden="true" viewBox="0 0 24 24">
         <path d="m15.8 3.2 5 5-2 2-1-.35-3.45 3.45.35 2-1.4 1.4-2.65-2.65-5.3 5.3-1.4-1.4 5.3-5.3L6.6 10l1.4-1.4 2 .35 3.45-3.45-.35-1 2.7-1.3Z"/>
       </svg>
-      <div class="address" title="https://www.songstudio.live/song-chat">
-        <span>https://www.songstudio.live/son...</span>
+      <div class="address" title="https://www.songstudio.live/midnight-room">
+        <span>https://www.songstudio.live/mid...</span>
         <button class="address-menu" type="button" aria-label="주소 메뉴">•••</button>
       </div>
       <button class="collapse-button" type="button" aria-label="상단 바 접기">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5.5 7.5 4.5 4.5 4.5-4.5"/></svg>
       </button>
     </header>
+
+    <section class="game-hud" aria-label="게임 상태">
+      <div class="hud-stat trust-stat">
+        <span>신뢰도</span>
+        <strong id="trust-display" aria-label="신뢰도 3">♥♥♥</strong>
+      </div>
+      <div class="hud-stat anomaly-stat">
+        <span>남은 이상 시청자</span>
+        <strong id="anomaly-display">3</strong>
+      </div>
+      <div class="hud-stat score-stat">
+        <span>점수</span>
+        <strong id="score-display">0000</strong>
+      </div>
+      <button class="help-button" id="help-button" type="button" aria-label="게임 방법">?</button>
+    </section>
 
     <section class="message-region" aria-label="실시간 메시지">
       <ol class="message-list" id="message-list" aria-live="polite"></ol>
@@ -83,9 +99,31 @@
       </nav>
     </section>
 
+    <div class="viewer-backdrop" id="viewer-backdrop" aria-hidden="true">
+      <section class="viewer-panel" role="dialog" aria-modal="true" aria-labelledby="viewer-name">
+        <button class="panel-close" id="panel-close" type="button" aria-label="닫기">×</button>
+        <p class="panel-kicker">VIEWER LOG</p>
+        <h2 id="viewer-name"></h2>
+        <p class="panel-help">최근 채팅 기록을 확인하고 판단하세요.</p>
+        <ol class="viewer-history" id="viewer-history"></ol>
+        <button class="kick-button" id="kick-button" type="button">강제 퇴장</button>
+      </section>
+    </div>
+
+    <div class="game-overlay" id="game-overlay" aria-hidden="true">
+      <section class="result-card" role="dialog" aria-modal="true" aria-labelledby="result-title">
+        <p class="result-kicker" id="result-kicker">CONNECTION CLOSED</p>
+        <h2 id="result-title">방송 종료</h2>
+        <p id="result-copy"></p>
+        <strong class="final-score" id="final-score">0000점</strong>
+        <button class="restart-button" id="game-restart" type="button">다시 시작</button>
+      </section>
+    </div>
+
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </main>
 
+  <script src="chat-engine.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

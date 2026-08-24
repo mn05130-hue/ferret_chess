@@ -1,41 +1,6 @@
 (() => {
   "use strict";
 
-  const initialMessages = [
-    { badge: "🤖", badgeClass: "robot", name: "오수재김포", color: "#63bf92", text: "와 이거" },
-    { badge: "🪙", badgeClass: "coin", name: "마춤법천지", color: "#52a4f4", text: "아흐" },
-    { badge: "🪙", badgeClass: "coin", name: "마코냥", color: "#56b6de", text: "게크네" },
-    { badge: "🪙", badgeClass: "coin", name: "마춤법천지", color: "#52a4f4", text: "저게 야스지" },
-    { badge: "", badgeClass: "empty", name: "사다시푸딩", color: "#55a7d9", text: "아흐" },
-    { badge: "🪙", badgeClass: "coin", name: "너나봐", color: "#ef4f86", text: "저건 50만원짜리다" },
-    { badge: "🤖", badgeClass: "robot", name: "버츄얼트래블러", color: "#d56ab5", text: "캬" },
-    { badge: "🤖", badgeClass: "robot", name: "버츄얼트래블러", color: "#d56ab5", text: "와 내장 개맛있겠다" },
-    { badge: "💜", badgeClass: "heart", name: "여름의 3악장", color: "#47c9e8", text: "게글류 진짜" },
-    { badge: "👑", badgeClass: "crown", name: "전공정머신", color: "#d983c7", text: "바로 버터발라서 구워버리고싶네" },
-    { badge: "🍛", badgeClass: "dish", name: "오이향", color: "#55c3d5", text: "심해바닥에 붙어다니는거임?" },
-    { badge: "🪙", badgeClass: "coin", name: "마코냥", color: "#56b6de", text: "거미게도 엄청 크던데" },
-    { badge: "🎉", badgeClass: "party", name: "산책나간 히네리아", color: "#3f9bdc", text: "ㅋㅋㅋㅋㅋㅋㅋㅋ" },
-    { badge: "🪙", badgeClass: "coin", name: "문팟팟", color: "#69d09c", text: "집게사냥 네이놈ㅋㅋㅋ" },
-    { badge: "💗", badgeClass: "heart", name: "퇴근중인 모니터 7356190", color: "#f24e74", text: "게마니ㅋㅋㅋ" },
-    { badge: "🪙", badgeClass: "coin", name: "GroupSound", color: "#a374e8", text: "내 고사리 스팟이라!!" },
-    { badge: "🪙", badgeClass: "coin", name: "마코냥", color: "#56b6de", text: "ㅋㅋㅋㅋㅋㅋㅋㅋ" }
-  ];
-
-  const audience = [
-    { badge: "🪙", badgeClass: "coin", name: "마춤법천지", color: "#52a4f4", lines: ["아흐", "와 진짜 크다", "저게 움직이네", "ㅋㅋㅋㅋㅋㅋ"] },
-    { badge: "🪙", badgeClass: "coin", name: "마코냥", color: "#56b6de", lines: ["게크네", "거미게도 엄청 크던데", "오 맛있겠다", "ㅋㅋㅋㅋㅋ"] },
-    { badge: "🤖", badgeClass: "robot", name: "버츄얼트래블러", color: "#d56ab5", lines: ["캬", "와 내장 개맛있겠다", "버터 준비해", "비주얼 미쳤다"] },
-    { badge: "💜", badgeClass: "heart", name: "여름의 3악장", color: "#47c9e8", lines: ["게글류 진짜", "저게 바다에 산다고?", "신기하다", "헉"] },
-    { badge: "👑", badgeClass: "crown", name: "전공정머신", color: "#d983c7", lines: ["바로 구워버리고싶네", "버터 발라주세요", "오늘 방송 재밌다", "크기가 장난 아닌데"] },
-    { badge: "🍛", badgeClass: "dish", name: "오이향", color: "#55c3d5", lines: ["심해바닥에 붙어다니는거임?", "저건 처음 본다", "다리가 엄청 기네", "오오오"] },
-    { badge: "🎉", badgeClass: "party", name: "산책나간 히네리아", color: "#3f9bdc", lines: ["ㅋㅋㅋㅋㅋㅋㅋㅋ", "표정 봐ㅋㅋㅋ", "너무 웃겨", "이게 뭐야ㅋㅋ"] },
-    { badge: "🪙", badgeClass: "coin", name: "문팟팟", color: "#69d09c", lines: ["집게사냥 네이놈ㅋㅋㅋ", "오늘도 잘 보고 있어요", "맛은 궁금하네", "와아"] },
-    { badge: "💗", badgeClass: "heart", name: "퇴근중인 모니터 7356190", color: "#f24e74", lines: ["게마니ㅋㅋㅋ", "퇴근길에 빵터졌네", "이건 못 참지", "ㅋㅋㅋㅋ"] },
-    { badge: "🪙", badgeClass: "coin", name: "GroupSound", color: "#a374e8", lines: ["내 고사리 스팟이라!!", "채팅 왜 이렇게 웃겨", "오 이건 귀하다", "집게 진짜 세 보인다"] },
-    { badge: "🪙", badgeClass: "coin", name: "너나봐", color: "#ef4f86", lines: ["저건 50만원짜리다", "오늘 콘텐츠 좋다", "와 대박", "진짜 신기하네"] },
-    { badge: "", badgeClass: "empty", name: "사다시푸딩", color: "#55a7d9", lines: ["아흐", "저게 가능해?", "처음 봤어", "방송 켜길 잘했다"] }
-  ];
-
   const NICKNAME_ADJECTIVES = [
     "금손", "즐거운", "빛나는", "신나는", "용감한", "엉뚱한",
     "행복한", "졸린", "재빠른", "유쾌한", "반짝이는", "집중한"
@@ -44,33 +9,26 @@
     "뉴비", "유저", "스트리머", "게이머", "시청자", "랭커",
     "챌린저", "방송인", "플레이어", "구독자", "매니저", "클립러"
   ];
-  const usedNicknames = new Set();
-  const nicknameByIdentity = new Map();
+  const VIEWER_STYLES = [
+    { badge: "🪙", badgeClass: "coin", color: "#52a4f4" },
+    { badge: "🪙", badgeClass: "coin", color: "#56b6de" },
+    { badge: "🤖", badgeClass: "robot", color: "#d56ab5" },
+    { badge: "💜", badgeClass: "heart", color: "#47c9e8" },
+    { badge: "👑", badgeClass: "crown", color: "#d983c7" },
+    { badge: "🍛", badgeClass: "dish", color: "#55c3d5" },
+    { badge: "🎉", badgeClass: "party", color: "#3f9bdc" },
+    { badge: "🪙", badgeClass: "coin", color: "#69d09c" },
+    { badge: "💗", badgeClass: "heart", color: "#f24e74" },
+    { badge: "🪙", badgeClass: "coin", color: "#a374e8" },
+    { badge: "🪙", badgeClass: "coin", color: "#ef6f86" },
+    { badge: "", badgeClass: "empty", color: "#75a7dc" }
+  ];
 
-  function createNickname(identity) {
-    if (nicknameByIdentity.has(identity)) return nicknameByIdentity.get(identity);
-
-    let nickname;
-    do {
-      const adjective = NICKNAME_ADJECTIVES[Math.floor(Math.random() * NICKNAME_ADJECTIVES.length)];
-      const noun = NICKNAME_NOUNS[Math.floor(Math.random() * NICKNAME_NOUNS.length)];
-      const number = Math.floor(1000 + Math.random() * 9000);
-      nickname = `${adjective} ${noun} ${number}`;
-    } while (usedNicknames.has(nickname));
-
-    usedNicknames.add(nickname);
-    nicknameByIdentity.set(identity, nickname);
-    return nickname;
-  }
-
-  initialMessages.forEach(message => { message.name = createNickname(message.name); });
-  audience.forEach(viewer => { viewer.name = createNickname(viewer.name); });
-  const myNickname = createNickname("current-user");
-
+  const ANOMALY_COUNT = 3;
   const MAX_MESSAGES = 100;
-  const AUTO_CHAT_MIN_DELAY = 1200;
-  const AUTO_CHAT_MAX_DELAY = 3200;
+  const MAX_TRUST = 3;
 
+  const chatApp = document.querySelector(".chat-app");
   const messageList = document.querySelector("#message-list");
   const messageForm = document.querySelector("#message-form");
   const messageInput = document.querySelector("#message-input");
@@ -81,39 +39,137 @@
   const newMessageButton = document.querySelector("#new-message-button");
   const browserBar = document.querySelector(".browser-bar");
   const collapseButton = document.querySelector(".collapse-button");
+  const trustDisplay = document.querySelector("#trust-display");
+  const anomalyDisplay = document.querySelector("#anomaly-display");
+  const scoreDisplay = document.querySelector("#score-display");
+  const helpButton = document.querySelector("#help-button");
+  const viewerBackdrop = document.querySelector("#viewer-backdrop");
+  const viewerName = document.querySelector("#viewer-name");
+  const viewerHistory = document.querySelector("#viewer-history");
+  const panelClose = document.querySelector("#panel-close");
+  const kickButton = document.querySelector("#kick-button");
+  const gameOverlay = document.querySelector("#game-overlay");
+  const resultKicker = document.querySelector("#result-kicker");
+  const resultTitle = document.querySelector("#result-title");
+  const resultCopy = document.querySelector("#result-copy");
+  const finalScore = document.querySelector("#final-score");
+  const gameRestart = document.querySelector("#game-restart");
   const toast = document.querySelector("#toast");
 
-  let toastTimer;
-  let autoChatTimer;
-  let previousAudienceIndex = -1;
-  let previousLine = "";
+  const seedParameter = new URLSearchParams(window.location.search).get("seed");
+  const fixedSeed = seedParameter !== null && /^\d+$/.test(seedParameter) ? Number(seedParameter) >>> 0 : null;
 
-  function createMessage(message, ownMessage = false) {
+  let viewers = [];
+  let myNickname = "";
+  let trust = MAX_TRUST;
+  let remainingAnomalies = ANOMALY_COUNT;
+  let score = 0;
+  let selectedViewerId = null;
+  let gameOver = false;
+  let chatEngine = null;
+  let toastTimer;
+  let currentSeed = 0;
+
+  function createRoundRandom(seed) {
+    let state = (Number(seed) >>> 0) || 0x6d2b79f5;
+    return () => {
+      state += 0x6d2b79f5;
+      let value = state;
+      value = Math.imul(value ^ (value >>> 15), value | 1);
+      value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+      return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function shuffle(items, random) {
+    const output = [...items];
+    for (let index = output.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(random() * (index + 1));
+      [output[index], output[swapIndex]] = [output[swapIndex], output[index]];
+    }
+    return output;
+  }
+
+  function createNickname(usedNicknames, random) {
+    let nickname;
+    do {
+      const adjective = NICKNAME_ADJECTIVES[Math.floor(random() * NICKNAME_ADJECTIVES.length)];
+      const noun = NICKNAME_NOUNS[Math.floor(random() * NICKNAME_NOUNS.length)];
+      const number = Math.floor(1000 + random() * 9000);
+      nickname = `${adjective} ${noun} ${number}`;
+    } while (usedNicknames.has(nickname));
+    usedNicknames.add(nickname);
+    return nickname;
+  }
+
+  function createSeed() {
+    if (fixedSeed !== null) return fixedSeed;
+    if (window.crypto?.getRandomValues) {
+      const values = new Uint32Array(1);
+      window.crypto.getRandomValues(values);
+      return values[0];
+    }
+    return Date.now() >>> 0;
+  }
+
+  function createViewers(seed) {
+    const random = createRoundRandom(seed);
+    const usedNicknames = new Set();
+    const anomalySlots = new Set(shuffle(VIEWER_STYLES.map((_, index) => index), random).slice(0, ANOMALY_COUNT));
+    const createdViewers = VIEWER_STYLES.map((style, index) => ({
+      id: `viewer-${index}`,
+      name: createNickname(usedNicknames, random),
+      anomalous: anomalySlots.has(index),
+      history: [],
+      active: true,
+      ...style
+    }));
+    myNickname = createNickname(usedNicknames, random);
+    return createdViewers;
+  }
+
+  function createMessage(viewer, text, ownMessage = false, metadata = {}) {
     const item = document.createElement("li");
     item.className = "message";
+    if (ownMessage) item.dataset.ownMessage = "true";
+    if (viewer?.id) item.dataset.viewerId = viewer.id;
+    if (metadata.intent) item.dataset.intent = metadata.intent;
+    if (metadata.state) item.dataset.directorState = metadata.state;
 
     const badge = document.createElement("span");
-    badge.className = `badge ${message.badgeClass || ""}`;
+    badge.className = `badge ${viewer?.badgeClass || ""}`;
     badge.setAttribute("aria-hidden", "true");
-    badge.textContent = message.badge || "";
+    badge.textContent = viewer?.badge || "";
 
     const copy = document.createElement("span");
     copy.className = "message-copy";
 
-    const username = document.createElement("span");
+    const username = document.createElement("button");
+    username.type = "button";
     username.className = "username";
-    username.style.color = message.color;
-    username.textContent = message.name;
+    username.style.color = viewer?.color || "#66d5b2";
+    username.textContent = viewer?.name || myNickname;
+    if (viewer?.id && !ownMessage) username.dataset.viewerId = viewer.id;
+    else username.disabled = true;
 
-    const text = document.createElement("span");
-    text.className = "message-text";
-    text.textContent = message.text;
+    const messageText = document.createElement("span");
+    messageText.className = "message-text";
+    messageText.textContent = text;
 
-    copy.append(username, text);
+    copy.append(username, messageText);
     item.append(badge, copy);
-
-    if (ownMessage) item.dataset.ownMessage = "true";
     return item;
+  }
+
+  function createSystemMessage(text, danger = false) {
+    const item = document.createElement("li");
+    item.className = `message system-message${danger ? " danger" : ""}`;
+    item.textContent = `[시스템] ${text}`;
+    return item;
+  }
+
+  function isNearLatest() {
+    return messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight < 54;
   }
 
   function scrollToLatest(behavior = "auto") {
@@ -121,13 +177,9 @@
     newMessageButton.hidden = true;
   }
 
-  function isNearLatest() {
-    return messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight < 54;
-  }
-
-  function appendMessage(message, ownMessage = false) {
+  function appendElement(element, behavior = "smooth") {
     const wasNearLatest = isNearLatest();
-    messageList.append(createMessage(message, ownMessage));
+    messageList.append(element);
 
     while (messageList.childElementCount > MAX_MESSAGES) {
       const firstMessage = messageList.firstElementChild;
@@ -136,44 +188,117 @@
       if (!wasNearLatest) messageList.scrollTop = Math.max(0, messageList.scrollTop - removedHeight);
     }
 
-    if (wasNearLatest) scrollToLatest("smooth");
+    if (wasNearLatest) scrollToLatest(behavior);
     else newMessageButton.hidden = false;
   }
 
-  function randomIndex(length, excludedIndex = -1) {
-    if (length < 2) return 0;
-    let index;
-    do index = Math.floor(Math.random() * length);
-    while (index === excludedIndex);
-    return index;
+  function handleEngineMessage(message) {
+    const { viewer, text, historyOnly, behavior } = message;
+    viewer.history.push(text);
+    if (viewer.history.length > 10) viewer.history.shift();
+    if (historyOnly) return;
+    appendElement(createMessage(viewer, text, false, message), behavior);
   }
 
-  function postAudienceMessage() {
-    if (document.hidden) return;
-
-    const audienceIndex = randomIndex(audience.length, previousAudienceIndex);
-    const viewer = audience[audienceIndex];
-    const availableLines = viewer.lines.filter(line => line !== previousLine);
-    const text = availableLines[Math.floor(Math.random() * availableLines.length)];
-
-    previousAudienceIndex = audienceIndex;
-    previousLine = text;
-    appendMessage({ ...viewer, text });
-    scheduleAudienceMessage();
+  function appendSystemMessage(text, danger = false) {
+    appendElement(createSystemMessage(text, danger));
   }
 
-  function scheduleAudienceMessage(delay) {
-    window.clearTimeout(autoChatTimer);
-    if (document.hidden) return;
-    const nextDelay = delay ?? AUTO_CHAT_MIN_DELAY + Math.random() * (AUTO_CHAT_MAX_DELAY - AUTO_CHAT_MIN_DELAY);
-    autoChatTimer = window.setTimeout(postAudienceMessage, nextDelay);
+  function updateHud() {
+    trustDisplay.textContent = `${"♥".repeat(trust)}${"♡".repeat(MAX_TRUST - trust)}`;
+    trustDisplay.setAttribute("aria-label", `신뢰도 ${trust}`);
+    anomalyDisplay.textContent = String(remainingAnomalies);
+    scoreDisplay.textContent = String(score).padStart(4, "0");
   }
 
-  function renderMessages() {
-    const fragment = document.createDocumentFragment();
-    initialMessages.forEach(message => fragment.append(createMessage(message)));
-    messageList.replaceChildren(fragment);
-    requestAnimationFrame(() => scrollToLatest());
+  function showToast(message) {
+    window.clearTimeout(toastTimer);
+    toast.textContent = message;
+    toast.classList.add("show");
+    toastTimer = window.setTimeout(() => toast.classList.remove("show"), 2300);
+  }
+
+  function openViewerPanel(viewerId) {
+    if (gameOver) return;
+    const viewer = viewers.find(candidate => candidate.id === viewerId && candidate.active);
+    if (!viewer) return;
+    selectedViewerId = viewerId;
+    viewerName.textContent = viewer.name;
+    viewerName.style.color = viewer.color;
+    viewerHistory.replaceChildren();
+    viewer.history.slice(-6).forEach(text => {
+      const item = document.createElement("li");
+      item.textContent = text;
+      viewerHistory.append(item);
+    });
+    chatEngine?.observeViewer(viewerId);
+    viewerBackdrop.classList.add("open");
+    viewerBackdrop.setAttribute("aria-hidden", "false");
+    kickButton.focus();
+  }
+
+  function closeViewerPanel() {
+    selectedViewerId = null;
+    viewerBackdrop.classList.remove("open");
+    viewerBackdrop.setAttribute("aria-hidden", "true");
+  }
+
+  function markViewerAsKicked(viewer) {
+    document.querySelectorAll(`.message[data-viewer-id="${viewer.id}"]`).forEach(message => {
+      message.classList.add("blinded-message");
+      message.removeAttribute("data-viewer-id");
+
+      const messageText = message.querySelector(".message-text");
+      if (messageText) messageText.textContent = "블라인드 처리 된 시청자입니다.";
+
+      const username = message.querySelector(".username");
+      if (username) {
+        username.disabled = true;
+        username.removeAttribute("data-viewer-id");
+      }
+    });
+  }
+
+  function endGame(won) {
+    gameOver = true;
+    chatEngine?.stop();
+    closeViewerPanel();
+    resultKicker.textContent = won ? "SIGNAL CLEARED" : "CONNECTION LOST";
+    resultTitle.textContent = won ? "방송을 지켜냈습니다" : "채팅이 잠식되었습니다";
+    resultCopy.textContent = won
+      ? "모든 이상 시청자를 찾아 강제 퇴장시켰습니다."
+      : "정상 시청자를 너무 많이 내보내 신뢰를 잃었습니다.";
+    finalScore.textContent = `${String(score).padStart(4, "0")}점`;
+    gameOverlay.classList.add("open");
+    gameOverlay.setAttribute("aria-hidden", "false");
+    gameRestart.focus();
+  }
+
+  function kickSelectedViewer() {
+    const viewer = viewers.find(candidate => candidate.id === selectedViewerId && candidate.active);
+    if (!viewer) return;
+    viewer.active = false;
+    markViewerAsKicked(viewer);
+    closeViewerPanel();
+
+    if (viewer.anomalous) {
+      remainingAnomalies -= 1;
+      score += 150;
+      appendSystemMessage(`${viewer.name}의 비정상 연결을 차단했습니다.`);
+      showToast("이상 신호를 발견했습니다. +150점");
+    } else {
+      trust -= 1;
+      score = Math.max(0, score - 75);
+      appendSystemMessage(`${viewer.name}은 정상 시청자였습니다. 신뢰도가 감소합니다.`, true);
+      showToast("정상 시청자를 잘못 퇴장시켰습니다.");
+      chatApp.classList.remove("wrong-kick");
+      requestAnimationFrame(() => chatApp.classList.add("wrong-kick"));
+      window.setTimeout(() => chatApp.classList.remove("wrong-kick"), 300);
+    }
+
+    updateHud();
+    if (remainingAnomalies === 0) window.setTimeout(() => endGame(true), 500);
+    else if (trust === 0) window.setTimeout(() => endGame(false), 500);
   }
 
   function updateComposerState() {
@@ -193,32 +318,86 @@
     emojiButton.setAttribute("aria-expanded", "false");
   }
 
-  function showToast(message) {
-    window.clearTimeout(toastTimer);
-    toast.textContent = message;
-    toast.classList.add("show");
-    toastTimer = window.setTimeout(() => toast.classList.remove("show"), 1900);
+  function exposeDebugApi() {
+    window.horrorChatGame = {
+      seed: currentSeed,
+      emitEvent(type, slots = {}, intensity) {
+        chatEngine?.emitEvent(type, slots, intensity);
+      },
+      pause() {
+        chatEngine?.setPaused(true);
+      },
+      resume() {
+        chatEngine?.setPaused(false);
+      },
+      debug() {
+        return chatEngine?.getDebugSnapshot();
+      },
+      restart: startGame
+    };
   }
+
+  function startGame() {
+    chatEngine?.stop();
+    currentSeed = createSeed();
+    viewers = createViewers(currentSeed);
+    trust = MAX_TRUST;
+    remainingAnomalies = ANOMALY_COUNT;
+    score = 0;
+    selectedViewerId = null;
+    gameOver = false;
+    messageList.replaceChildren();
+    gameOverlay.classList.remove("open");
+    gameOverlay.setAttribute("aria-hidden", "true");
+    closeViewerPanel();
+    updateHud();
+
+    const deterministicEpoch = fixedSeed === null
+      ? Date.now()
+      : Date.UTC(2026, 0, 1) + (currentSeed % 86400) * 1000;
+
+    chatEngine = new window.HorrorChatEngine({
+      viewers,
+      seed: currentSeed,
+      syntheticEvents: true,
+      externalContext: { startedAt: deterministicEpoch, initiallyFocused: document.hasFocus() },
+      onMessage: handleEngineMessage,
+      onStateChange({ state, tension }) {
+        chatApp.dataset.directorState = state;
+        chatApp.style.setProperty("--chat-tension", tension.toFixed(3));
+      }
+    });
+    chatEngine.start();
+    appendSystemMessage("닉네임을 눌러 기록을 확인하고 수상한 시청자를 강제 퇴장시키세요.");
+    requestAnimationFrame(() => scrollToLatest());
+    exposeDebugApi();
+  }
+
+  messageList.addEventListener("click", event => {
+    const username = event.target.closest(".username[data-viewer-id]");
+    if (username) openViewerPanel(username.dataset.viewerId);
+  });
 
   messageForm.addEventListener("submit", event => {
     event.preventDefault();
     const text = messageInput.value.trim();
-    if (!text) return;
-
-    appendMessage({
-      badge: "🐹",
-      badgeClass: "robot",
-      name: myNickname,
-      color: "#66d5b2",
-      text
-    }, true);
-
+    if (!text || gameOver) return;
+    const myViewer = { name: myNickname, badge: "🐹", badgeClass: "robot", color: "#66d5b2" };
+    appendElement(createMessage(myViewer, text, true));
     messageInput.value = "";
     updateComposerState();
     closeEmojiPanel();
   });
 
   messageInput.addEventListener("input", updateComposerState);
+  newMessageButton.addEventListener("click", () => scrollToLatest("smooth"));
+  panelClose.addEventListener("click", closeViewerPanel);
+  kickButton.addEventListener("click", kickSelectedViewer);
+  gameRestart.addEventListener("click", startGame);
+
+  viewerBackdrop.addEventListener("click", event => {
+    if (event.target === viewerBackdrop) closeViewerPanel();
+  });
 
   emojiButton.addEventListener("click", () => {
     const willOpen = emojiPanel.hidden;
@@ -239,14 +418,12 @@
     rewardButton.classList.add("claimed");
     rewardButton.disabled = true;
     rewardLabel.textContent = "받기 완료";
-    showToast("통나무 파워 100개를 받았어요!");
+    showToast("통나무 파워 100개를 받았습니다.");
   });
 
   messageList.addEventListener("scroll", () => {
     if (isNearLatest()) newMessageButton.hidden = true;
   }, { passive: true });
-
-  newMessageButton.addEventListener("click", () => scrollToLatest("smooth"));
 
   collapseButton.addEventListener("click", () => {
     browserBar.classList.toggle("collapsed");
@@ -254,25 +431,24 @@
     requestAnimationFrame(() => scrollToLatest());
   });
 
-  document.querySelector(".address-menu").addEventListener("click", () => showToast("현재 방송 주소입니다."));
-  document.querySelector("#support-button").addEventListener("click", () => showToast("후원하기 기능을 준비 중이에요."));
-  document.querySelector("#voice-button").addEventListener("click", () => showToast("음성 채팅 기능을 준비 중이에요."));
-  document.querySelector("#chat-tab").addEventListener("click", () => {
-    scrollToLatest("smooth");
-    messageInput.focus();
-  });
+  document.querySelector(".address-menu").addEventListener("click", () => showToast(`채팅 시드: ${currentSeed}`));
+  document.querySelector("#support-button").addEventListener("click", () => showToast("지금은 후원할 수 없습니다."));
+  document.querySelector("#voice-button").addEventListener("click", () => showToast("알 수 없는 잡음이 들립니다…"));
+  document.querySelector("#chat-tab").addEventListener("click", () => scrollToLatest("smooth"));
+  helpButton.addEventListener("click", () => showToast("말투가 지나치게 정확하거나 게임 밖 정보를 아는 시청자를 찾으세요."));
 
   document.addEventListener("pointerdown", event => {
-    if (!emojiPanel.hidden && !emojiPanel.contains(event.target) && !emojiButton.contains(event.target)) {
+    if (!emojiPanel.hidden && !emojiPanel.contains(event.target) && !emojiButton.contains(event.target)) closeEmojiPanel();
+  });
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
       closeEmojiPanel();
+      closeViewerPanel();
     }
   });
 
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) window.clearTimeout(autoChatTimer);
-    else scheduleAudienceMessage(700);
-  });
+  document.addEventListener("visibilitychange", () => chatEngine?.setPaused(document.hidden));
 
-  renderMessages();
-  scheduleAudienceMessage(1000);
+  startGame();
 })();

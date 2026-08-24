@@ -47,7 +47,7 @@ button {
   height: 100vh;
   height: 100svh;
   display: grid;
-  grid-template-rows: 52px minmax(0, 1fr) auto;
+  grid-template-rows: 52px 42px minmax(0, 1fr) auto;
   overflow: hidden;
   background: var(--background);
   box-shadow: 0 0 40px #000;
@@ -153,7 +153,73 @@ button {
 }
 
 .chat-app:has(.browser-bar.collapsed) {
-  grid-template-rows: 12px minmax(0, 1fr) auto;
+  grid-template-rows: 12px 42px minmax(0, 1fr) auto;
+}
+
+.game-hud {
+  position: relative;
+  z-index: 4;
+  height: 42px;
+  display: grid;
+  grid-template-columns: .9fr 1.35fr .75fr 28px;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 7px;
+  border-block: 1px solid #292b30;
+  background: linear-gradient(180deg, #17171a, #111214);
+  box-shadow: 0 4px 12px #0005;
+}
+
+.hud-stat {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+}
+
+.hud-stat span {
+  overflow: hidden;
+  color: #747a84;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hud-stat strong {
+  color: #e7e9ed;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.trust-stat strong {
+  color: #e94962;
+  letter-spacing: 2px;
+}
+
+.anomaly-stat strong {
+  color: #ff5d68;
+}
+
+.score-stat strong {
+  color: #69d8b5;
+  font-size: 12px;
+}
+
+.help-button {
+  width: 25px;
+  height: 25px;
+  border: 1px solid #4c5058;
+  border-radius: 50%;
+  padding: 0;
+  color: #9da3ad;
+  background: #202227;
+  font-family: Georgia, serif;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .message-region {
@@ -249,9 +315,53 @@ button {
 }
 
 .username {
+  display: inline;
   margin-right: 6px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
   font-weight: 500;
   white-space: nowrap;
+}
+
+.username:hover,
+.username:focus-visible {
+  outline: 1px dashed currentColor;
+  outline-offset: 2px;
+}
+
+.username[disabled] {
+  cursor: default;
+  opacity: .58;
+  text-decoration: line-through;
+}
+
+.blinded-message .badge,
+.blinded-message .username {
+  filter: grayscale(1);
+  opacity: .45;
+}
+
+.blinded-message .message-text {
+  color: #747983;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.system-message {
+  min-height: 31px;
+  justify-content: center;
+  padding-inline: 10px;
+  color: #b7bbc2;
+  background: linear-gradient(90deg, transparent, #54131d28, transparent);
+  font-size: 12px;
+  letter-spacing: .015em;
+  text-align: center;
+}
+
+.system-message.danger {
+  color: #ff7580;
 }
 
 .message-text {
@@ -590,6 +700,172 @@ button {
   visibility: visible;
 }
 
+.viewer-backdrop,
+.game-overlay {
+  position: absolute;
+  z-index: 30;
+  inset: 0;
+  background: #030405bd;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 180ms ease, visibility 180ms ease;
+}
+
+.viewer-backdrop.open,
+.game-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.viewer-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 360px;
+  padding: 25px 20px max(22px, env(safe-area-inset-bottom));
+  border-top: 1px solid #6a2730;
+  border-radius: 18px 18px 0 0;
+  background:
+    linear-gradient(#63151c18 1px, transparent 1px) 0 0 / 100% 23px,
+    #17181b;
+  box-shadow: 0 -18px 45px #000d;
+  translate: 0 30px;
+  transition: translate 180ms ease;
+}
+
+.viewer-backdrop.open .viewer-panel {
+  translate: 0 0;
+}
+
+.panel-close {
+  position: absolute;
+  top: 13px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  color: #aeb2b9;
+  background: transparent;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.panel-kicker,
+.result-kicker {
+  margin: 0 0 5px;
+  color: #a33b46;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .18em;
+}
+
+.viewer-panel h2 {
+  margin: 0;
+  padding-right: 30px;
+  color: #f1f2f4;
+  font-size: 20px;
+}
+
+.panel-help {
+  margin: 6px 0 15px;
+  color: #8f949d;
+  font-size: 12px;
+}
+
+.viewer-history {
+  height: 166px;
+  margin: 0 0 16px;
+  padding: 10px 12px 10px 31px;
+  overflow-y: auto;
+  border: 1px solid #30333a;
+  border-radius: 8px;
+  color: #d8dadd;
+  background: #0e0f11;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.viewer-history li::marker {
+  color: #6b7078;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.kick-button,
+.restart-button {
+  width: 100%;
+  height: 45px;
+  border: 1px solid #b6323f;
+  border-radius: 8px;
+  color: #fff1f2;
+  background: linear-gradient(#8e2631, #681a23);
+  box-shadow: 0 5px 16px #0008;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.kick-button:hover,
+.kick-button:focus-visible,
+.restart-button:hover,
+.restart-button:focus-visible {
+  outline: 2px solid #f06a76;
+  outline-offset: 2px;
+  background: linear-gradient(#a52d3a, #791e29);
+}
+
+.game-overlay {
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #050506e8;
+}
+
+.result-card {
+  width: min(100%, 330px);
+  border: 1px solid #5d2930;
+  border-radius: 13px;
+  padding: 27px 24px 23px;
+  background:
+    radial-gradient(circle at 50% 0, #771e2828, transparent 58%),
+    #17181b;
+  box-shadow: 0 18px 55px #000;
+  text-align: center;
+  scale: .95;
+  transition: scale 180ms ease;
+}
+
+.game-overlay.open .result-card {
+  scale: 1;
+}
+
+.result-card h2 {
+  margin: 5px 0 10px;
+  font-size: 27px;
+}
+
+.result-card > p:not(.result-kicker) {
+  margin: 0;
+  color: #aeb2b9;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.final-score {
+  display: block;
+  margin: 19px 0;
+  color: #62d7b0;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 28px;
+}
+
+.chat-app.wrong-kick {
+  animation: wrong-kick 260ms linear;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -609,6 +885,13 @@ button {
 
 @keyframes caret-blink {
   50% { opacity: 0; }
+}
+
+@keyframes wrong-kick {
+  20% { translate: -5px 0; filter: saturate(1.5); }
+  40% { translate: 5px 0; }
+  60% { translate: -3px 0; }
+  80% { translate: 3px 0; }
 }
 
 @media (min-width: 431px) {
