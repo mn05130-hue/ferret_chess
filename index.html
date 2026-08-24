@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#25170f">
   <meta name="description" content="버찌와 쩨비가 펼치는 작은 AI 체스 인형극">
   <title>버찌 체스</title>
-  <link rel="stylesheet" href="styles.css?v=8">
+  <link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body>
   <main class="theatre" id="theatre">
@@ -45,6 +45,7 @@
               </label>
             </fieldset>
             <button class="paper-button primary" id="start-game" type="button">AI 대국 시작</button>
+            <button class="paper-button variant-menu-button" id="open-variants" type="button">변형 체스</button>
             <button class="paper-button" data-modal="how" type="button">게임 방법</button>
             <button class="paper-button" data-modal="credits" type="button">크레딧</button>
           </nav>
@@ -67,6 +68,7 @@
           <div class="chessboard" id="chessboard" role="grid" aria-label="가로 방향 8×8 체스판"></div>
           <div class="game-actions" aria-label="대국 메뉴">
             <button class="paper-button compact" id="hint" type="button">힌트</button>
+            <button class="paper-button compact skill-button" id="skill" type="button" hidden>스킬 · 수호막</button>
             <button class="paper-button compact" id="restart" type="button">다시 시작</button>
             <button class="paper-button compact" id="back-title" type="button">타이틀로</button>
           </div>
@@ -76,9 +78,36 @@
           <div class="beorjji-crop game-beorjji" role="img" aria-label="버찌"></div>
           <span class="name-card">버찌 · 흑</span>
         </aside>
+
+        <aside class="move-history paper-card" aria-labelledby="move-history-title">
+          <div class="move-history-heading">
+            <h2 id="move-history-title">기보</h2>
+            <span id="move-count">0수</span>
+          </div>
+          <p class="opening-name" id="opening-name">오프닝 대기 중</p>
+          <div class="move-list-scroll" id="move-list-scroll" tabindex="0" aria-label="지금까지 둔 수">
+            <table class="move-table">
+              <thead>
+                <tr><th scope="col">#</th><th scope="col">쩨비</th><th scope="col">버찌</th></tr>
+              </thead>
+              <tbody id="move-list" aria-live="polite"></tbody>
+            </table>
+          </div>
+        </aside>
       </section>
 
       <div class="floor" aria-hidden="true"></div>
+
+      <div class="cutscene-layer" id="cutscene-layer" role="dialog" aria-modal="true" aria-labelledby="cutscene-title" aria-describedby="cutscene-copy" aria-hidden="true" inert>
+        <div class="cutscene-speedlines" aria-hidden="true"></div>
+        <div class="cutscene-actor" id="cutscene-actor" data-side="w" aria-hidden="true"></div>
+        <div class="cutscene-card">
+          <p class="cutscene-eyebrow" id="cutscene-eyebrow">SPECIAL MOVE</p>
+          <h2 id="cutscene-title">특수 상황!</h2>
+          <p id="cutscene-copy">임시 컷신 장면입니다.</p>
+          <button class="paper-button compact" id="cutscene-skip" type="button">건너뛰기</button>
+        </div>
+      </div>
 
       <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true" inert>
         <div class="modal">
@@ -87,10 +116,52 @@
           <button class="paper-button primary" id="close-modal" type="button">무대로 돌아가기</button>
         </div>
       </div>
+
+      <div class="modal-backdrop" id="variant-modal" role="dialog" aria-modal="true" aria-labelledby="variant-modal-title" aria-describedby="variant-modal-copy" aria-hidden="true" inert>
+        <div class="modal variant-menu-modal">
+          <h2 id="variant-modal-title">변형 체스</h2>
+          <p id="variant-modal-copy">서로 다른 승리 조건과 전술을 가진 모드를 선택하세요.</p>
+          <div class="variant-options">
+            <button class="variant-option" type="button" data-variant="kingOfTheHill">
+              <strong>언덕의 왕</strong>
+              <span>킹을 중앙의 d4, e4, d5, e5 중 한 칸에 먼저 도착시키거나 상대 킹을 잡으면 승리합니다.</span>
+            </button>
+            <button class="variant-option" type="button" data-variant="threeCheck">
+              <strong>3-체크</strong>
+              <span>상대 킹에게 세 번째 체크를 주거나 상대 킹을 잡으면 승리합니다.</span>
+            </button>
+            <button class="variant-option tactical-option" type="button" data-variant="tactical">
+              <strong>냉병기 전술 시작</strong>
+              <span>한 턴에 기물 하나가 이동 또는 공격합니다. 공격 피해는 기본값에서 ±1이며 장군의 HP가 0이 되면 즉시 승리합니다.</span>
+            </button>
+          </div>
+          <h3 class="tactical-rules-title">냉병기 전술 세부 규칙</h3>
+          <div class="tactical-rule-grid" aria-label="냉병기 전술 핵심 규칙">
+            <p class="variant-rule-note"><strong>고정 진군 방향</strong><span>쩨비는 오른쪽, 버찌는 왼쪽으로 진군합니다. 방향 제한 병과는 뒤로 갈 수 없습니다.</span></p>
+            <p class="variant-rule-note"><strong>이동과 공격 분리</strong><span>적을 공격해도 공격자는 원래 칸에 남습니다. 경기병만 이동 후 인접 공격이 가능합니다.</span></p>
+          </div>
+          <div class="unit-roster" aria-label="병과 목록">
+            <p><strong>보</strong><span>보병 · HP 5 / 피해 2<br>앞·좌·우 1칸</span></p>
+            <p><strong>창</strong><span>창병 · HP 5 / 피해 2<br>정면 공격 2칸</span></p>
+            <p><strong>중</strong><span>중보병 · HP 8 / 피해 3<br>전방 세 방향</span></p>
+            <p><strong>궁</strong><span>궁병 · HP 4 / 피해 2<br>전방 사선 4칸</span></p>
+            <p><strong>경</strong><span>경기병 · HP 5 / 피해 2<br>막힘 있는 말 행마</span></p>
+            <p><strong>기</strong><span>중기병 · HP 8 / 피해 3<br>전방 세 방향 2칸</span></p>
+            <p><strong>장</strong><span>장군 · HP 9 / 피해 3<br>이동 직교 4방향 · 공격 주변 8칸</span></p>
+          </div>
+          <div class="skill-guide" aria-label="변형 체스 캐릭터 스킬">
+            <p><strong>쩨비 · 별빛 수호막</strong><span>자기 병력 하나가 버찌의 다음 행동 동안 받는 피해를 막습니다.</span></p>
+            <p><strong>버찌 · 그림자 봉인</strong><span>쩨비의 병력 하나가 다음 차례 동안 이동하지 못합니다. 제자리 공격은 가능합니다.</span></p>
+          </div>
+          <button class="paper-button" id="close-variants" type="button">돌아가기</button>
+        </div>
+      </div>
     </div>
   </main>
-  <script src="chess-engine.js?v=1"></script>
-  <script src="chess-ai.js?v=1"></script>
-  <script src="app.js?v=5"></script>
+  <script src="chess-engine.js?v=9"></script>
+  <script src="chess-openings.js?v=1"></script>
+  <script src="chess-ai.js?v=9"></script>
+  <script src="cutscene-manager.js?v=3"></script>
+  <script src="app.js?v=17"></script>
 </body>
 </html>
