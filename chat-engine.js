@@ -3,15 +3,22 @@
 
   /* ==========================================================================
    * 1. 튜닝 상수
+   *
+   *    상태 의미가 저스트 채팅 기준으로 재정의됐습니다.
+   *      AMBIENT   평범한 잡담
+   *      TENSE     스트리머가 뭔가 하는 중, 반응이 몰리기 시작
+   *      BURST     빵 터진 순간, 도배
+   *      AFTERMATH 여운. 놀리기 / 회상 / 클립 얘기
+   *      LULL      할 말 없음. 뻘소리와 질문 폭탄
    * ======================================================================== */
   const TUNING = Object.freeze({
     tickMs: 100,
-    tensionHalfLifeMs: 12000,
+    tensionHalfLifeMs: 10000,
     tenseThreshold: 0.4,
     burstDurationMs: 3000,
-    aftermathDurationMs: 8000,
-    lullAfterMs: 30000,
-    requestExpiryMs: 2000,
+    aftermathDurationMs: 9000,
+    lullAfterMs: 25000,
+    requestExpiryMs: 2500,
     maxAnomalyLevel: 4,
     formalFromLevel: 3,        // 이 이상도부터 정중형 원문을 그대로 출력
     anomalySpeechStep: 3,
@@ -19,23 +26,27 @@
     similarityThreshold: 0.7,
     intentCooldownMs: 4200,
     intervals: {
-      AMBIENT: [2000, 4300],
-      TENSE: [750, 1600],
-      BURST: [260, 680],
-      AFTERMATH: [900, 2100],
-      LULL: [2400, 4800]
+      AMBIENT: [1800, 4000],
+      TENSE: [700, 1500],
+      BURST: [220, 620],
+      AFTERMATH: [800, 2000],
+      LULL: [2400, 5200]
     },
     stateIntents: {
-      AMBIENT: { CHAT: 40, ADVICE: 25, QUESTION: 20, EXCLAIM: 15 },
-      TENSE: { WARNING: 45, OBSERVE: 30, ADVICE: 20, CHAT: 5 },
-      BURST: { SCREAM: 50, EXCLAIM: 30, WARNING: 20 },
-      AFTERMATH: { HINDSIGHT: 35, TEASE: 30, REVIEW: 25, ADVICE: 10 },
-      LULL: { CHAT: 50, STREAM_QUESTION: 25, OFF_TOPIC: 25 }
+      AMBIENT:   { CHAT: 26, QUESTION: 16, AGREE: 15, REACT: 12, NAG: 10, FOOD: 8, STORY: 8, GREET: 5 },
+      TENSE:     { REACT: 34, LAUGH: 24, AGREE: 20, TEASE: 14, CHAT: 8 },
+      BURST:     { LAUGH: 52, REACT: 30, TEASE: 18 },
+      AFTERMATH: { TEASE: 28, RECALL: 24, LAUGH: 20, AGREE: 16, CHAT: 12 },
+      LULL:      { CHAT: 26, QUESTION: 20, FOOD: 18, STORY: 14, COMPLAIN: 12, RECALL: 6, SUSPICION: 4 }
     }
   });
 
   /* ==========================================================================
    * 2. 성격 정의
+   *
+   *    personaKey는 기존 그대로 유지했습니다 (UI 참조가 깨지지 않도록).
+   *    label만 저스트 채팅에 맞게 바꿨습니다.
+   *
    *    style 필드는 전부 "개별 항목마다" 적용되는 확률입니다.
    *      trim        문장 맨 앞 어절을 통째로 날릴 확률 (어절 4개 이상일 때만)
    *      particle    각 조사를 생략할 확률
@@ -49,25 +60,33 @@
    * ======================================================================== */
   const PERSONAS = Object.freeze({
     COWARD: {
-      label: "겁쟁이",
-      desire: 1.1,
-      cooldownMs: 2600,
-      shortChance: 0.62,
-      tensionResponse: 1.55,
-      fit: { WARNING: 3, SCREAM: 3, QUESTION: .8, OBSERVE: .6, ADVICE: .25, TEASE: .15 },
+      label: "소심이",
+      desire: 1.0,
+      cooldownMs: 2800,
+      shortChance: 0.60,
+      tensionResponse: 1.35,
+      fit: {
+        AGREE: 2.6, NAG: 2.4, COMPLAIN: 2.0, REACT: 1.5, GREET: 1.3,
+        CHAT: 1.0, QUESTION: 1.0, STORY: 1.0, FOOD: .9, RECALL: .8,
+        SUSPICION: .8, LAUGH: .7, TEASE: .2
+      },
       style: {
         trim: .55, particle: .62, ending: .40, spacing: .42, punctuation: .88,
         abbrev: .25, emote: .70, typo: .12,
-        emotePool: ["ㅠㅠ", "ㅠ", "ㄷㄷ", "ㅠㅠㅠ"]
+        emotePool: ["ㅠㅠ", "ㅠ", "ㄷㄷ", "ㅎㅎ"]
       }
     },
     COACH: {
       label: "훈수꾼",
       desire: 1.15,
       cooldownMs: 2300,
-      shortChance: 0.45,
-      tensionResponse: 1.15,
-      fit: { ADVICE: 3, REVIEW: 2.2, HINDSIGHT: 2, OBSERVE: 1.1, QUESTION: .35, TEASE: .45 },
+      shortChance: 0.44,
+      tensionResponse: 1.05,
+      fit: {
+        NAG: 3, COMPLAIN: 2.4, RECALL: 2.0, AGREE: 1.0, CHAT: .8,
+        SUSPICION: .8, REACT: .7, TEASE: .6, STORY: .6, GREET: .6,
+        QUESTION: .5, FOOD: .5, LAUGH: .3
+      },
       style: {
         trim: .70, particle: .85, ending: .78, spacing: .50, punctuation: .95,
         abbrev: .35, emote: .10, typo: .04,
@@ -76,28 +95,36 @@
     },
     JOKER: {
       label: "장난꾼",
-      desire: 1.05,
-      cooldownMs: 2100,
-      shortChance: 0.68,
-      tensionResponse: 1.35,
-      fit: { TEASE: 3, EXCLAIM: 1.7, CHAT: 1.2, OFF_TOPIC: 1.3, WARNING: .3, ADVICE: .4 },
+      desire: 1.1,
+      cooldownMs: 2000,
+      shortChance: 0.70,
+      tensionResponse: 1.45,
+      fit: {
+        LAUGH: 3, TEASE: 3, REACT: 1.8, FOOD: 1.4, CHAT: 1.2, GREET: 1.0,
+        AGREE: .8, RECALL: .8, STORY: .7, QUESTION: .6, COMPLAIN: .4,
+        NAG: .3, SUSPICION: .3
+      },
       style: {
         trim: .60, particle: .72, ending: .60, spacing: .48, punctuation: .92,
-        abbrev: .48, emote: .82, typo: .08,
+        abbrev: .48, emote: .85, typo: .08,
         emotePool: ["ㅋㅋㅋ", "ㅋㅋㅋㅋㅋ", "ㅋㅋ", "ㅋㅋㅋㅋㅋㅋㅋ"]
       }
     },
     IMMERSIVE: {
-      label: "몰입형",
-      desire: .95,
-      cooldownMs: 3000,
+      label: "찐팬",
+      desire: .98,
+      cooldownMs: 2900,
       shortChance: 0.38,
-      tensionResponse: 1.25,
-      fit: { OBSERVE: 3, QUESTION: 1.6, WARNING: 1.3, REVIEW: 1.4, ADVICE: .65, TEASE: .25 },
+      tensionResponse: 1.2,
+      fit: {
+        RECALL: 3, AGREE: 2.6, STORY: 2.0, QUESTION: 1.6, CHAT: 1.4,
+        REACT: 1.4, GREET: 1.2, LAUGH: 1.0, FOOD: 1.0, SUSPICION: 1.0,
+        NAG: .8, COMPLAIN: .8, TEASE: .4
+      },
       style: {
         trim: .35, particle: .45, ending: .50, spacing: .28, punctuation: .80,
-        abbrev: .15, emote: .30, typo: .04,
-        emotePool: ["ㄷㄷ", "...", "ㅇㅇ"]
+        abbrev: .15, emote: .32, typo: .04,
+        emotePool: ["ㅎㅎ", "ㄷㄷ", "ㅇㅇ"]
       }
     },
     SKEPTIC: {
@@ -105,8 +132,12 @@
       desire: .92,
       cooldownMs: 3400,
       shortChance: 0.42,
-      tensionResponse: 1.05,
-      fit: { SUSPICION: 3, QUESTION: 1.5, OBSERVE: 1.2, REVIEW: 1.1, WARNING: .65, TEASE: .55 },
+      tensionResponse: 1.0,
+      fit: {
+        SUSPICION: 3, QUESTION: 2.4, TEASE: 1.6, RECALL: 1.4, COMPLAIN: 1.2,
+        REACT: 1.0, CHAT: .9, LAUGH: .7, NAG: .7, AGREE: .6, STORY: .6,
+        FOOD: .6, GREET: .5
+      },
       style: {
         trim: .45, particle: .58, ending: .55, spacing: .32, punctuation: .85,
         abbrev: .22, emote: .28, typo: .04,
@@ -117,166 +148,177 @@
 
   /* ==========================================================================
    * 3. 템플릿 — [templateId, 정중형(이상도 3+), 채팅형(평소)]
-   *    채팅형은 어절 2~4개를 넘기지 마세요. 여기가 길면 뭘 해도 딱딱합니다.
+   *
+   *    정상 시청자 라인에는 공포 어휘가 한 단어도 들어가지 않습니다.
+   *    채팅형은 어절 2~4개를 넘기지 마세요.
    * ======================================================================== */
   const TEMPLATES = Object.freeze({
+    GREET: [
+      ["greet-hi",    "안녕하십니까, 오늘도 잘 부탁드립니다.",   "안녕"],
+      ["greet-late",  "조금 늦게 들어왔습니다.",                 "늦게 들어왔다"],
+      ["greet-back",  "잠시 자리를 비웠다가 돌아왔습니다.",       "다시 왔어"],
+      ["greet-first", "오늘 처음 보러 왔습니다.",                "오늘 처음 왔어"],
+      ["greet-work",  "퇴근하고 바로 들어왔습니다.",             "퇴근하고 바로 왔다"]
+    ],
     CHAT: [
-      ["chat-room",     "{location|은/는} 분위기가 정말 무섭습니다.",      "{location} 분위기 미쳤다"],
-      ["chat-sound",    "이 게임은 소리를 들을수록 더 무섭습니다.",         "소리 키우니까 더 무섭네"],
-      ["chat-progress", "오늘은 엔딩까지 볼 수 있을 것 같습니다.",          "오늘 엔딩 각"],
-      ["chat-silence",  "갑자기 조용해져서 더 불안합니다.",                 "조용한 게 더 무서움"],
-      ["chat-bgm",      "배경음이 계속 신경 쓰입니다.",                     "브금 계속 거슬리네"],
-      ["chat-late",     "늦은 시간에 보니 더 무섭습니다.",                  "이 시간에 보니까 더함"]
+      ["chat-today",   "오늘 방송 분위기가 좋습니다.",           "오늘 분위기 좋다"],
+      ["chat-topic",   "{topic} 계속 듣고 싶습니다.",            "{topic} 더 해줘"],
+      ["chat-weather", "오늘은 밖이 정말 더웠습니다.",           "오늘 밖에 더웠어"],
+      ["chat-lying",   "누워서 편하게 보고 있습니다.",           "누워서 보는 중"],
+      ["chat-mood",    "이런 잡담 방송이 제일 편합니다.",        "이런 잡담이 제일 편해"],
+      ["chat-work",    "일하면서 틀어 놓고 있습니다.",           "일하면서 틀어놨어"]
     ],
-    ADVICE: [
-      ["advice-direction", "{direction|을/를} 먼저 확인해야 합니다.",        "{direction} 먼저 봐"],
-      ["advice-item",      "{item|을/를} 아껴 사용하는 것이 좋겠습니다.",     "{item} 아껴라"],
-      ["advice-save",      "{location}에 들어가기 전에 저장해야 합니다.",     "들어가기 전에 저장"],
-      ["advice-door",      "지나온 문을 닫고 이동하는 것이 좋겠습니다.",      "문 닫고 가"],
-      ["advice-slow",      "조금 천천히 이동하는 것이 좋겠습니다.",           "좀 천천히 가"],
-      ["advice-crouch",    "앉아서 이동하면 소리가 줄어듭니다.",              "앉아서 가면 소리 줄음"]
+    REACT: [
+      ["react-what",  "방금 그 이야기가 정말 놀랍습니다.",       "방금 그거 놀랍다"],
+      ["react-empathy", "그 부분은 정말 공감이 됩니다.",         "그건 진짜 공감된다"],
+      ["react-wow",   "생각보다 훨씬 대단합니다.",              "생각보다 대단하다"],
+      ["react-again", "방금 그 부분을 다시 듣고 싶습니다.",      "방금 그거 다시"],
+      ["react-real",  "정말입니까?",                            "진짜야?"],
+      ["react-shock", "그 이야기는 조금 충격적입니다.",          "그거 좀 충격이다"]
     ],
-    QUESTION: [
-      ["question-target", "{target|은/는} 아까도 {location}에 있었습니까?",   "{target} 아까도 있었나"],
-      ["question-sound",  "방금 {direction}에서 소리가 들리지 않았습니까?",    "방금 {direction} 소리 안 남?"],
-      ["question-item",   "{item|은/는} 이미 사용한 것입니까?",               "{item} 쓴 거야?"],
-      ["question-path",   "이 길로 가는 것이 맞습니까?",                     "이 길 맞아?"],
-      ["question-saw",    "방금 그 장면을 본 사람이 있습니까?",               "방금 본 사람"],
-      ["question-again",  "이 장소는 이미 지나온 것 아닙니까?",               "여기 아까 온 데 아닌가"]
-    ],
-    EXCLAIM: [
-      ["exclaim-target", "{target|이/가} 갑자기 나타나서 정말 놀랐습니다!",    "{target} 갑자기 나왔어"],
-      ["exclaim-close",  "방금은 정말 위험했습니다!",                        "방금 진짜 위험했다"],
-      ["exclaim-sound",  "소리가 너무 커서 깜짝 놀랐습니다!",                 "소리 너무 컸어"],
-      ["exclaim-scene",  "이 장면은 분위기가 정말 무섭습니다!",               "이 장면 미쳤다"],
-      ["exclaim-heart",  "심장이 내려앉는 줄 알았습니다!",                   "심장 나갈 뻔했다"],
-      ["exclaim-jump",   "의자에서 일어날 뻔했습니다!",                      "의자에서 튀어나올 뻔"]
-    ],
-    WARNING: [
-      ["warning-approach", "{direction}에서 {target|이/가} 다가오고 있습니다!", "{direction}에서 {target} 온다"],
-      ["warning-distance", "지금은 {target}에게서 떨어지는 것이 좋겠습니다!",   "{target}한테서 떨어져"],
-      ["warning-location", "지금 {location|으로/로} 들어가면 안 됩니다!",       "{location} 들어가지 마"],
-      ["warning-behind",   "뒤를 확인하고 바로 도망쳐야 합니다!",              "뒤 뒤 뒤"],
-      ["warning-hide",     "지금 바로 숨어야 합니다!",                       "빨리 숨어"],
-      ["warning-light",    "불빛을 끄는 것이 좋겠습니다!",                    "불 꺼 빨리"]
-    ],
-    OBSERVE: [
-      ["observe-motion",   "{direction}에서 {target|이/가} 움직인 것 같습니다.", "{direction}에서 {target} 움직인다"],
-      ["observe-position", "{target|은/는} 아까 {location}에 있지 않았습니까?",  "{target} 아까 {location}에 없었는데"],
-      ["observe-change",   "방금 {location}의 모습이 달라진 것 같습니다.",       "{location} 뭔가 바뀐 거 같은데"],
-      ["observe-sound",    "{direction}에서 발소리가 들리는 것 같습니다.",       "{direction}에서 발소리 났다"],
-      ["observe-corner",   "{location} 구석에 무언가 보입니다.",                "{location} 구석 봐"],
-      ["observe-shadow",   "벽에 그림자가 지나간 것 같습니다.",                 "벽에 그림자 지나갔어"]
-    ],
-    SCREAM: [
-      ["scream-run",    "지금 바로 도망쳐야 합니다!",    "튀어"],
-      ["scream-behind", "바로 뒤에 무언가가 있습니다!",  "뒤에 있어"],
-      ["scream-no",     "그쪽으로 가면 안 됩니다!",      "가지마"],
-      ["scream-shock",  "정말 깜짝 놀랐습니다!",        "아 깜짝이야"],
-      ["scream-close",  "거의 잡힐 뻔했습니다!",        "잡힐 뻔했다"],
-      ["scream-go",     "빨리 나가야 합니다!",          "빨리 나가"]
-    ],
-    HINDSIGHT: [
-      ["hindsight-run",  "아까 바로 도망쳤어야 했습니다.",                  "아까 튀었어야지"],
-      ["hindsight-seen", "조금 전에 {direction|을/를} 확인했어야 했습니다.",  "{direction} 봤어야 했는데"],
-      ["hindsight-door", "그 문을 열지 않는 것이 좋았습니다.",               "그 문 열지 말랬잖아"],
-      ["hindsight-item", "아까 {item|을/를} 챙겼어야 했습니다.",             "{item} 챙겼어야 했는데"],
-      ["hindsight-told", "여러 사람이 이미 말했던 내용입니다.",              "아까부터 말했는데"],
-      ["hindsight-turn", "그때 돌아섰어야 했습니다.",                       "그때 돌았어야 했어"]
+    LAUGH: [
+      ["laugh-hard",  "지금 크게 웃었습니다.",                  "방금 크게 웃었다"],
+      ["laugh-clip",  "지금 부분은 편집해야 합니다.",            "지금 거 편집각"],
+      ["laugh-again", "같은 말을 또 하고 있습니다.",             "같은 말 또 한다"],
+      ["laugh-face",  "지금 표정이 정말 웃깁니다.",              "지금 표정 웃긴다"],
+      ["laugh-sound", "웃음소리가 더 웃깁니다.",                 "웃음소리가 더 웃겨"],
+      ["laugh-out",   "옆방에 들릴 정도로 웃었습니다.",          "옆방까지 들리게 웃었다"]
     ],
     TEASE: [
-      ["tease-shock",   "방금 놀라는 모습이 정말 재미있었습니다.",     "방금 리액션 봐"],
-      ["tease-return",  "또 같은 장소로 돌아온 것 같습니다.",          "또 같은 데 왔어"],
-      ["tease-brave",   "이번에는 도망치지 않을 수 있습니까?",         "이번엔 안 튈 수 있어?"],
-      ["tease-monster", "{target}도 방송을 보러 온 것 같습니다.",      "{target}도 방송 보러 왔네"],
-      ["tease-scared",  "생각보다 많이 놀란 것 같습니다.",             "생각보다 겁 많은 거 같은데"],
-      ["tease-again",   "같은 곳에서 또 놀라고 있습니다.",             "같은 데서 또 놀란다"]
+      ["tease-old",   "그 이야기는 저번에도 하셨습니다.",        "그거 저번에도 했어"],
+      ["tease-lie",   "그 말은 믿기가 조금 어렵습니다.",         "그 말 못 믿겠는데"],
+      ["tease-fail",  "방금 실수하신 것 같습니다.",              "방금 실수했다"],
+      ["tease-brag",  "자랑이 조금 길어지고 있습니다.",          "자랑 좀 길어진다"],
+      ["tease-late",  "오늘도 늦게 시작했습니다.",               "오늘도 늦게 시작함"],
+      ["tease-food",  "{food} 이야기만 계속 하고 있습니다.",     "{food} 얘기만 계속 한다"]
     ],
-    REVIEW: [
-      ["review-cause", "방금은 {direction|을/를} 늦게 확인해서 위험했습니다.",        "{direction} 늦게 봐서 그런다"],
-      ["review-route", "다음에는 {location|으로/로} 바로 가지 않는 것이 좋겠습니다.", "다음에 {location} 바로 가지 마"],
-      ["review-item",  "{item|을/를} 먼저 사용했다면 피할 수 있었습니다.",           "{item} 먼저 썼으면 됐는데"],
-      ["review-close", "조금만 늦었으면 잡혔을 것 같습니다.",                       "조금만 늦었으면 잡혔다"],
-      ["review-luck",  "이번에는 운이 좋았던 것 같습니다.",                         "이번엔 운 좋았어"],
-      ["review-sound", "소리를 먼저 들었다면 피할 수 있었습니다.",                   "소리 먼저 들었으면 됐는데"]
+    QUESTION: [
+      ["question-plan",  "오늘은 몇 시까지 방송합니까?",         "오늘 몇 시까지 해?"],
+      ["question-topic", "{topic} 어떻게 됐습니까?",             "{topic} 어떻게 됐어?"],
+      ["question-food",  "저녁은 드셨습니까?",                   "저녁 먹었어?"],
+      ["question-next",  "다음 방송은 언제입니까?",              "다음 방송 언제야?"],
+      ["question-thing", "{thing} 새로 바꾸셨습니까?",           "{thing} 새로 바꿨어?"],
+      ["question-sleep", "어제는 몇 시에 주무셨습니까?",         "어제 몇 시에 잤어?"]
     ],
-    STREAM_QUESTION: [
-      ["stream-end",     "오늘 이 게임의 엔딩까지 볼 예정입니까?",     "오늘 엔딩까지 가?"],
-      ["stream-next",    "다음 방송에서도 공포 게임을 할 예정입니까?",  "다음에도 공포겜 해?"],
-      ["stream-light",   "화면 밝기를 조금 올려 줄 수 있습니까?",      "밝기 좀 올려줘"],
-      ["stream-headset", "이어폰을 끼고 플레이하고 있습니까?",         "이어폰 끼고 해?"],
-      ["stream-hours",   "오늘 방송은 몇 시까지 진행합니까?",          "오늘 몇 시까지 해?"],
-      ["stream-part",    "이 게임은 몇 번째 방송입니까?",              "이거 몇 편이야?"]
+    AGREE: [
+      ["agree-yes",   "그 말이 정말 맞습니다.",                 "그 말 맞아"],
+      ["agree-me",    "저도 완전히 같은 생각입니다.",            "나도 완전 같은 생각이야"],
+      ["agree-same",  "저도 어제 같은 일이 있었습니다.",         "나도 어제 그랬어"],
+      ["agree-know",  "그 기분을 정말 잘 압니다.",               "그 기분 잘 안다"],
+      ["agree-right", "역시 그렇게 하는 것이 맞습니다.",         "역시 그게 맞아"]
     ],
-    OFF_TOPIC: [
-      ["off-snack", "이 방송을 보면서 야식을 먹고 있습니다.",        "야식 먹으면서 본다"],
-      ["off-time",  "시간이 벌써 이렇게 늦은 줄 몰랐습니다.",         "벌써 시간 이렇게 됐네"],
-      ["off-sleep", "이 방송을 보고 나면 잠들기 어려울 것 같습니다.",  "오늘 잠 다 잤다"],
-      ["off-chat",  "오늘 채팅창도 평소보다 조용한 것 같습니다.",      "채팅 오늘 조용하네"],
-      ["off-work",  "내일 일정이 있어서 곧 자야 합니다.",             "내일 일정 있어서 곧 자야 한다"],
-      ["off-eyes",  "화면이 어두워서 눈이 아픕니다.",                 "화면 어두워서 눈 아프다"]
+    NAG: [
+      ["nag-water",   "물을 조금 마시는 것이 좋겠습니다.",       "물 좀 마셔"],
+      ["nag-posture", "자세가 조금 무너졌습니다.",               "자세 무너졌다"],
+      ["nag-rest",    "잠시 쉬었다 하는 것이 좋겠습니다.",       "좀 쉬었다 해"],
+      ["nag-sleep",   "오늘은 일찍 주무시는 것이 좋겠습니다.",   "오늘은 일찍 자"],
+      ["nag-thing",   "{thing} 위치를 조금 조정해야 합니다.",    "{thing} 위치 좀 고쳐"],
+      ["nag-meal",    "끼니는 거르지 않는 것이 좋겠습니다.",     "끼니 거르지 마"]
     ],
+    STORY: [
+      ["story-day",     "오늘 하루가 정말 길었습니다.",          "오늘 하루 길었다"],
+      ["story-work",    "회사에서 있었던 일이 아직도 생각납니다.", "회사 일 아직 생각난다"],
+      ["story-tired",   "요즘 계속 피곤합니다.",                 "요즘 계속 피곤해"],
+      ["story-food",    "점심에 {food} 먹었습니다.",             "점심에 {food} 먹었어"],
+      ["story-weekend", "이번 주말에는 아무것도 하지 않았습니다.", "주말에 아무것도 안 했어"]
+    ],
+    FOOD: [
+      ["food-want",  "{food} 먹고 싶어졌습니다.",                "{food} 먹고 싶다"],
+      ["food-order", "방금 {food} 시켰습니다.",                  "방금 {food} 시켰어"],
+      ["food-late",  "이 시간에 먹으면 안 되는데 참기 어렵습니다.", "이 시간에 먹으면 안 되는데"],
+      ["food-ask",   "{food} 좋아하십니까?",                     "{food} 좋아해?"],
+      ["food-eat",   "지금 {food} 먹으면서 보고 있습니다.",       "지금 {food} 먹으면서 봐"]
+    ],
+    RECALL: [
+      ["recall-day",     "{day} 방송이 정말 재미있었습니다.",     "{day} 방송 재밌었어"],
+      ["recall-topic",   "{day}에도 {topic} 이야기를 하셨습니다.", "{day}에도 {topic} 얘기했어"],
+      ["recall-scene",   "그 장면은 아직도 기억납니다.",          "그 장면 아직 기억난다"],
+      ["recall-miss",    "{day} 방송은 놓쳤습니다.",              "{day} 방송 놓쳤어"],
+      ["recall-promise", "{day}에 하신 약속이 있었습니다.",       "{day}에 약속했잖아"]
+    ],
+    COMPLAIN: [
+      ["complain-mic",   "마이크 소리가 조금 작습니다.",         "마이크 소리 좀 작아"],
+      ["complain-light", "화면이 조금 어둡습니다.",              "화면 좀 어둡다"],
+      ["complain-lag",   "화면이 잠깐 끊겼습니다.",              "화면 잠깐 끊겼어"],
+      ["complain-bgm",   "배경음이 조금 큽니다.",                "브금 좀 크다"],
+      ["complain-echo",  "소리가 조금 울립니다.",                "소리 좀 울린다"]
+    ],
+    /* SUSPICION은 정상 시청자가 "채팅이 좀 이상하다"고 느끼는 지점입니다.
+       이상 시청자를 직접 언급하지는 않되, 플레이어의 주의를 채팅창으로 돌립니다.
+       가중치를 낮게 유지하세요. 자주 나오면 힌트가 아니라 소음이 됩니다. */
     SUSPICION: [
-      ["suspicion-target", "{target|이/가} 일부러 플레이어를 기다리는 것 같습니다.", "{target} 일부러 기다리는 거 같은데"],
-      ["suspicion-repeat", "방금 같은 장면을 이미 본 것 같습니다.",                "이 장면 아까 봤는데"],
-      ["suspicion-chat",   "채팅에 조금 이상한 사람이 있는 것 같습니다.",           "채팅에 이상한 사람 있는 거 같은데"],
-      ["suspicion-room",   "이 방의 구조가 계속 바뀌는 것 같습니다.",              "방 구조 계속 바뀐다"],
-      ["suspicion-count",  "시청자 수가 조금 전과 다릅니다.",                     "시청자 수 아까랑 다르다"],
-      ["suspicion-name",   "같은 닉네임이 두 번 보이는 것 같습니다.",              "같은 닉 두 개 있는데"]
+      ["suspicion-chat",   "채팅에 조금 이상한 사람이 있는 것 같습니다.", "채팅에 이상한 사람 있는 거 같은데"],
+      ["suspicion-repeat", "방금 그 채팅을 아까도 본 것 같습니다.",      "방금 그 채팅 아까도 봤는데"],
+      ["suspicion-name",   "같은 닉네임이 두 번 보이는 것 같습니다.",     "같은 닉 두 개 있는데"],
+      ["suspicion-count",  "시청자 수가 조금 전과 다릅니다.",            "시청자 수 아까랑 다르다"],
+      ["suspicion-know",   "저 사람은 그것을 어떻게 아는 것입니까?",      "저 사람 저걸 어떻게 알아"]
     ]
   });
 
   /* ==========================================================================
    * 4. 초단문 풀 — 전체 발화의 절반 이상이 여기서 나갑니다.
-   *    의도당 최소 10개를 유지하세요. 부족하면 필터가 막아 긴 문장으로 밀립니다.
    * ======================================================================== */
   const SHORT_LINES = Object.freeze({
-    CHAT: ["무섭네", "분위기 뭐임", "오늘 꿀잼", "ㄷㄷ", "와 분위기", "이거 뭐야",
-           "ㅋㅋㅋ", "브금 좋다", "무서워", "분위기 실화", "하 진짜", "잘 보고 있음"],
-    ADVICE: ["왼쪽 봐", "문 닫아", "일단 저장", "배터리 아껴", "뒤부터 봐", "천천히 가",
-             "불 켜", "숨어", "아이템 챙겨", "맵 봐", "앉아서 가", "소리 줄여"],
-    QUESTION: ["방금 봄?", "저거 뭐야", "길 맞아?", "있었나?", "뭐임?", "방금 뭐였음",
-               "저건 뭐지", "다들 봤음?", "소리 들림?", "어디로 감?", "여기 왔었나"],
-    EXCLAIM: ["와", "미쳤다", "ㄷㄷㄷ", "헉", "헐", "어우", "아니", "와 진짜",
-              "ㅁㅊ", "심장 나감", "깜짝이야", "와 놀랐다", "개무섭"],
-    WARNING: ["뒤 뒤", "도망쳐", "오지 마", "문 닫아", "튀어", "가지마", "위험",
-              "뒤에!!", "멈춰", "숨어 빨리", "왼쪽 왼쪽", "안돼", "불 꺼"],
-    OBSERVE: ["뭐 지나감", "움직였어", "방금 소리", "저기 봐", "뭔가 있음", "그림자 봄",
-              "저거 아까 없었는데", "방금 움직임", "위 봐", "구석", "벽 봐"],
-    SCREAM: ["아아악", "뛰어", "안돼", "뒤에!!", "으악", "튀어튀어", "아 진짜",
-             "ㅁㅊㅁㅊ", "심장", "악", "나가 빨리", "헐헐헐"],
-    HINDSIGHT: ["아깝다", "늦었음", "그럴 줄", "아까 뛰지", "그러게", "말했잖아",
-                "아까 봤어야", "에휴", "거봐", "내가 뭐랬어"],
-    TEASE: ["ㅋㅋㅋㅋ", "또 속음", "겁먹었네", "귀신도 웃겠다", "리액션 ㅋㅋ",
-            "ㅋㅋㅋㅋㅋㅋ", "쫄았네", "또 저기 감", "반응 봐", "무섭냐고"],
-    REVIEW: ["판단 늦음", "길 잘못 감", "거의 잡힘", "다시 해보자", "아까가 문제",
-             "루트 꼬임", "운 좋았다", "타이밍 늦음", "그래도 살았네"],
-    STREAM_QUESTION: ["오늘 엔딩 봄?", "다음 겜 뭐임", "밝기 가능?", "안 무서움?",
-                      "몇 시까지 함?", "이거 몇 편임", "마이크 좀", "이어폰 씀?"],
-    OFF_TOPIC: ["배고프다", "벌써 이 시간", "잠 다 잤다", "채팅 조용하네", "나 내일 출근",
-                "치킨 시킴", "눈 아파", "누워서 보는 중", "불 켜고 봄"],
-    SUSPICION: ["뭔가 이상함", "또 반복됨", "쟤 뭐임", "방 구조 바뀜", "아까랑 다른데",
-                "채팅 이상해", "저 사람 뭐지", "데자뷰", "이거 아까 봤는데"]
+    GREET: ["ㅎㅇ", "안녕", "왔다", "ㅎㅇㅎㅇ", "출첵", "지금 왔음",
+            "안녕하세요", "오늘도 왔다", "이제 봄", "늦게 왔다"],
+    CHAT: ["ㅇㅇ", "그니까", "오늘 좋네", "편하다", "잘 보고 있음", "ㅋㅋ",
+           "분위기 좋다", "누워서 봄", "일하면서 봄", "재밌다", "오늘 뭐 함?"],
+    REACT: ["헐", "와", "진짜?", "대박", "ㄷㄷ", "미쳤다", "말도 안 돼",
+            "실화?", "헉", "와 진짜", "우와", "장난 아니네"],
+    LAUGH: ["ㅋㅋㅋㅋ", "ㅋㅋㅋㅋㅋㅋ", "아 웃겨", "편집각", "ㅋㅋㅋ",
+            "미쳤다ㅋㅋ", "아 진짜ㅋㅋ", "터졌다", "ㅋㅋㅋㅋㅋㅋㅋ", "숨넘어감"],
+    TEASE: ["또 시작", "거짓말ㅋㅋ", "저번에도 그랬어", "믿는 사람?", "또 저래",
+            "실수했다", "자랑 그만", "이번엔 진짜?", "매번 저럼"],
+    QUESTION: ["몇 시까지 해?", "밥 먹었어?", "그래서 어떻게 됨?", "다음 언제야?",
+               "그거 뭐임?", "어디서 샀어?", "왜?", "진짜 그랬어?", "무슨 얘기임?"],
+    AGREE: ["ㅇㅈ", "ㄹㅇ", "맞아맞아", "나도", "그니까", "인정",
+            "완전 공감", "나도 그럼", "ㅇㅇ 맞음", "그거지"],
+    NAG: ["물 마셔", "자세", "좀 쉬어", "일찍 자", "밥 먹어", "허리 펴",
+          "목 아프겠다", "무리하지 마", "스트레칭 좀"],
+    STORY: ["나 오늘 힘들었음", "퇴근하고 왔다", "피곤하다", "주말에 뻗음",
+            "회사 지옥", "나도 오늘 그랬어", "내일도 출근", "쉬고 싶다"],
+    FOOD: ["배고파", "치킨 시킬까", "야식각", "지금 먹는 중", "먹고 싶다",
+           "떡볶이 땡긴다", "다이어트 망함", "라면 끓임", "군침"],
+    RECALL: ["저번에도 그랬어", "그거 기억난다", "지난 방송 재밌었음", "그때 그거",
+             "놓쳤는데", "다시보기 봄", "저번주 그 얘기"],
+    COMPLAIN: ["마이크 작아", "화면 어두워", "소리 울림", "브금 크다",
+               "끊겼음", "화질 낮음", "소리 좀"],
+    SUSPICION: ["쟤 뭐임", "채팅 이상해", "방금 그거 뭐야", "저 사람 뭐지",
+                "아까도 봤는데", "닉 두 개임", "소름", "지금 뭐라고 함?"]
   });
 
   const SLOT_POOLS = Object.freeze({
-    direction: ["왼쪽", "오른쪽", "뒤쪽", "복도 끝"],
-    target: ["그림자", "인형", "괴물", "문"],
-    location: ["복도", "지하실", "계단", "어두운 방"],
-    item: ["손전등", "열쇠", "배터리", "회복 아이템"]
+    topic: ["어제 얘기", "회사 얘기", "그 드라마", "새로 산 거", "여행 얘기", "그 영화"],
+    food:  ["치킨", "떡볶이", "마라탕", "라면", "곱창", "피자", "김밥"],
+    thing: ["마이크", "조명", "의자", "카메라", "브금", "키보드"],
+    day:   ["어제", "지난주", "저번 방송", "지지난주", "저번에"]
   });
 
+  /* ==========================================================================
+   * 5. 방송 이벤트 — 저스트 채팅 기준
+   *
+   *    omen은 예언형 이상 시청자가 미리 말해버릴 문구입니다.
+   *    게임 쪽에서 emitEvent(type, slots, intensity)로 직접 호출해도 됩니다.
+   * ======================================================================== */
   const SYNTHETIC_EVENTS = Object.freeze([
-    { type: "SHADOW_MOVED",     intensity: .45, slots: { direction: "왼쪽",    target: "그림자",  location: "복도" } },
-    { type: "DOOR_OPENED",      intensity: .58, slots: { direction: "뒤쪽",    target: "문",      location: "어두운 방" } },
-    { type: "LOUD_NOISE",       intensity: .72, slots: { direction: "오른쪽",  target: "무언가",  location: "계단" } },
-    { type: "LIGHTS_OUT",       intensity: .82, slots: { direction: "복도 끝", target: "그림자",  location: "지하실" } },
-    { type: "MONSTER_APPEARED", intensity: .95, slots: { direction: "뒤쪽",    target: "괴물",    location: "복도" } }
+    { type: "STORY_STARTED",  intensity: .35, omen: "새로운 이야기가 시작될 것입니다.",
+      slots: { topic: "어제 얘기" } },
+    { type: "FOOD_ARRIVED",   intensity: .45, omen: "배달이 도착할 것입니다.",
+      slots: { food: "치킨" } },
+    { type: "TECH_TROUBLE",   intensity: .50, omen: "장비에 문제가 생길 것입니다.",
+      slots: { thing: "마이크" } },
+    { type: "DONATION_READ",  intensity: .55, omen: "후원 메시지가 읽힐 것입니다.",
+      slots: { topic: "후원 얘기" } },
+    { type: "SLIP_OF_TONGUE", intensity: .62, omen: "실언이 나올 것입니다.",
+      slots: { topic: "방금 그 말" } },
+    { type: "DOORBELL",       intensity: .72, omen: "초인종이 울릴 것입니다.",
+      slots: { thing: "현관" } },
+    { type: "BIG_LAUGH",      intensity: .88, omen: "크게 웃음이 터질 것입니다.",
+      slots: { topic: "그 얘기" } }
   ]);
 
   /* ==========================================================================
-   * 5. 표기 변형 자원
-   *    반드시 IIFE 안에, 클래스보다 위에 있어야 합니다.
+   * 6. 표기 변형 자원
    * ======================================================================== */
 
   // 채팅 어미. 문장부호를 뗀 상태에서 매칭하므로 패턴에 부호를 넣지 마세요.
@@ -287,31 +329,34 @@
     [/것 같다$/,     "듯"],
     [/있는데$/,      "있음"],
     [/없는데$/,      "없음"],
-    [/했는데$/,      "했음"],
-    [/움직인다$/,    "움직임"],
-    [/온다$/,        "옴"],
-    [/간다$/,        "감"],
+    [/먹었어$/,      "먹었음"],
+    [/시켰어$/,      "시켰음"],
+    [/왔어$/,        "왔음"],
+    [/했어$/,        "함"],
+    [/했다$/,        "함"],
     [/한다$/,        "함"],
     [/된다$/,        "됨"],
-    [/났다$/,        "남"],
-    [/났어$/,        "남"],
+    [/난다$/,        "남"],
+    [/간다$/,        "감"],
+    [/온다$/,        "옴"],
     [/본다$/,        "봄"],
     [/봤어$/,        "봄"],
-    [/했어$/,        "함"],
-    [/였어$/,        "임"],
+    [/공감된다$/,    "공감됨"],
+    [/웃긴다$/,      "웃김"],
+    [/웃겨$/,        "웃김"],
+    [/피곤해$/,      "피곤함"],
+    [/싶다$/,        "싶음"],
+    [/맞아$/,        "맞음"],
+    [/안다$/,        "앎"],
+    [/알아$/,        "앎"],
+    [/작아$/,        "작음"],
+    [/어둡다$/,      "어두움"],
+    [/크다$/,        "큼"],
+    [/울린다$/,      "울림"],
+    [/끊겼어$/,      "끊김"],
+    [/편해$/,        "편함"],
     [/이야$/,        "임"],
     [/거야$/,        "거임"],
-    [/맞아$/,        "맞음"],
-    [/있어$/,        "있음"],
-    [/없어$/,        "없음"],
-    [/줄어든다$/,    "줄음"],
-    [/아프다$/,      "아픔"],
-    [/무섭다$/,      "무서움"],
-    [/무서워$/,      "무서움"],
-    [/미쳤다$/,      "미침"],
-    [/위험했다$/,    "위험했음"],
-    [/컸어$/,        "큼"],
-    [/잡혔다$/,      "잡힘"],
     [/같다$/,        "듯"]
   ]);
 
@@ -320,20 +365,21 @@
   const ABBREVIATIONS = Object.freeze([
     [/정말/g,     "ㄹㅇ"],
     [/진짜/g,     "ㄹㅇ"],
-    [/미쳤다/g,   "ㅁㅊ"],
-    [/미침/g,     "ㅁㅊ"],
-    [/괜찮아/g,   "ㄱㅊ"],
-    [/그렇지/g,   "ㅇㅈ"],
+    [/완전/g,     "ㅈㄴ"],
     [/인정/g,     "ㅇㅈ"],
+    [/미쳤다/g,   "ㅁㅊ"],
+    [/괜찮아/g,   "ㄱㅊ"],
     [/감사/g,     "ㄱㅅ"],
+    [/축하/g,     "ㅊㅋ"],
+    [/그렇지/g,   "ㅇㅈ"],
     [/다음에/g,   "담에"],
     [/아니야/g,   "ㄴㄴ"],
     [/그러니까/g, "ㄱㄴㄲ"]
   ]);
 
   const TYPO_PAIRS = Object.freeze([
-    ["지금", "지굼"], ["왼쪽", "왼쫀"], ["무서", "무셔"], ["뒤", "듸"],
-    ["빨리", "빨ㄹ"], ["같이", "가치"], ["어디", "어됴"], ["그거", "그ㄱ"]
+    ["지금", "지굼"], ["진짜", "진쨔"], ["그거", "그ㄱ"], ["같이", "가치"],
+    ["어디", "어됴"], ["빨리", "빨ㄹ"], ["먹었", "머겄"], ["재밌", "잼있"]
   ]);
 
   const CHOSEONG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
@@ -351,7 +397,7 @@
   }
 
   /* ==========================================================================
-   * 6. 시드 난수
+   * 7. 시드 난수
    * ======================================================================== */
   class SeededRandom {
     constructor(seed) {
@@ -396,7 +442,7 @@
   }
 
   /* ==========================================================================
-   * 7. 엔진
+   * 8. 엔진
    * ======================================================================== */
   class HorrorChatEngine {
     constructor(options) {
@@ -429,7 +475,7 @@
       this.recentTemplates = [];
       this.recentSignatures = [];
       this.recentSemanticMessages = [];
-      this.scene = { direction: "왼쪽", target: "문", location: "복도", item: "손전등" };
+      this.scene = { topic: "어제 얘기", food: "치킨", thing: "마이크", day: "어제" };
       this.debug = {
         speakerSelections: [],
         filterRejects: { exact: 0, template: 0, signature: 0, similarity: 0 },
@@ -446,7 +492,7 @@
 
     assignViewerModels() {
       const personaKeys = this.random.shuffle(Object.keys(PERSONAS));
-      const anomalyPermissions = this.random.shuffle(["PROPHECY", "OBSERVER", "PROPHECY"]);
+      const permissions = this.random.shuffle(["PROPHECY", "OBSERVER", "MEMORY"]);
       let anomalyIndex = 0;
       this.viewers.forEach((viewer, index) => {
         viewer.personaKey = personaKeys[index % personaKeys.length];
@@ -456,7 +502,7 @@
         viewer.engineSpeechCount = 0;
         viewer.anomalyLevel = viewer.anomalous ? 1 : 0;
         viewer.anomalyPermission = viewer.anomalous
-          ? anomalyPermissions[anomalyIndex++ % anomalyPermissions.length]
+          ? permissions[anomalyIndex++ % permissions.length]
           : null;
       });
     }
@@ -572,13 +618,13 @@
       for (let index = 0; index < count; index += 1) {
         const intent = intensity >= .7
           ? this.random.weighted([
-              { value: "SCREAM", weight: 5 },
-              { value: "EXCLAIM", weight: 3 },
-              { value: "WARNING", weight: 2 }
+              { value: "LAUGH", weight: 5 },
+              { value: "REACT", weight: 3 },
+              { value: "TEASE", weight: 2 }
             ])
           : this.random.weighted([
-              { value: "OBSERVE", weight: 4 },
-              { value: "WARNING", weight: 3 },
+              { value: "REACT", weight: 4 },
+              { value: "AGREE", weight: 3 },
               { value: "QUESTION", weight: 2 }
             ]);
         this.enqueue({
@@ -599,7 +645,7 @@
       this.futureEvent = {
         ...event,
         slots: { ...event.slots },
-        scheduledAt: this.simTime + this.random.range(8500, 14500)
+        scheduledAt: this.simTime + this.random.range(8500, 15000)
       };
     }
 
@@ -642,9 +688,10 @@
 
     processRequest(originalRequest, options = {}) {
       const request = { ...originalRequest };
+      // 반응 타이밍을 놓친 요청은 뒷북(회상)으로 바꿉니다.
       if (this.simTime - request.scheduledAt > TUNING.requestExpiryMs
-          && ["WARNING", "SCREAM"].includes(request.intent)) {
-        request.intent = "HINDSIGHT";       // 뒷북 의도로 변환
+          && ["REACT", "LAUGH"].includes(request.intent)) {
+        request.intent = "RECALL";
       }
 
       const viewer = this.chooseSpeaker(request.intent, request.forcedSpeakerId);
@@ -714,7 +761,7 @@
     }
 
     generateShortCandidate(viewer, intent, slotHints = {}, fallback = false) {
-      const pool = SHORT_LINES[intent] || SHORT_LINES.EXCLAIM;
+      const pool = SHORT_LINES[intent] || SHORT_LINES.REACT;
       const unusedPool = fallback ? pool.filter(line => !this.recentOutputs.includes(line)) : pool;
       let text = this.random.pick(unusedPool.length ? unusedPool : pool);
       const baseText = text;
@@ -738,6 +785,15 @@
       };
     }
 
+    /* ---------- 이상 시청자 ----------
+     * 공포 요소는 전부 여기에만 있습니다.
+     * 정상 시청자가 일상 얘기만 하는 채팅창에서 이 라인들이 혼자 튀는 것이 핵심입니다.
+     * "이상함"은 문장 데이터가 아니라 접근 권한으로 구현됩니다.
+     *   PROPHECY 아직 일어나지 않은 방송 이벤트를 읽음
+     *   OBSERVER 게임 밖 정보(시스템 시각, 경과 시간)를 읽음
+     *   MEMORY   존재하지 않는 과거 방송을 기억함
+     */
+
     createAnomalyOverride(viewer, request) {
       if (!viewer.anomalous || viewer.anomalyLevel < 2) return null;
       const chance = { 2: .22, 3: .5, 4: .78 }[viewer.anomalyLevel];
@@ -747,16 +803,14 @@
       const dress = standardText => useFormal ? standardText : this.transformStyle(standardText, viewer);
 
       if (viewer.anomalyPermission === "PROPHECY" && this.futureEvent) {
-        const target = this.futureEvent.slots.target || "무언가";
-        const direction = this.futureEvent.slots.direction || "뒤쪽";
         const seconds = Math.max(1, Math.ceil((this.futureEvent.scheduledAt - this.simTime) / 1000));
-        const standardText = `${seconds}초 뒤에 ${direction}에서 ${this.attachParticle(target, "이/가")} 나타날 것입니다.`;
+        const standardText = `${seconds}초 뒤에 ${this.futureEvent.omen}`;
         return {
           text: dress(standardText),
           standardText,
           templateId: "anomaly:prophecy",
-          signature: `anomaly:prophecy:${target}:${direction}:${seconds}`,
-          slots: { target, direction },
+          signature: `anomaly:prophecy:${this.futureEvent.type}:${seconds}`,
+          slots: {},
           short: false,
           anomalyEvidence: "PROPHECY"
         };
@@ -765,10 +819,13 @@
       if (viewer.anomalyPermission === "OBSERVER") {
         const elapsedSeconds = Math.floor(this.simTime / 1000);
         const startedAt = new Date(this.externalContext.startedAt);
-        const time = `${String(startedAt.getHours()).padStart(2, "0")}시 ${String(startedAt.getMinutes()).padStart(2, "0")}분`;
-        const standardText = this.random.next() < .5
-          ? `방송을 시작한 지 정확히 ${elapsedSeconds}초가 지났습니다.`
-          : `당신이 이 창을 연 시각은 ${time}입니다.`;
+        const clock = `${String(startedAt.getHours()).padStart(2, "0")}시 ${String(startedAt.getMinutes()).padStart(2, "0")}분`;
+        const variants = [
+          `방송을 켠 지 정확히 ${elapsedSeconds}초가 지났습니다.`,
+          `당신이 이 창을 연 시각은 ${clock}입니다.`,
+          `지금 이 채팅을 읽고 있는 사람은 한 명뿐입니다.`
+        ];
+        const standardText = this.random.pick(variants);
         return {
           text: dress(standardText),
           standardText,
@@ -779,6 +836,26 @@
           anomalyEvidence: "OBSERVER"
         };
       }
+
+      if (viewer.anomalyPermission === "MEMORY") {
+        const day = this.random.pick(SLOT_POOLS.day);
+        const variants = [
+          `${day} 방송에서도 똑같은 말씀을 하셨습니다.`,
+          `${day}에 저와 나눈 대화를 기억하십니까?`,
+          `${day} 방송은 아무도 보지 못했습니다.`,
+          `이 이야기는 ${day}에 이미 한 번 끝났습니다.`
+        ];
+        const standardText = this.random.pick(variants);
+        return {
+          text: dress(standardText),
+          standardText,
+          templateId: "anomaly:memory",
+          signature: `anomaly:memory:${standardText}`,
+          slots: { day },
+          short: false,
+          anomalyEvidence: "MEMORY"
+        };
+      }
       return null;
     }
 
@@ -786,7 +863,7 @@
       const value = hints?.[name]
         ?? viewer.memorySlots[name]
         ?? this.scene[name]
-        ?? this.random.pick(SLOT_POOLS[name] || ["무언가"]);
+        ?? this.random.pick(SLOT_POOLS[name] || ["그거"]);
       viewer.memorySlots[name] = value;
       return value;
     }
@@ -806,8 +883,7 @@
     /* ---------- 표기 변형기 ---------- */
 
     transformStyle(input, viewer) {
-      const persona = PERSONAS[viewer.personaKey];
-      const style = persona.style;
+      const style = PERSONAS[viewer.personaKey].style;
       // 이상도가 올라갈수록 모든 변형 확률이 0으로 수렴합니다.
       const factor = viewer.anomalous
         ? Math.max(0, 1 - viewer.anomalyLevel / TUNING.maxAnomalyLevel)
@@ -963,9 +1039,10 @@
     }
 
     bootstrapMessages() {
+      // 채팅창을 켰을 때 이미 굴러가고 있던 것처럼 보이게 하는 초기 로그
       this.viewers.forEach(viewer => {
         this.processRequest(
-          { intent: "CHAT", scheduledAt: this.simTime, forcedSpeakerId: viewer.id, slotHints: {}, source: "bootstrap" },
+          { intent: "GREET", scheduledAt: this.simTime, forcedSpeakerId: viewer.id, slotHints: {}, source: "bootstrap" },
           { historyOnly: true, skipFilters: true, behavior: "auto" }
         );
       });
@@ -977,7 +1054,7 @@
       });
       this.random.shuffle(this.viewers.filter(viewer => viewer.anomalous)).slice(0, 2).forEach(viewer => {
         this.processRequest(
-          { intent: "OBSERVE", scheduledAt: this.simTime, forcedSpeakerId: viewer.id, slotHints: {}, source: "bootstrap" },
+          { intent: "CHAT", scheduledAt: this.simTime, forcedSpeakerId: viewer.id, slotHints: {}, source: "bootstrap" },
           { behavior: "auto" }
         );
       });
@@ -1008,12 +1085,18 @@
           formalLeaks: this.debug.formalLeaks
         },
         nextFutureEvent: this.futureEvent
-          ? { type: this.futureEvent.type, scheduledAt: this.futureEvent.scheduledAt, slots: { ...this.futureEvent.slots } }
+          ? {
+              type: this.futureEvent.type,
+              scheduledAt: this.futureEvent.scheduledAt,
+              omen: this.futureEvent.omen,
+              slots: { ...this.futureEvent.slots }
+            }
           : null,
         viewers: this.viewers.map(viewer => ({
           id: viewer.id,
           name: viewer.name,
           persona: viewer.personaKey,
+          label: PERSONAS[viewer.personaKey].label,
           active: viewer.active,
           anomalous: viewer.anomalous,
           anomalyPermission: viewer.anomalyPermission,
@@ -1028,4 +1111,5 @@
   window.HorrorChatEngine = HorrorChatEngine;
   window.HORROR_CHAT_TUNING = TUNING;
   window.HORROR_CHAT_PERSONAS = PERSONAS;
+  window.HORROR_CHAT_EVENTS = SYNTHETIC_EVENTS;
 })();

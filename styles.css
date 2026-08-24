@@ -46,11 +46,182 @@ button {
   width: min(100%, 430px);
   height: 100vh;
   height: 100svh;
-  display: grid;
-  grid-template-rows: 52px 42px minmax(0, 1fr) auto;
   overflow: hidden;
+  isolation: isolate;
   background: var(--background);
   box-shadow: 0 0 40px #000;
+}
+
+.game-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: 52px auto 42px minmax(0, 1fr) auto;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.title-screen {
+  position: absolute;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  padding: max(18px, env(safe-area-inset-top)) 22px max(22px, env(safe-area-inset-bottom));
+  background: #050707;
+}
+
+.title-screen[hidden] {
+  display: none;
+}
+
+.title-screen::before,
+.title-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.title-screen::before {
+  background: url("assets/gudok-bangsong-cover.png") center top / cover no-repeat;
+  animation: title-breathe 7s ease-in-out infinite alternate;
+}
+
+.title-screen::after {
+  background:
+    linear-gradient(180deg, #0002 0, transparent 35%, #05070799 61%, #050707 86%),
+    repeating-linear-gradient(0deg, #ffffff08 0 1px, transparent 1px 4px);
+}
+
+.title-brand,
+.title-content,
+.title-hint {
+  position: relative;
+  z-index: 1;
+}
+
+.title-brand {
+  position: absolute;
+  top: max(17px, env(safe-area-inset-top));
+  left: 18px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid #ffffff24;
+  border-radius: 20px;
+  padding: 6px 10px;
+  color: #d9eee8;
+  background: #0507079c;
+  backdrop-filter: blur(8px);
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.title-brand-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 9px var(--green);
+}
+
+.title-content {
+  border: 1px solid #8bd6c337;
+  border-radius: 15px;
+  padding: 18px 16px 15px;
+  background: linear-gradient(145deg, #101715ee, #090c0ce8);
+  box-shadow: 0 18px 45px #000c, inset 0 1px #ffffff0b;
+  backdrop-filter: blur(10px);
+  animation: title-content-in 520ms 120ms ease-out both;
+}
+
+.title-alert {
+  margin: 0 0 8px;
+  color: #ff6470;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .13em;
+}
+
+.title-alert span {
+  display: inline-block;
+  margin-right: 5px;
+  text-shadow: 0 0 9px #ff3344;
+  animation: live-pulse 1.15s steps(2) infinite;
+}
+
+.title-copy {
+  margin: 0 0 15px;
+  color: #e4e9e7;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.title-start-button {
+  width: 100%;
+  height: 49px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #57e3ba;
+  border-radius: 9px;
+  color: #06120f;
+  background: linear-gradient(180deg, #55ebbe, #00c991);
+  box-shadow: 0 8px 25px #00d99b2b, inset 0 1px #d9fff4;
+  font-size: 16px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.title-start-button:hover,
+.title-start-button:focus-visible {
+  outline: 2px solid #d5fff3;
+  outline-offset: 3px;
+  filter: brightness(1.08);
+}
+
+.title-start-button svg {
+  width: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.title-rules {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 13px;
+  color: #7f918c;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.title-rules i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #53635f;
+}
+
+.title-hint {
+  margin: 14px 0 0;
+  color: #66716e;
+  font-size: 10px;
+  text-align: center;
 }
 
 .browser-bar {
@@ -152,8 +323,197 @@ button {
   rotate: 180deg;
 }
 
-.chat-app:has(.browser-bar.collapsed) {
-  grid-template-rows: 12px 42px minmax(0, 1fr) auto;
+.game-screen:has(.browser-bar.collapsed) {
+  grid-template-rows: 12px auto 42px minmax(0, 1fr) auto;
+}
+
+.stream-stage {
+  position: relative;
+  z-index: 2;
+  height: clamp(155px, 23svh, 205px);
+  overflow: hidden;
+  border-block: 1px solid #28322f;
+  background:
+    radial-gradient(circle at 50% 70%, #78968b2e 0 12%, transparent 42%),
+    linear-gradient(135deg, #12191a, #07090b 55%, #111817);
+  box-shadow: inset 0 -22px 35px #0009;
+  transition: border-color 180ms, filter 180ms;
+}
+
+.stream-room,
+.stream-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.stream-room {
+  opacity: .68;
+  background:
+    linear-gradient(90deg, transparent 49.7%, #729b8d1c 50%, transparent 50.3%),
+    linear-gradient(#151d1d 1px, transparent 1px) 0 0 / 100% 34px,
+    linear-gradient(90deg, #151d1d 1px, transparent 1px) 0 0 / 43px 100%;
+}
+
+.room-monitor {
+  position: absolute;
+  top: 28%;
+  width: 31%;
+  height: 49%;
+  border: 4px solid #171b1d;
+  border-radius: 4px;
+  background:
+    repeating-linear-gradient(0deg, #79d8ba0a 0 2px, transparent 2px 5px),
+    radial-gradient(circle at 60% 42%, #87ffda26, transparent 25%),
+    #050808;
+  box-shadow: 0 5px 14px #000, inset 0 0 17px #6df1c21a;
+}
+
+.monitor-left {
+  left: -5%;
+  rotate: 3deg;
+}
+
+.monitor-right {
+  right: -5%;
+  rotate: -3deg;
+}
+
+.room-light {
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  width: 160px;
+  height: 100px;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: #b7ffe918;
+  filter: blur(18px);
+}
+
+.stream-character {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: -8%;
+  height: 105%;
+  translate: -50% 0;
+  filter: drop-shadow(0 7px 9px #000b);
+  user-select: none;
+}
+
+.stream-noise {
+  z-index: 2;
+  opacity: .07;
+  background:
+    repeating-linear-gradient(0deg, #fff 0 1px, transparent 1px 4px),
+    linear-gradient(90deg, transparent, #76ffd41b, transparent);
+  mix-blend-mode: screen;
+}
+
+.stream-topline,
+.stream-lower-third {
+  position: absolute;
+  z-index: 3;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stream-topline {
+  top: 8px;
+}
+
+.live-badge,
+.viewer-count,
+.signal-status {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #ffffff1f;
+  border-radius: 5px;
+  background: #090b0cc9;
+  backdrop-filter: blur(6px);
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.live-badge {
+  gap: 5px;
+  padding: 5px 7px;
+  color: #fff;
+  background: #db2638e8;
+}
+
+.live-badge i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+  animation: live-pulse 1.15s steps(2) infinite;
+}
+
+.viewer-count {
+  gap: 4px;
+  padding: 5px 7px;
+  color: #d7dddc;
+}
+
+.viewer-count svg {
+  width: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.stream-lower-third {
+  bottom: 7px;
+  align-items: flex-end;
+}
+
+.stream-lower-third > div {
+  display: grid;
+  gap: 1px;
+  padding: 5px 8px;
+  border-left: 2px solid var(--green);
+  background: linear-gradient(90deg, #050707dc, transparent);
+  text-shadow: 0 1px 3px #000;
+}
+
+.stream-lower-third strong {
+  font-size: 12px;
+}
+
+.stream-lower-third div span {
+  color: #b7bfbd;
+  font-size: 9px;
+}
+
+.signal-status {
+  padding: 4px 6px;
+  color: #7de5c5;
+  font-size: 8px;
+}
+
+.chat-app[data-director-state="TENSE"] .stream-stage,
+.chat-app[data-director-state="AFTERMATH"] .stream-stage {
+  border-color: #76543c;
+}
+
+.chat-app[data-director-state="BURST"] .stream-stage {
+  border-color: #a72835;
+  filter: saturate(.72) contrast(1.15);
+}
+
+.chat-app[data-director-state="BURST"] .stream-noise {
+  opacity: .28;
+  animation: signal-noise 160ms steps(2) infinite;
+}
+
+.chat-app[data-director-state="BURST"] .stream-character {
+  animation: signal-jump 220ms steps(2) infinite;
 }
 
 .game-hud {
@@ -894,6 +1254,32 @@ button {
   80% { translate: 3px 0; }
 }
 
+@keyframes title-breathe {
+  from { scale: 1.01; filter: brightness(.88); }
+  to { scale: 1.055; filter: brightness(1); }
+}
+
+@keyframes title-content-in {
+  from { opacity: 0; translate: 0 16px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@keyframes live-pulse {
+  50% { opacity: .38; }
+}
+
+@keyframes signal-noise {
+  0% { translate: -3px 0; }
+  50% { translate: 4px 1px; }
+  100% { translate: -1px -1px; }
+}
+
+@keyframes signal-jump {
+  0% { translate: calc(-50% - 2px) 0; }
+  50% { translate: calc(-50% + 3px) -1px; }
+  100% { translate: -50% 1px; }
+}
+
 @media (min-width: 431px) {
   .chat-app {
     border-inline: 1px solid #202226;
@@ -901,6 +1287,10 @@ button {
 }
 
 @media (max-height: 680px) {
+  .stream-stage {
+    height: 132px;
+  }
+
   .message {
     min-height: 29px;
     padding-block: 1px;
@@ -917,6 +1307,23 @@ button {
 
   .bottom-nav {
     min-height: 42px;
+  }
+
+  .title-screen {
+    padding-inline: 16px;
+  }
+
+  .title-copy {
+    margin-bottom: 11px;
+    font-size: 12px;
+  }
+
+  .title-content {
+    padding: 14px;
+  }
+
+  .title-hint {
+    margin-top: 9px;
   }
 }
 

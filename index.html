@@ -10,6 +10,31 @@
 </head>
 <body>
   <main class="chat-app" aria-label="라이브 채팅">
+    <section class="title-screen" id="title-screen" aria-labelledby="game-title">
+      <div class="title-brand" aria-hidden="true">
+        <span class="title-brand-dot"></span>
+        SONG STUDIO · MIDNIGHT ROOM
+      </div>
+      <div class="title-content">
+        <p class="title-alert"><span aria-hidden="true">●</span> UNKNOWN VIEWERS DETECTED</p>
+        <h1 class="sr-only" id="game-title">구독 방송</h1>
+        <p class="title-copy">평범한 심야 방송에 정체불명의 시청자들이 접속했습니다.</p>
+        <button class="title-start-button" id="game-start" type="button">
+          <span>방송 입장</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+        </button>
+        <div class="title-rules" aria-label="게임 목표">
+          <span>기록 확인</span>
+          <i aria-hidden="true"></i>
+          <span>이상 징후 탐색</span>
+          <i aria-hidden="true"></i>
+          <span>강제 퇴장</span>
+        </div>
+      </div>
+      <p class="title-hint">이어폰을 착용하면 더 몰입해서 즐길 수 있습니다.</p>
+    </section>
+
+    <div class="game-screen" id="game-screen" aria-hidden="true" inert>
     <header class="browser-bar" aria-label="현재 방송 주소">
       <svg class="pin-icon" aria-hidden="true" viewBox="0 0 24 24">
         <path d="m15.8 3.2 5 5-2 2-1-.35-3.45 3.45.35 2-1.4 1.4-2.65-2.65-5.3 5.3-1.4-1.4 5.3-5.3L6.6 10l1.4-1.4 2 .35 3.45-3.45-.35-1 2.7-1.3Z"/>
@@ -22,6 +47,30 @@
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5.5 7.5 4.5 4.5 4.5-4.5"/></svg>
       </button>
     </header>
+
+    <section class="stream-stage" aria-label="버찌의 실시간 방송 화면">
+      <div class="stream-noise" aria-hidden="true"></div>
+      <div class="stream-room" aria-hidden="true">
+        <span class="room-monitor monitor-left"></span>
+        <span class="room-monitor monitor-right"></span>
+        <span class="room-light"></span>
+      </div>
+      <img class="stream-character" src="assets/beorjji-idle-preview.gif" alt="방송을 진행 중인 버찌">
+      <div class="stream-topline">
+        <span class="live-badge"><i aria-hidden="true"></i> LIVE</span>
+        <span class="viewer-count" aria-label="현재 시청자 수">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 10s2.7-4.5 7.5-4.5 7.5 4.5 7.5 4.5-2.7 4.5-7.5 4.5S2.5 10 2.5 10Z"/><circle cx="10" cy="10" r="2.1"/></svg>
+          <span id="stream-viewer-count">1,284</span>
+        </span>
+      </div>
+      <div class="stream-lower-third">
+        <div>
+          <strong>버찌</strong>
+          <span>오늘도 엔딩까지 달립니다 🌙</span>
+        </div>
+        <span class="signal-status" id="stream-signal">연결 안정</span>
+      </div>
+    </section>
 
     <section class="game-hud" aria-label="게임 상태">
       <div class="hud-stat trust-stat">
@@ -116,11 +165,12 @@
         <h2 id="result-title">방송 종료</h2>
         <p id="result-copy"></p>
         <strong class="final-score" id="final-score">0000점</strong>
-        <button class="restart-button" id="game-restart" type="button">다시 시작</button>
+        <button class="restart-button" id="game-restart" type="button">타이틀로</button>
       </section>
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
   </main>
 
   <script src="chat-engine.js"></script>

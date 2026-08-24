@@ -29,6 +29,9 @@
   const MAX_TRUST = 3;
 
   const chatApp = document.querySelector(".chat-app");
+  const titleScreen = document.querySelector("#title-screen");
+  const gameScreen = document.querySelector("#game-screen");
+  const gameStart = document.querySelector("#game-start");
   const messageList = document.querySelector("#message-list");
   const messageForm = document.querySelector("#message-form");
   const messageInput = document.querySelector("#message-input");
@@ -55,6 +58,16 @@
   const finalScore = document.querySelector("#final-score");
   const gameRestart = document.querySelector("#game-restart");
   const toast = document.querySelector("#toast");
+  const streamViewerCount = document.querySelector("#stream-viewer-count");
+  const streamSignal = document.querySelector("#stream-signal");
+
+  const STREAM_STATE_LABELS = {
+    AMBIENT: "연결 안정",
+    TENSE: "신호 흔들림",
+    BURST: "간섭 감지",
+    AFTERMATH: "신호 복구 중",
+    LULL: "미약한 신호"
+  };
 
   const seedParameter = new URLSearchParams(window.location.search).get("seed");
   const fixedSeed = seedParameter !== null && /^\d+$/.test(seedParameter) ? Number(seedParameter) >>> 0 : null;
@@ -68,6 +81,7 @@
   let gameOver = false;
   let chatEngine = null;
   let toastTimer;
+  let endTimer;
   let currentSeed = 0;
 
   function createRoundRandom(seed) {
@@ -218,6 +232,35 @@
     toastTimer = window.setTimeout(() => toast.classList.remove("show"), 2300);
   }
 
+  function updateStreamState(state) {
+    streamSignal.textContent = STREAM_STATE_LABELS[state] || STREAM_STATE_LABELS.AMBIENT;
+  }
+
+  function showTitle(shouldFocus = true) {
+    window.clearTimeout(endTimer);
+    endTimer = undefined;
+    chatEngine?.stop();
+    chatEngine = null;
+    gameOver = true;
+    closeEmojiPanel();
+    closeViewerPanel();
+    gameOverlay.classList.remove("open");
+    gameOverlay.setAttribute("aria-hidden", "true");
+    gameScreen.inert = true;
+    gameScreen.setAttribute("aria-hidden", "true");
+    titleScreen.hidden = false;
+    titleScreen.setAttribute("aria-hidden", "false");
+    if (shouldFocus) requestAnimationFrame(() => gameStart.focus());
+  }
+
+  function enterGame() {
+    titleScreen.hidden = true;
+    titleScreen.setAttribute("aria-hidden", "true");
+    gameScreen.inert = false;
+    gameScreen.setAttribute("aria-hidden", "false");
+    startGame();
+  }
+
   function openViewerPanel(viewerId) {
     if (gameOver) return;
     const viewer = viewers.find(candidate => candidate.id === viewerId && candidate.active);
@@ -260,6 +303,8 @@
   }
 
   function endGame(won) {
+    window.clearTimeout(endTimer);
+    endTimer = undefined;
     gameOver = true;
     chatEngine?.stop();
     closeViewerPanel();
@@ -297,8 +342,12 @@
     }
 
     updateHud();
-    if (remainingAnomalies === 0) window.setTimeout(() => endGame(true), 500);
-    else if (trust === 0) window.setTimeout(() => endGame(false), 500);
+    if (remainingAnomalies === 0 || trust === 0) {
+      const won = remainingAnomalies === 0;
+      gameOver = true;
+      chatEngine?.setPaused(true);
+      endTimer = window.setTimeout(() => endGame(won), 500);
+    }
   }
 
   function updateComposerState() {
@@ -338,6 +387,8 @@
   }
 
   function startGame() {
+    window.clearTimeout(endTimer);
+    endTimer = undefined;
     chatEngine?.stop();
     currentSeed = createSeed();
     viewers = createViewers(currentSeed);
@@ -347,10 +398,16 @@
     selectedViewerId = null;
     gameOver = false;
     messageList.replaceChildren();
+    rewardButton.classList.remove("claimed");
+    rewardButton.disabled = false;
+    rewardLabel.textContent = "100 받기";
     gameOverlay.classList.remove("open");
     gameOverlay.setAttribute("aria-hidden", "true");
     closeViewerPanel();
     updateHud();
+    chatApp.dataset.directorState = "AMBIENT";
+    updateStreamState("AMBIENT");
+    streamViewerCount.textContent = (1200 + currentSeed % 401).toLocaleString("ko-KR");
 
     const deterministicEpoch = fixedSeed === null
       ? Date.now()
@@ -365,6 +422,7 @@
       onStateChange({ state, tension }) {
         chatApp.dataset.directorState = state;
         chatApp.style.setProperty("--chat-tension", tension.toFixed(3));
+        updateStreamState(state);
       }
     });
     chatEngine.start();
@@ -393,7 +451,8 @@
   newMessageButton.addEventListener("click", () => scrollToLatest("smooth"));
   panelClose.addEventListener("click", closeViewerPanel);
   kickButton.addEventListener("click", kickSelectedViewer);
-  gameRestart.addEventListener("click", startGame);
+  gameStart.addEventListener("click", enterGame);
+  gameRestart.addEventListener("click", () => showTitle());
 
   viewerBackdrop.addEventListener("click", event => {
     if (event.target === viewerBackdrop) closeViewerPanel();
@@ -450,5 +509,5 @@
 
   document.addEventListener("visibilitychange", () => chatEngine?.setPaused(document.hidden));
 
-  startGame();
+  showTitle(false);
 })();
