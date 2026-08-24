@@ -92,7 +92,7 @@
     capture: target ? { ...target } : null,
     ...extras
   });
-}
+  }
 
   function rejectPendingAiRequests(error) {
     pendingAiRequests.forEach(({ reject }) => reject(error));
@@ -611,7 +611,12 @@
       hintButton.disabled = false;
       renderBoard();
       updateStatus();
-    };
+      }catch (error) {
+      if (error?.name !== "AbortError" && session === gameSession) {
+        game.thinking = false;
+        updateStatus();
+      }
+    }
   }
 
   function resetGame() {
