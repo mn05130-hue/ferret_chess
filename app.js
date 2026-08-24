@@ -1,465 +1,278 @@
 (() => {
   "use strict";
 
-  const FILES = "abcdefgh";
-  const BACK_RANK = ["r", "n", "b", "q", "k", "b", "n", "r"];
-  const PIECE_NAME = { p: "폰", n: "나이트", b: "비숍", r: "룩", q: "퀸", k: "킹" };
-  const PIECE_SYMBOL = {
-    w: { p: "♙", n: "♘", b: "♗", r: "♖", q: "♕", k: "♔" },
-    b: { p: "♟", n: "♞", b: "♝", r: "♜", q: "♛", k: "♚" }
-  };
-  const VALUE = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+  const initialMessages = [
+    { badge: "🤖", badgeClass: "robot", name: "오수재김포", color: "#63bf92", text: "와 이거" },
+    { badge: "🪙", badgeClass: "coin", name: "마춤법천지", color: "#52a4f4", text: "아흐" },
+    { badge: "🪙", badgeClass: "coin", name: "마코냥", color: "#56b6de", text: "게크네" },
+    { badge: "🪙", badgeClass: "coin", name: "마춤법천지", color: "#52a4f4", text: "저게 야스지" },
+    { badge: "", badgeClass: "empty", name: "사다시푸딩", color: "#55a7d9", text: "아흐" },
+    { badge: "🪙", badgeClass: "coin", name: "너나봐", color: "#ef4f86", text: "저건 50만원짜리다" },
+    { badge: "🤖", badgeClass: "robot", name: "버츄얼트래블러", color: "#d56ab5", text: "캬" },
+    { badge: "🤖", badgeClass: "robot", name: "버츄얼트래블러", color: "#d56ab5", text: "와 내장 개맛있겠다" },
+    { badge: "💜", badgeClass: "heart", name: "여름의 3악장", color: "#47c9e8", text: "게글류 진짜" },
+    { badge: "👑", badgeClass: "crown", name: "전공정머신", color: "#d983c7", text: "바로 버터발라서 구워버리고싶네" },
+    { badge: "🍛", badgeClass: "dish", name: "오이향", color: "#55c3d5", text: "심해바닥에 붙어다니는거임?" },
+    { badge: "🪙", badgeClass: "coin", name: "마코냥", color: "#56b6de", text: "거미게도 엄청 크던데" },
+    { badge: "🎉", badgeClass: "party", name: "산책나간 히네리아", color: "#3f9bdc", text: "ㅋㅋㅋㅋㅋㅋㅋㅋ" },
+    { badge: "🪙", badgeClass: "coin", name: "문팟팟", color: "#69d09c", text: "집게사냥 네이놈ㅋㅋㅋ" },
+    { badge: "💗", badgeClass: "heart", name: "퇴근중인 모니터 7356190", color: "#f24e74", text: "게마니ㅋㅋㅋ" },
+    { badge: "🪙", badgeClass: "coin", name: "GroupSound", color: "#a374e8", text: "내 고사리 스팟이라!!" },
+    { badge: "🪙", badgeClass: "coin", name: "마코냥", color: "#56b6de", text: "ㅋㅋㅋㅋㅋㅋㅋㅋ" }
+  ];
 
-  const theatre = document.querySelector("#theatre");
-  const titleScreen = document.querySelector("#title-screen");
-  const gameScreen = document.querySelector("#game-screen");
-  const boardElement = document.querySelector("#chessboard");
-  const statusElement = document.querySelector("#game-status");
-  const modal = document.querySelector("#modal");
-  const modalTitle = document.querySelector("#modal-title");
-  const modalCopy = document.querySelector("#modal-copy");
-  const closeModalButton = document.querySelector("#close-modal");
-  const hintButton = document.querySelector("#hint");
-  const restartButton = document.querySelector("#restart");
+  const audience = [
+    { badge: "🪙", badgeClass: "coin", name: "마춤법천지", color: "#52a4f4", lines: ["아흐", "와 진짜 크다", "저게 움직이네", "ㅋㅋㅋㅋㅋㅋ"] },
+    { badge: "🪙", badgeClass: "coin", name: "마코냥", color: "#56b6de", lines: ["게크네", "거미게도 엄청 크던데", "오 맛있겠다", "ㅋㅋㅋㅋㅋ"] },
+    { badge: "🤖", badgeClass: "robot", name: "버츄얼트래블러", color: "#d56ab5", lines: ["캬", "와 내장 개맛있겠다", "버터 준비해", "비주얼 미쳤다"] },
+    { badge: "💜", badgeClass: "heart", name: "여름의 3악장", color: "#47c9e8", lines: ["게글류 진짜", "저게 바다에 산다고?", "신기하다", "헉"] },
+    { badge: "👑", badgeClass: "crown", name: "전공정머신", color: "#d983c7", lines: ["바로 구워버리고싶네", "버터 발라주세요", "오늘 방송 재밌다", "크기가 장난 아닌데"] },
+    { badge: "🍛", badgeClass: "dish", name: "오이향", color: "#55c3d5", lines: ["심해바닥에 붙어다니는거임?", "저건 처음 본다", "다리가 엄청 기네", "오오오"] },
+    { badge: "🎉", badgeClass: "party", name: "산책나간 히네리아", color: "#3f9bdc", lines: ["ㅋㅋㅋㅋㅋㅋㅋㅋ", "표정 봐ㅋㅋㅋ", "너무 웃겨", "이게 뭐야ㅋㅋ"] },
+    { badge: "🪙", badgeClass: "coin", name: "문팟팟", color: "#69d09c", lines: ["집게사냥 네이놈ㅋㅋㅋ", "오늘도 잘 보고 있어요", "맛은 궁금하네", "와아"] },
+    { badge: "💗", badgeClass: "heart", name: "퇴근중인 모니터 7356190", color: "#f24e74", lines: ["게마니ㅋㅋㅋ", "퇴근길에 빵터졌네", "이건 못 참지", "ㅋㅋㅋㅋ"] },
+    { badge: "🪙", badgeClass: "coin", name: "GroupSound", color: "#a374e8", lines: ["내 고사리 스팟이라!!", "채팅 왜 이렇게 웃겨", "오 이건 귀하다", "집게 진짜 세 보인다"] },
+    { badge: "🪙", badgeClass: "coin", name: "너나봐", color: "#ef4f86", lines: ["저건 50만원짜리다", "오늘 콘텐츠 좋다", "와 대박", "진짜 신기하네"] },
+    { badge: "", badgeClass: "empty", name: "사다시푸딩", color: "#55a7d9", lines: ["아흐", "저게 가능해?", "처음 봤어", "방송 켜길 잘했다"] }
+  ];
 
-  let game = createGame();
-  let selected = null;
-  let selectedMoves = [];
-  let hintSquares = [];
-  let aiTimer = null;
+  const NICKNAME_ADJECTIVES = [
+    "금손", "즐거운", "빛나는", "신나는", "용감한", "엉뚱한",
+    "행복한", "졸린", "재빠른", "유쾌한", "반짝이는", "집중한"
+  ];
+  const NICKNAME_NOUNS = [
+    "뉴비", "유저", "스트리머", "게이머", "시청자", "랭커",
+    "챌린저", "방송인", "플레이어", "구독자", "매니저", "클립러"
+  ];
+  const usedNicknames = new Set();
+  const nicknameByIdentity = new Map();
 
-  function createBoard() {
-    const board = {};
-    for (let index = 0; index < 8; index += 1) {
-      const file = FILES[index];
-      board[`${file}1`] = { color: "w", type: BACK_RANK[index] };
-      board[`${file}2`] = { color: "w", type: "p" };
-      board[`${file}7`] = { color: "b", type: "p" };
-      board[`${file}8`] = { color: "b", type: BACK_RANK[index] };
-    }
-    return board;
+  function createNickname(identity) {
+    if (nicknameByIdentity.has(identity)) return nicknameByIdentity.get(identity);
+
+    let nickname;
+    do {
+      const adjective = NICKNAME_ADJECTIVES[Math.floor(Math.random() * NICKNAME_ADJECTIVES.length)];
+      const noun = NICKNAME_NOUNS[Math.floor(Math.random() * NICKNAME_NOUNS.length)];
+      const number = Math.floor(1000 + Math.random() * 9000);
+      nickname = `${adjective} ${noun} ${number}`;
+    } while (usedNicknames.has(nickname));
+
+    usedNicknames.add(nickname);
+    nicknameByIdentity.set(identity, nickname);
+    return nickname;
   }
 
-  function createGame() {
-    return {
-      board: createBoard(),
-      turn: "w",
-      castling: { wK: true, wQ: true, bK: true, bQ: true },
-      enPassant: null,
-      lastMove: null,
-      over: false,
-      thinking: false,
-      moveNumber: 1
-    };
+  initialMessages.forEach(message => { message.name = createNickname(message.name); });
+  audience.forEach(viewer => { viewer.name = createNickname(viewer.name); });
+  const myNickname = createNickname("current-user");
+
+  const MAX_MESSAGES = 100;
+  const AUTO_CHAT_MIN_DELAY = 1200;
+  const AUTO_CHAT_MAX_DELAY = 3200;
+
+  const messageList = document.querySelector("#message-list");
+  const messageForm = document.querySelector("#message-form");
+  const messageInput = document.querySelector("#message-input");
+  const emojiButton = document.querySelector("#emoji-button");
+  const emojiPanel = document.querySelector("#emoji-panel");
+  const rewardButton = document.querySelector("#reward-button");
+  const rewardLabel = document.querySelector("#reward-label");
+  const newMessageButton = document.querySelector("#new-message-button");
+  const browserBar = document.querySelector(".browser-bar");
+  const collapseButton = document.querySelector(".collapse-button");
+  const toast = document.querySelector("#toast");
+
+  let toastTimer;
+  let autoChatTimer;
+  let previousAudienceIndex = -1;
+  let previousLine = "";
+
+  function createMessage(message, ownMessage = false) {
+    const item = document.createElement("li");
+    item.className = "message";
+
+    const badge = document.createElement("span");
+    badge.className = `badge ${message.badgeClass || ""}`;
+    badge.setAttribute("aria-hidden", "true");
+    badge.textContent = message.badge || "";
+
+    const copy = document.createElement("span");
+    copy.className = "message-copy";
+
+    const username = document.createElement("span");
+    username.className = "username";
+    username.style.color = message.color;
+    username.textContent = message.name;
+
+    const text = document.createElement("span");
+    text.className = "message-text";
+    text.textContent = message.text;
+
+    copy.append(username, text);
+    item.append(badge, copy);
+
+    if (ownMessage) item.dataset.ownMessage = "true";
+    return item;
   }
 
-  function cloneGame(source) {
-    const board = {};
-    Object.entries(source.board).forEach(([square, piece]) => {
-      board[square] = { ...piece };
-    });
-    return {
-      ...source,
-      board,
-      castling: { ...source.castling },
-      lastMove: source.lastMove ? { ...source.lastMove } : null
-    };
+  function scrollToLatest(behavior = "auto") {
+    messageList.scrollTo({ top: messageList.scrollHeight, behavior });
+    newMessageButton.hidden = true;
   }
 
-  function coords(square) {
-    return [FILES.indexOf(square[0]), Number(square[1])];
+  function isNearLatest() {
+    return messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight < 54;
   }
 
-  function squareAt(fileIndex, rank) {
-    if (fileIndex < 0 || fileIndex > 7 || rank < 1 || rank > 8) return null;
-    return `${FILES[fileIndex]}${rank}`;
-  }
+  function appendMessage(message, ownMessage = false) {
+    const wasNearLatest = isNearLatest();
+    messageList.append(createMessage(message, ownMessage));
 
-  function pushMove(moves, state, from, to, extras = {}) {
-    const target = state.board[to];
-    moves.push({ from, to, capture: target ? { ...target } : null, ...extras });
-  }
-
-  function generatePseudoMoves(state, color) {
-    const moves = [];
-    Object.entries(state.board).forEach(([from, piece]) => {
-      if (piece.color !== color) return;
-      const [file, rank] = coords(from);
-
-      if (piece.type === "p") {
-        const direction = color === "w" ? 1 : -1;
-        const startRank = color === "w" ? 2 : 7;
-        const promotionRank = color === "w" ? 8 : 1;
-        const one = squareAt(file, rank + direction);
-        const two = squareAt(file, rank + direction * 2);
-        if (one && !state.board[one]) {
-          pushMove(moves, state, from, one, rank + direction === promotionRank ? { promotion: "q" } : {});
-          if (rank === startRank && two && !state.board[two]) {
-            pushMove(moves, state, from, two, { doublePawn: true });
-          }
-        }
-        [-1, 1].forEach(fileStep => {
-          const to = squareAt(file + fileStep, rank + direction);
-          if (!to) return;
-          const target = state.board[to];
-          if (target && target.color !== color) {
-            pushMove(moves, state, from, to, rank + direction === promotionRank ? { promotion: "q" } : {});
-          } else if (to === state.enPassant) {
-            pushMove(moves, state, from, to, { enPassant: true, capture: { color: color === "w" ? "b" : "w", type: "p" } });
-          }
-        });
-        return;
-      }
-
-      if (piece.type === "n") {
-        [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]].forEach(([df, dr]) => {
-          const to = squareAt(file + df, rank + dr);
-          if (to && (!state.board[to] || state.board[to].color !== color)) pushMove(moves, state, from, to);
-        });
-        return;
-      }
-
-      if (["b", "r", "q"].includes(piece.type)) {
-        const directions = [];
-        if (["b", "q"].includes(piece.type)) directions.push([1, 1], [1, -1], [-1, 1], [-1, -1]);
-        if (["r", "q"].includes(piece.type)) directions.push([1, 0], [-1, 0], [0, 1], [0, -1]);
-        directions.forEach(([df, dr]) => {
-          let nextFile = file + df;
-          let nextRank = rank + dr;
-          while (true) {
-            const to = squareAt(nextFile, nextRank);
-            if (!to) break;
-            const target = state.board[to];
-            if (!target) pushMove(moves, state, from, to);
-            else {
-              if (target.color !== color) pushMove(moves, state, from, to);
-              break;
-            }
-            nextFile += df;
-            nextRank += dr;
-          }
-        });
-        return;
-      }
-
-      if (piece.type === "k") {
-        for (let df = -1; df <= 1; df += 1) {
-          for (let dr = -1; dr <= 1; dr += 1) {
-            if (!df && !dr) continue;
-            const to = squareAt(file + df, rank + dr);
-            if (to && (!state.board[to] || state.board[to].color !== color)) pushMove(moves, state, from, to);
-          }
-        }
-
-        const homeRank = color === "w" ? 1 : 8;
-        const enemy = color === "w" ? "b" : "w";
-        if (from === `e${homeRank}` && !isSquareAttacked(state, from, enemy)) {
-          if (state.castling[`${color}K`] && state.board[`h${homeRank}`]?.type === "r" &&
-              !state.board[`f${homeRank}`] && !state.board[`g${homeRank}`] &&
-              !isSquareAttacked(state, `f${homeRank}`, enemy) && !isSquareAttacked(state, `g${homeRank}`, enemy)) {
-            pushMove(moves, state, from, `g${homeRank}`, { castle: "K" });
-          }
-          if (state.castling[`${color}Q`] && state.board[`a${homeRank}`]?.type === "r" &&
-              !state.board[`b${homeRank}`] && !state.board[`c${homeRank}`] && !state.board[`d${homeRank}`] &&
-              !isSquareAttacked(state, `d${homeRank}`, enemy) && !isSquareAttacked(state, `c${homeRank}`, enemy)) {
-            pushMove(moves, state, from, `c${homeRank}`, { castle: "Q" });
-          }
-        }
-      }
-    });
-    return moves;
-  }
-
-  function isSquareAttacked(state, target, byColor) {
-    const [file, rank] = coords(target);
-    const pawnRank = rank + (byColor === "w" ? -1 : 1);
-    for (const df of [-1, 1]) {
-      const square = squareAt(file + df, pawnRank);
-      if (square && state.board[square]?.color === byColor && state.board[square]?.type === "p") return true;
+    while (messageList.childElementCount > MAX_MESSAGES) {
+      const firstMessage = messageList.firstElementChild;
+      const removedHeight = firstMessage.getBoundingClientRect().height;
+      firstMessage.remove();
+      if (!wasNearLatest) messageList.scrollTop = Math.max(0, messageList.scrollTop - removedHeight);
     }
 
-    for (const [df, dr] of [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]]) {
-      const square = squareAt(file + df, rank + dr);
-      if (square && state.board[square]?.color === byColor && state.board[square]?.type === "n") return true;
-    }
-
-    for (const [df, dr, validTypes] of [
-      [1, 0, ["r", "q"]], [-1, 0, ["r", "q"]], [0, 1, ["r", "q"]], [0, -1, ["r", "q"]],
-      [1, 1, ["b", "q"]], [1, -1, ["b", "q"]], [-1, 1, ["b", "q"]], [-1, -1, ["b", "q"]]
-    ]) {
-      let nextFile = file + df;
-      let nextRank = rank + dr;
-      while (true) {
-        const square = squareAt(nextFile, nextRank);
-        if (!square) break;
-        const piece = state.board[square];
-        if (piece) {
-          if (piece.color === byColor && validTypes.includes(piece.type)) return true;
-          break;
-        }
-        nextFile += df;
-        nextRank += dr;
-      }
-    }
-
-    for (let df = -1; df <= 1; df += 1) {
-      for (let dr = -1; dr <= 1; dr += 1) {
-        if (!df && !dr) continue;
-        const square = squareAt(file + df, rank + dr);
-        if (square && state.board[square]?.color === byColor && state.board[square]?.type === "k") return true;
-      }
-    }
-    return false;
+    if (wasNearLatest) scrollToLatest("smooth");
+    else newMessageButton.hidden = false;
   }
 
-  function isInCheck(state, color) {
-    const kingSquare = Object.keys(state.board).find(square => state.board[square].color === color && state.board[square].type === "k");
-    if (!kingSquare) return true;
-    return isSquareAttacked(state, kingSquare, color === "w" ? "b" : "w");
+  function randomIndex(length, excludedIndex = -1) {
+    if (length < 2) return 0;
+    let index;
+    do index = Math.floor(Math.random() * length);
+    while (index === excludedIndex);
+    return index;
   }
 
-  function applyMove(state, move) {
-    const piece = state.board[move.from];
-    const captured = state.board[move.to];
-    if (!piece) return;
+  function postAudienceMessage() {
+    if (document.hidden) return;
 
-    delete state.board[move.from];
-    if (move.enPassant) {
-      const [targetFile, targetRank] = coords(move.to);
-      delete state.board[squareAt(targetFile, targetRank + (piece.color === "w" ? -1 : 1))];
-    }
-    state.board[move.to] = { color: piece.color, type: move.promotion || piece.type };
+    const audienceIndex = randomIndex(audience.length, previousAudienceIndex);
+    const viewer = audience[audienceIndex];
+    const availableLines = viewer.lines.filter(line => line !== previousLine);
+    const text = availableLines[Math.floor(Math.random() * availableLines.length)];
 
-    if (move.castle) {
-      const rank = piece.color === "w" ? 1 : 8;
-      const rookFrom = move.castle === "K" ? `h${rank}` : `a${rank}`;
-      const rookTo = move.castle === "K" ? `f${rank}` : `d${rank}`;
-      state.board[rookTo] = state.board[rookFrom];
-      delete state.board[rookFrom];
-    }
-
-    if (piece.type === "k") {
-      state.castling[`${piece.color}K`] = false;
-      state.castling[`${piece.color}Q`] = false;
-    }
-    if (piece.type === "r") disableRookCastling(state, piece.color, move.from);
-    if (captured?.type === "r") disableRookCastling(state, captured.color, move.to);
-
-    state.enPassant = null;
-    if (piece.type === "p" && move.doublePawn) {
-      const [file, rank] = coords(move.from);
-      state.enPassant = squareAt(file, rank + (piece.color === "w" ? 1 : -1));
-    }
-
-    state.lastMove = { from: move.from, to: move.to };
-    if (piece.color === "b") state.moveNumber += 1;
-    state.turn = piece.color === "w" ? "b" : "w";
+    previousAudienceIndex = audienceIndex;
+    previousLine = text;
+    appendMessage({ ...viewer, text });
+    scheduleAudienceMessage();
   }
 
-  function disableRookCastling(state, color, square) {
-    const rank = color === "w" ? 1 : 8;
-    if (square === `a${rank}`) state.castling[`${color}Q`] = false;
-    if (square === `h${rank}`) state.castling[`${color}K`] = false;
+  function scheduleAudienceMessage(delay) {
+    window.clearTimeout(autoChatTimer);
+    if (document.hidden) return;
+    const nextDelay = delay ?? AUTO_CHAT_MIN_DELAY + Math.random() * (AUTO_CHAT_MAX_DELAY - AUTO_CHAT_MIN_DELAY);
+    autoChatTimer = window.setTimeout(postAudienceMessage, nextDelay);
   }
 
-  function legalMovesFor(state, color) {
-    return generatePseudoMoves(state, color).filter(move => {
-      const simulation = cloneGame(state);
-      applyMove(simulation, move);
-      return !isInCheck(simulation, color);
-    });
+  function renderMessages() {
+    const fragment = document.createDocumentFragment();
+    initialMessages.forEach(message => fragment.append(createMessage(message)));
+    messageList.replaceChildren(fragment);
+    requestAnimationFrame(() => scrollToLatest());
   }
 
-  function legalMovesFrom(square) {
-    return legalMovesFor(game, game.turn).filter(move => move.from === square);
+  function updateComposerState() {
+    messageForm.classList.toggle("has-text", messageInput.value.trim().length > 0);
   }
 
-  function moveScore(state, move, color) {
-    let score = move.capture ? VALUE[move.capture.type] * 12 : 0;
-    if (move.promotion) score += VALUE.q * 8;
-    if (move.castle) score += 180;
-    const simulation = cloneGame(state);
-    applyMove(simulation, move);
-    const enemy = color === "w" ? "b" : "w";
-    if (isInCheck(simulation, enemy)) score += 75;
-    const [, targetRank] = coords(move.to);
-    score += color === "w" ? targetRank * 3 : (9 - targetRank) * 3;
-    score += Math.random() * 45;
-    return score;
+  function insertAtCursor(value) {
+    const start = messageInput.selectionStart ?? messageInput.value.length;
+    const end = messageInput.selectionEnd ?? start;
+    messageInput.setRangeText(value, start, end, "end");
+    messageInput.focus();
+    updateComposerState();
   }
 
-  function chooseMove(color) {
-    const moves = legalMovesFor(game, color);
-    if (!moves.length) return null;
-    return moves
-      .map(move => ({ move, score: moveScore(game, move, color) }))
-      .sort((a, b) => b.score - a.score)[0].move;
+  function closeEmojiPanel() {
+    emojiPanel.hidden = true;
+    emojiButton.setAttribute("aria-expanded", "false");
   }
 
-  function renderBoard() {
-    boardElement.replaceChildren();
-    for (let displayRow = 0; displayRow < 8; displayRow += 1) {
-      for (let displayColumn = 0; displayColumn < 8; displayColumn += 1) {
-        const square = `${FILES[displayRow]}${displayColumn + 1}`;
-        const piece = game.board[square];
-        const cell = document.createElement("button");
-        cell.type = "button";
-        cell.className = `square ${(displayRow + displayColumn) % 2 ? "dark" : "light"}`;
-        cell.dataset.square = square;
-        cell.setAttribute("role", "gridcell");
-        cell.setAttribute("aria-label", square);
-
-        if (game.lastMove && (game.lastMove.from === square || game.lastMove.to === square)) cell.classList.add("last");
-        if (selected === square) cell.classList.add("selected");
-        const legal = selectedMoves.find(move => move.to === square);
-        if (legal) cell.classList.add(legal.capture ? "capture" : "legal");
-        if (hintSquares.includes(square)) cell.classList.add("hint");
-
-        if (piece) {
-          const token = document.createElement("span");
-          token.className = `piece ${piece.color === "w" ? "white" : "black"} ${piece.type === "p" ? "pawn" : "major"}`;
-          token.textContent = PIECE_SYMBOL[piece.color][piece.type];
-          token.setAttribute("aria-hidden", "true");
-          cell.append(token);
-          cell.setAttribute("aria-label", `${piece.color === "w" ? "백" : "흑"} ${PIECE_NAME[piece.type]} ${square}`);
-        }
-
-        cell.addEventListener("click", () => handleSquare(square));
-        boardElement.append(cell);
-      }
-    }
+  function showToast(message) {
+    window.clearTimeout(toastTimer);
+    toast.textContent = message;
+    toast.classList.add("show");
+    toastTimer = window.setTimeout(() => toast.classList.remove("show"), 1900);
   }
 
-  function handleSquare(square) {
-    if (game.over || game.thinking || game.turn !== "w") return;
-    const piece = game.board[square];
-    const chosenMove = selectedMoves.find(move => move.to === square);
-    hintSquares = [];
+  messageForm.addEventListener("submit", event => {
+    event.preventDefault();
+    const text = messageInput.value.trim();
+    if (!text) return;
 
-    if (selected && chosenMove) {
-      applyMove(game, chosenMove);
-      selected = null;
-      selectedMoves = [];
-      renderBoard();
-      if (updateStatus()) return;
-      queueAiMove();
-      return;
-    }
+    appendMessage({
+      badge: "🐹",
+      badgeClass: "robot",
+      name: myNickname,
+      color: "#66d5b2",
+      text
+    }, true);
 
-    if (piece?.color === "w") {
-      selected = square;
-      selectedMoves = legalMovesFrom(square);
-    } else {
-      selected = null;
-      selectedMoves = [];
-    }
-    renderBoard();
-  }
-
-  function updateStatus() {
-    const moves = legalMovesFor(game, game.turn);
-    if (!moves.length) {
-      game.over = true;
-      const checked = isInCheck(game, game.turn);
-      if (checked) statusElement.textContent = game.turn === "w" ? "체크메이트 · 버찌 승리" : "체크메이트 · 쩨비 승리!";
-      else statusElement.textContent = "스테일메이트 · 무승부";
-      hintButton.disabled = true;
-      return true;
-    }
-    if (game.thinking) statusElement.textContent = "버찌가 생각 중…";
-    else if (game.turn === "w") statusElement.textContent = isInCheck(game, "w") ? "쩨비 체크!" : "쩨비의 차례";
-    else statusElement.textContent = isInCheck(game, "b") ? "버찌 체크!" : "버찌의 차례";
-    return false;
-  }
-
-  function queueAiMove() {
-    game.thinking = true;
-    hintButton.disabled = true;
-    updateStatus();
-    window.clearTimeout(aiTimer);
-    aiTimer = window.setTimeout(() => {
-      const move = chooseMove("b");
-      if (move) applyMove(game, move);
-      game.thinking = false;
-      hintButton.disabled = false;
-      renderBoard();
-      updateStatus();
-    }, 650);
-  }
-
-  function resetGame() {
-    window.clearTimeout(aiTimer);
-    game = createGame();
-    selected = null;
-    selectedMoves = [];
-    hintSquares = [];
-    hintButton.disabled = false;
-    renderBoard();
-    updateStatus();
-  }
-
-  function switchScreen(showGame) {
-    theatre.classList.add("curtain-call");
-    window.setTimeout(() => {
-      titleScreen.classList.toggle("active", !showGame);
-      gameScreen.classList.toggle("active", showGame);
-      titleScreen.setAttribute("aria-hidden", String(showGame));
-      gameScreen.setAttribute("aria-hidden", String(!showGame));
-      if (showGame) resetGame();
-      window.setTimeout(() => theatre.classList.remove("curtain-call"), 80);
-    }, 520);
-  }
-
-  function showHint() {
-    if (game.over || game.thinking || game.turn !== "w") return;
-    const move = chooseMove("w");
-    if (!move) return;
-    hintSquares = [move.from, move.to];
-    renderBoard();
-    statusElement.textContent = "초록색 두 칸을 살펴봐!";
-    window.setTimeout(() => {
-      hintSquares = [];
-      renderBoard();
-      updateStatus();
-    }, 2200);
-  }
-
-  const modalContent = {
-    how: {
-      title: "게임 방법",
-      html: "<p>쩨비는 왼쪽의 흰색 기물로 먼저 움직입니다. 말을 누른 뒤 초록색으로 표시된 칸을 선택하세요.</p><p>버찌의 킹을 체크메이트하면 공연의 주인공이 됩니다.</p>"
-    },
-    credits: {
-      title: "크레딧 · 팬게임 표기",
-      html: "<p>《버찌 체스》는 버찌를 테마로 만든 비공식 팬게임입니다.</p><p>캐릭터와 원작의 권리는 각 권리자에게 있습니다.</p>"
-    }
-  };
-
-  function openModal(kind) {
-    const content = modalContent[kind];
-    if (!content) return;
-    modalTitle.textContent = content.title;
-    modalCopy.innerHTML = content.html;
-    modal.classList.add("open");
-    modal.setAttribute("aria-hidden", "false");
-    closeModalButton.focus();
-  }
-
-  function closeModal() {
-    modal.classList.remove("open");
-    modal.setAttribute("aria-hidden", "true");
-  }
-
-  document.querySelector("#start-game").addEventListener("click", () => switchScreen(true));
-  document.querySelector("#back-title").addEventListener("click", () => switchScreen(false));
-  document.querySelector("#restart").addEventListener("click", resetGame);
-  hintButton.addEventListener("click", showHint);
-  document.querySelectorAll("[data-modal]").forEach(button => {
-    button.addEventListener("click", () => openModal(button.dataset.modal));
+    messageInput.value = "";
+    updateComposerState();
+    closeEmojiPanel();
   });
-  closeModalButton.addEventListener("click", closeModal);
-  modal.addEventListener("click", event => { if (event.target === modal) closeModal(); });
-  document.addEventListener("keydown", event => { if (event.key === "Escape") closeModal(); });
 
-  renderBoard();
+  messageInput.addEventListener("input", updateComposerState);
+
+  emojiButton.addEventListener("click", () => {
+    const willOpen = emojiPanel.hidden;
+    emojiPanel.hidden = !willOpen;
+    emojiButton.setAttribute("aria-expanded", String(willOpen));
+    if (willOpen) emojiPanel.querySelector("button")?.focus();
+  });
+
+  emojiPanel.addEventListener("click", event => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    insertAtCursor(button.textContent);
+    closeEmojiPanel();
+  });
+
+  rewardButton.addEventListener("click", () => {
+    if (rewardButton.classList.contains("claimed")) return;
+    rewardButton.classList.add("claimed");
+    rewardButton.disabled = true;
+    rewardLabel.textContent = "받기 완료";
+    showToast("통나무 파워 100개를 받았어요!");
+  });
+
+  messageList.addEventListener("scroll", () => {
+    if (isNearLatest()) newMessageButton.hidden = true;
+  }, { passive: true });
+
+  newMessageButton.addEventListener("click", () => scrollToLatest("smooth"));
+
+  collapseButton.addEventListener("click", () => {
+    browserBar.classList.toggle("collapsed");
+    collapseButton.setAttribute("aria-label", browserBar.classList.contains("collapsed") ? "상단 바 펼치기" : "상단 바 접기");
+    requestAnimationFrame(() => scrollToLatest());
+  });
+
+  document.querySelector(".address-menu").addEventListener("click", () => showToast("현재 방송 주소입니다."));
+  document.querySelector("#support-button").addEventListener("click", () => showToast("후원하기 기능을 준비 중이에요."));
+  document.querySelector("#voice-button").addEventListener("click", () => showToast("음성 채팅 기능을 준비 중이에요."));
+  document.querySelector("#chat-tab").addEventListener("click", () => {
+    scrollToLatest("smooth");
+    messageInput.focus();
+  });
+
+  document.addEventListener("pointerdown", event => {
+    if (!emojiPanel.hidden && !emojiPanel.contains(event.target) && !emojiButton.contains(event.target)) {
+      closeEmojiPanel();
+    }
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) window.clearTimeout(autoChatTimer);
+    else scheduleAudienceMessage(700);
+  });
+
+  renderMessages();
+  scheduleAudienceMessage(1000);
 })();
