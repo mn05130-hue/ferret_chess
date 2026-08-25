@@ -3,11 +3,11 @@
 
   const NICKNAME_ADJECTIVES = [
     "금손", "즐거운", "빛나는", "신나는", "용감한", "엉뚱한",
-    "행복한", "졸린", "재빠른", "유쾌한", "반짝이는", "집중한","족쩨비"
+    "행복한", "졸린", "재빠른", "유쾌한", "반짝이는", "집중한","야무진",
   ];
   const NICKNAME_NOUNS = [
     "뉴비", "유저", "스트리머", "게이머", "시청자", "랭커",
-    "챌린저", "방송인", "플레이어", "구독자", "매니저", "클립러"
+    "챌린저", "방송인", "플레이어", "구독자", "매니저", "클립러", "족쩨비", "시바견",
   ];
   const VIEWER_STYLES = [
     { badge: "🪙", badgeClass: "coin", color: "#52a4f4" },
@@ -47,38 +47,11 @@
     "종료 버튼이 사라졌습니다. 오늘도 새벽 2시까지 송출을 유지해야 합니다.",
     "마지막 밤입니다. 이 방송에 남아 있는 이상 연결을 찾아내세요."
   ]);
-  const DISORDERED_CHAT_PATTERNS = Object.freeze([
-    // 단어의 분해·합성, 신어 조작
-    "문 밖을 봤는데 밖문이 먼저 나를 봤어\n창문을 닫아도 눈창문은 아직 열려 있어",
-    "방송을 끄면 끝방송이 시작돼\n끝난 뒤에도 보는 사람은 남시청자라고 불러",
-    "복도 끝과 방 안이 붙어서 복방도가 됐어\n거기서 네 발소리가 먼저 걸어오고 있어",
-    "오늘밤은 밤오늘이라서 아직 어제가 안 끝났어\n{player}도 어제 쪽에 그대로 앉아 있잖아",
-
-    // 빠른 비약과 기이한 인과
-    "빨간 불은 녹화고 녹화는 기억이고\n기억은 어제고 어제는 네 뒤에 서 있었어",
-    "시청자는 숫자고 숫자는 세는 거고\n하나를 더 세면 네 방에는 지금 둘이야",
-    "방송은 전파로 오고 전파는 벽을 지나가고\n벽 안은 비어 있으니까 누군가 들어가기 좋겠네",
-    "네 목소리가 스피커에서 나오면 스피커도 너고\n방금 꺼진 스피커 안의 너는 아직 말하고 있어",
-
-    // 사고 지연과 갑작스러운 단절
-    "아까 네 뒤에... 아니...\n그게 아직 이름을... ...이제 고개를 들었어",
-    "창문에 뭐가 비쳐서... 잠깐만...\n내가 왜 네 방 이야기를 하고 있었지",
-    "{source} 그 말 다음에는...\n........................\n이번 주말에는 문을 열지 마",
-    "지금 화면 오른쪽에...\n아니야 잊어버렸어\n그런데 왜 그게 조금 더 가까워졌지",
-
-    // 빙빙 도는 설명과 논점 이탈
-    "처음에는 시계가 느린 줄 알았어 시계는 두 시에 멈추고\n두 시는 문이 닫히는 시간이고 문은 안에서 잠갔는데\n아무튼 네 뒤에서 계속 두드리고 있어",
-    "오늘 방송 재밌다 방송은 원래 여러 사람이 같이 보지\n여러 사람은 방이 좁으면 붙어 앉아야 하고\n그래서 네 옆자리도 비어 있으면 안 돼",
-    "소리가 작다고 했지 작은 건 가까이 가야 들리고\n가까이 가면 화면에 얼굴이 커지고\n그 얼굴은 네 얼굴이 아니야",
-    "{source}라는 말은 끝났고 끝난 말은 처음으로 돌아가니까\n처음부터 나는 그 말을 한 적이 없어\n그런데 네가 왜 대답했어",
-
-    // 지리멸렬, 말비빔, 동문서답
-    "네가 모르는 얼굴을 아는 사람이 다시 기억하면\n처음 얼굴이 나중 얼굴을 보고 안 닮았다는 게 맞는 거야?",
-    "문은 닫힌 쪽이 열려 있고 열린 쪽은 방이 아니라서\n나가려면 계속 안으로 들어오면 돼",
-    "복도, 손톱, 시청자, 두 번째 의자, 새벽 두 시.\n복도, 손톱, 시청자, 두 번째 의자, 새벽 두 시.",
-    "카메라, 젖은 머리카락, 비밀번호, 천장, {player}.\n천장, {player}, 카메라, 아직 방송 중.",
-    "왜 여기 있냐고 물었지?\n지금 비는 오지 않는데 네 창문은 젖어 있어",
-    "누가 채팅을 썼냐고?\n오늘은 목요일이고 냉장고 문이 세 번 열렸어"
+  const UNKNOWN_CHAT_TOKENS = Object.freeze([
+    "ㄱ▤ɯ", "G의", "GG", "뾰", "JJG", "R▥ɯ", "JJ나는", "RRG이▤ɯ",
+    "GGG▤ɯ", "R를", "Gflies", "pps▥ɯ", "G…을▤ɯ", "R라▥ɯ", "RR그",
+    "Grar", "pp다▤ɯ", "JJ가▥ɯ", "GGGyard", "ᚫ", "ȣ", "҂", "∴", "ƎƎ",
+    "ㅿ", "▥ɯR", "J. JJ", "G…p", "R▤ɯR", "GG그", "RRG", "j▥ɯ"
   ]);
 
   const chatApp = document.querySelector(".chat-app");
@@ -338,24 +311,31 @@
     return hash >>> 0;
   }
 
-  function createDisorderedChatText(text, viewer) {
+  function createUnknownChatText(text, viewer) {
     const seed = hashText(`${currentSeed}:${viewer?.id || "unknown"}:${viewer?.history?.length || 0}:${text}`);
     const random = createRoundRandom(seed);
-    const source = String(text).replace(/\s+/g, " ").trim();
-    const shortenedSource = source.length > 24 ? `${source.slice(0, 23)}…` : source;
-    const startIndex = Math.floor(random() * DISORDERED_CHAT_PATTERNS.length);
-    const formatPattern = pattern => pattern
-      .replaceAll("{player}", () => myNickname)
-      .replaceAll("{viewer}", () => viewer?.name || "그 사람")
-      .replaceAll("{source}", () => shortenedSource || "방금 그 말");
+    const hangul = [...String(text)].filter(character => /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(character));
+    const tokenCount = Math.max(17, Math.min(32, Math.ceil(String(text).length * 1.35)));
+    const lines = [];
+    let currentLine = [];
+    let targetLineLength = 6 + Math.floor(random() * 4);
 
-    for (let offset = 0; offset < DISORDERED_CHAT_PATTERNS.length; offset += 1) {
-      const pattern = DISORDERED_CHAT_PATTERNS[(startIndex + offset) % DISORDERED_CHAT_PATTERNS.length];
-      const candidate = formatPattern(pattern);
-      if (!viewer?.history?.includes(candidate)) return candidate;
+    for (let index = 0; index < tokenCount; index += 1) {
+      let token = UNKNOWN_CHAT_TOKENS[Math.floor(random() * UNKNOWN_CHAT_TOKENS.length)];
+      if (hangul.length && random() < .2) {
+        const syllable = hangul[Math.floor(random() * hangul.length)];
+        token = random() < .5 ? `${syllable}${token}` : `${token}${syllable}`;
+      }
+      if (random() < .12) token += random() < .5 ? "…" : ".";
+      currentLine.push(token);
+      if (currentLine.length >= targetLineLength) {
+        lines.push(currentLine.join(" "));
+        currentLine = [];
+        targetLineLength = 6 + Math.floor(random() * 4);
+      }
     }
-
-    return formatPattern(DISORDERED_CHAT_PATTERNS[startIndex]);
+    if (currentLine.length) lines.push(currentLine.join(" "));
+    return lines.slice(0, 4).join("\n");
   }
 
   function triggerCorruptedChatPulse() {
@@ -435,7 +415,7 @@
   function handleEngineMessage(message) {
     const { viewer, text, historyOnly, behavior } = message;
     const isCorruptedMessage = viewer.anomalous && Boolean(message.anomalyEvidence || message.anomalyMode);
-    const displayedText = isCorruptedMessage ? createDisorderedChatText(text, viewer) : text;
+    const displayedText = isCorruptedMessage ? createUnknownChatText(text, viewer) : text;
     viewer.history.push(displayedText);
     if (viewer.history.length > 10) viewer.history.shift();
     if (historyOnly) return;
