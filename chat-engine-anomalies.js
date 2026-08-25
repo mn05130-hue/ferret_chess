@@ -10,73 +10,73 @@ const ANOMALY_LINES = Object.freeze({
   /* ---- 예언형 : 아직 일어나지 않은 방송 이벤트를 읽습니다 ---- */
   PROPHECY: [
     { id: "pro-soon",   level: 2, mode: "casual", needs: c => c.seconds != null,
-      make: c => `${c.seconds}초 뒤 장면을 이미 봤어 넌 아직 못 봤고` },
+      make: c => `${c.seconds}명의 사람이 널 보고있어, 넌 아직 못 봤고` },
     { id: "pro-hint",   level: 2, mode: "casual",
-      make: () => `아직 일어나지 않은 장면이 자꾸 기억나` },
+      make: () => `지난 여름의 기억이 자꾸 기억나기억나기억나기억나` },
     { id: "pro-count",  level: 2, mode: "casual", needs: c => c.seconds != null,
-      make: c => `지금부터 ${c.seconds}초 세면 방송이 한 번 끊겨` },
+      make: c => `지금부터 ${c.seconds}개의 기억나기억나들이 올거야` },
     { id: "pro-omen",   level: 3, mode: "formal", needs: c => c.omen != null,
-      make: c => `${c.seconds}초 뒤에 ${c.omen}` },
+      make: c => `${c.seconds}초 뒤에 그들이 온다. ${c.omen}` },
     { id: "pro-seen",   level: 3, mode: "formal", needs: c => c.omen != null,
-      make: c => `${c.omen} 저는 이미 봤습니다.` },
+      make: c => `${c.omen} 저는 이미 봤습니다.끔찍한 미래를` },
     { id: "pro-tick",   level: 3, mode: "raw", needs: c => c.seconds != null && c.seconds >= 3,
       make: c => `${c.seconds}... ${c.seconds - 1}... ${c.seconds - 2}...` },
     { id: "pro-know",   level: 4, mode: "formal",
-      make: () => `이 다음 장면을 저는 알고 있습니다. 당신도 곧 알게 됩니다.` },
+      make: () => `이 다음 장면을 저는 알고 있습니다. 당신도 곧 알게 됩니다. 알고싶진 않겠지만...` },
     { id: "pro-repeat", level: 4, mode: "raw", needs: c => c.seconds != null,
       make: c => `${c.seconds}초. ${c.seconds}초. ${c.seconds}초.` },
     { id: "pro-nostop", level: 4, mode: "formal",
-      make: () => `막을 수 없습니다. 이미 정해져 있습니다.` }
+      make: () => `막을 수 없습니다. 이미 정해져 있습니다. 곧 다가옵니다. ` }
   ],
 
   /* ---- 관찰형 : 게임 밖 정보를 읽습니다 ---- */
   OBSERVER: [
     { id: "obs-elapsed", level: 2, mode: "casual",
-      make: c => `네가 방송 켠 지 정확히 ${c.elapsed}초 지났어` },
+      make: c => `${c.elapsed}개의 시선이 너를 보고 있다.` },
     { id: "obs-late",    level: 2, mode: "casual",
-      make: c => `지금 네 시계도 ${c.nowClock}로 보이지?` },
+      make: c => `지금 네 시계도 ${c.nowClock} 널 바라본다.` },
     { id: "obs-look",    level: 2, mode: "casual",
-      make: () => `너 방금 화면 말고 내 쪽 봤지` },
+      make: () => `너 방금 화면 말고 여기봤지?. 너 봤구나.` },
     { id: "obs-alone",   level: 2, mode: "casual",
-      make: () => `지금 네 뒤에는 아무도 없네 아직은` },
+      make: () => `아까 네 뒤에 나 있었어. 너는 모르겠지만.` },
     { id: "obs-open",    level: 3, mode: "formal",
-      make: c => `당신이 이 창을 연 시각은 ${c.clock}입니다.` },
+      make: c => `내일 우리들이 다시 오는 시각은 ${c.clock}입니다.` },
     { id: "obs-spam",    level: 3, mode: "raw",
       make: () => `너지금나봤지너지금나봤지너지금나봤지` },
     { id: "obs-one",     level: 3, mode: "formal",
-      make: () => `지금 이 채팅을 읽고 있는 사람은 한 명뿐입니다.` },
+      make: () => `지금 이 방송을 보는 사람은 단, 한 명뿐입니다.` },
     { id: "obs-quiet",   level: 3, mode: "formal",
-      make: () => `방 안이 조용해서 다행입니다.` },
+      make: () => `방 안이 조용해서 다행입니다. 당신이 어디 있늘 줄 알겠네요.` },
     { id: "obs-watch",   level: 4, mode: "raw",
-      make: () => `보고있어 보고있어 보고있어 보고있어` },
+      make: () => `보고있어 보고있어 보고있어 보고있어 불 켜진 방이구나?` },
     { id: "obs-only",    level: 4, mode: "formal",
-      make: c => `${c.elapsed}초 동안 저는 당신만 보고 있었습니다.` },
+      make: c => `${c.elapsed}일 동안 저는 당신만 보고 있었습니다.` },
     { id: "obs-behind",  level: 4, mode: "formal",
-      make: () => `등 뒤는 확인하지 않는 편이 좋습니다.` },
+      make: () => `뒤돌아보지마` },
     { id: "obs-blink",   level: 4, mode: "casual",
-      make: () => `방금 눈 깜빡였잖아` }
+      make: () => `■■■■■■■■` }
   ],
 
   /* ---- 기억오류형 : 존재하지 않는 과거를 기억합니다 ---- */
   MEMORY: [
     { id: "mem-again",  level: 2, mode: "casual",
-      make: c => `${c.day}에도 똑같이 말했잖아 그 방송은 없었지만` },
+      make: c => `${c.year}년 전에도 똑같이 말했어` },
     { id: "mem-only",   level: 2, mode: "casual",
-      make: c => `${c.day} 방송은 나만 기억하나 봐` },
+      make: c => `${c.day} 긴급재난방송방송을끄고모두옥상에올라가세요 ` },
     { id: "mem-behind", level: 2, mode: "casual",
-      make: c => `${c.day} 네 뒤에 나 있었는데 모르더라` },
+      make: c => `${c.day} 네 뒤에 나 있었는데 모르더라 다시 해볼려고 ㅋㅋ` },
     { id: "mem-none",   level: 3, mode: "formal",
       make: c => `${c.day} 방송은 아무도 보지 못했습니다.` },
     { id: "mem-ended",  level: 3, mode: "formal",
-      make: c => `이 이야기는 ${c.day}에 이미 한 번 끝났습니다.` },
+      make: c => `이 세계는 ${c.day}에 이미 한 번 끝났습니다.` },
     { id: "mem-did",    level: 3, mode: "formal",
-      make: c => `${c.day}에 당신이 한 일을 기억하십니까?` },
+      make: c => `${c.day}에 네가 한 일` },
     { id: "mem-same",   level: 4, mode: "formal",
-      make: c => `우리는 ${c.day}에도 정확히 같은 대화를 나눴습니다.` },
+      make: c => `우리는 ${c.day}번째 같은 대화를 하고있네?` },
     { id: "mem-loop",   level: 4, mode: "raw",
       make: c => `${c.day} ${c.day} ${c.day} ${c.day}` },
     { id: "mem-count",  level: 4, mode: "formal",
-      make: () => `이번이 몇 번째인지 세고 계십니까? 저는 세고 있습니다.` }
+      make: () => `이번이 몇 번째인지 세고 계십니까? 저는 잊어버렸습니다.` }
   ],
 
   /* ---- 모방형 : 다른 시청자를 복제합니다 ----
@@ -85,17 +85,17 @@ const ANOMALY_LINES = Object.freeze({
     { id: "mim-echo",   level: 2, mode: "raw", bypass: true, needs: c => Boolean(c.lastText),
       make: c => c.lastText },
     { id: "mim-same",   level: 2, mode: "casual", needs: c => Boolean(c.otherNick),
-      make: c => `${c.otherNick}랑 내 채팅이 곧 똑같아질 거야` },
+      make: c => `${c.otherNick}님은 곧 죽을 예정입니다.` },
     { id: "mim-double", level: 3, mode: "raw", bypass: true, needs: c => Boolean(c.lastText),
-      make: c => `${c.lastText} ${c.lastText}` },
+      make: c => `${c.lastText}살려줘사렺 ${c.lastText}ㅁㅣ` },
     { id: "mim-gone",   level: 3, mode: "formal", needs: c => Boolean(c.otherNick),
-      make: c => `${c.otherNick}님은 지금 여기 없습니다.` },
+      make: c => `${c.otherNick}님은 여기 없습니다. 찾지 마세요.` },
     { id: "mim-name",   level: 4, mode: "raw", needs: c => Boolean(c.otherNick),
       make: c => `${c.otherNick}${c.otherNick}${c.otherNick}` },
     { id: "mim-become", level: 4, mode: "formal", needs: c => Boolean(c.otherNick),
-      make: c => `${c.otherNick}님의 자리는 곧 비게 됩니다.` },
+      make: c => `${c.otherNick}님의 자리는 대체됩니다.` },
     { id: "mim-mine",   level: 4, mode: "casual",
-      make: c => `${c.nickname} 이 이름은 네가 오기 전부터 내가 쓰고 있었어` }
+      make: c => `${c.nickname}<<<는귀신입니다제발퇴장시켜주세요제발요` }
   ],
 
   /* ---- 시스템 침입형 : 방송 UI를 흉내냅니다 ----
@@ -103,17 +103,17 @@ const ANOMALY_LINES = Object.freeze({
      닉네임을 숨기고 시스템 공지 스타일로 렌더해야 효과가 삽니다. */
   INTRUDER: [
     { id: "int-left",  level: 2, mode: "raw",
-      make: () => `[알림] 시청자 1명이 퇴장했습니다.` },
+      make: () => `[알림] 시청자 1명이 사망했습니다.` },
     { id: "int-nolog", level: 3, mode: "raw",
-      make: () => `[경고] 이 채팅은 기록되지 않습니다.` },
+      make: () => `[경고] 방송이 끝났습니다. 모두 자리로 돌아가세요.` },
     { id: "int-ban",   level: 3, mode: "raw",
-      make: c => `[알림] ${c.nickname}님이 차단되었습니다.` },
+      make: c => `[알림] ${c.nickname}님이 제거되었습니다.` },
     { id: "int-timer", level: 4, mode: "raw", needs: c => c.seconds != null,
-      make: c => `[시스템] 방송 종료까지 ${c.seconds}초` },
+      make: c => `[시스템]  방문까지 ${c.seconds}초 남았습니다. 곧 다시 봅시다.` },
     { id: "int-close", level: 4, mode: "formal",
-      make: () => `이 창을 닫아도 방송은 계속됩니다.` },
+      make: () => `이 창을 닫아도 방송은 계속됩니다. 이제까지 감사합니다.` },
     { id: "int-perm",  level: 4, mode: "raw",
-      make: c => `[알림] ${c.nickname}님에게 관리자 권한이 부여되었습니다.` }
+      make: c => `[알림] ${c.nickname}님에게 사형투표가 진행되고 있습니다.` }
   ],
 
   /* ---- 붕괴형 : 모든 유형이 이상도 3부터 공유하는 지리멸렬 풀 ----
