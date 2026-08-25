@@ -34,6 +34,11 @@
         <p class="title-alert"><span aria-hidden="true">●</span> UNKNOWN VIEWERS DETECTED</p>
         <h1 class="sr-only" id="game-title">구독 방송</h1>
         <p class="title-copy">평범한 심야 방송에 정체불명의 시청자들이 접속했습니다. 플레이할 모드를 선택하세요.</p>
+        <label class="player-nickname-field" for="player-nickname">
+          <span>PLAYER NAME</span>
+          <input id="player-nickname" type="text" maxlength="16" autocomplete="nickname" enterkeyhint="done" placeholder="닉네임을 입력하세요" aria-describedby="nickname-error" required>
+        </label>
+        <p class="nickname-error" id="nickname-error" role="status" aria-live="polite" hidden>게임을 시작하려면 닉네임을 입력하세요.</p>
         <div class="title-mode-buttons" aria-label="게임 모드 선택">
           <button class="title-start-button story-start-button" id="story-start" type="button">
             <span><strong>스토리 모드</strong><small>7일 동안 생존</small></span>
@@ -77,6 +82,14 @@
         <span class="room-light"></span>
       </div>
       <img class="stream-character" src="assets/beorjji-idle-preview.gif" alt="방송을 진행 중인 버찌">
+      <button class="stream-apparition" id="stream-apparition" type="button" aria-label="방송 화면의 괴이 퇴치" hidden>
+        <span class="apparition-shape" aria-hidden="true">
+          <i class="apparition-eye eye-left"></i>
+          <i class="apparition-eye eye-right"></i>
+          <i class="apparition-mouth"></i>
+        </span>
+        <span class="apparition-action" aria-hidden="true">퇴치</span>
+      </button>
       <div class="stream-topline">
         <span class="live-badge"><i aria-hidden="true"></i> LIVE</span>
         <div class="stream-topline-actions">
@@ -225,6 +238,14 @@
     </div>
 
     <div class="story-night-overlay" id="story-night-overlay" aria-hidden="true">
+      <div class="story-night-omen" aria-hidden="true">
+        <span class="story-omen-head">
+          <i class="story-omen-eye eye-left"></i>
+          <i class="story-omen-eye eye-right"></i>
+          <i class="story-omen-mouth"></i>
+        </span>
+        <span class="story-omen-copy">DON'T LOOK AWAY</span>
+      </div>
       <section class="story-night-card" role="dialog" aria-modal="true" aria-labelledby="story-result-title">
         <p class="story-night-kicker" id="story-result-kicker">DAY 01 · BROADCAST CLOSED</p>
         <time class="story-night-time" datetime="02:00">02:00 AM</time>
@@ -234,6 +255,7 @@
           <div><dt>이상 차단</dt><dd id="story-caught">0</dd></div>
           <div><dt>놓침</dt><dd id="story-missed">0</dd></div>
           <div><dt>오판</dt><dd id="story-wrong">0</dd></div>
+          <div><dt>괴이 놓침</dt><dd id="story-apparition-missed">0</dd></div>
           <div><dt>남은 체력</dt><dd id="story-health">3</dd></div>
         </dl>
         <ul class="story-result-details" id="story-result-details" aria-label="오늘의 판정 상세"></ul>
