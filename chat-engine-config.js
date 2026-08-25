@@ -1,6 +1,10 @@
 "use strict";
 
-// Director tuning and viewer persona definitions.
+/*
+ * 채팅 생성 속도와 시청자 성격 모델을 정의합니다.
+ * 수치를 조정하면 모든 스테이지의 발화 빈도·중복 허용·말투 강도가 함께 바뀝니다.
+ */
+// 디렉터 상태 전환, 요청 만료, 유사도 필터, 상태별 채팅 간격을 중앙 관리합니다.
 const TUNING = Object.freeze({
   tickMs: 100,
   tensionHalfLifeMs: 10000,
@@ -46,6 +50,7 @@ const TUNING = Object.freeze({
  *      typo        오타를 낼 확률
  *      emotePool   이 성격이 쓰는 이모트 (앞쪽이 자주 뽑힘)
  * ======================================================================== */
+// 각 페르소나는 의도 적합도와 말투 변형 확률을 가져 서로 다른 채팅 습관을 만듭니다.
 const PERSONAS = Object.freeze({
   COWARD: {
     label: "소심이",

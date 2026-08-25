@@ -2,6 +2,9 @@
 
 // Candidate generation, anomaly overrides, particles, and style transforms.
 HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
+  /**
+   * 큐 요청을 처리해 화자와 후보 문장을 고르고 중복 필터를 통과한 최종 발화를 외부로 보냅니다.
+   */
   processRequest(originalRequest, options = {}) {
     const request = { ...originalRequest };
     // 반응 타이밍을 놓친 요청은 뒷북(회상)으로 바꿉니다.
@@ -39,6 +42,9 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
 
   /* ---------- 내용 생성 ---------- */
 
+  /**
+   * 일반 템플릿 또는 강제 이상 대사 중 하나를 선택해 메타데이터가 포함된 문장 후보를 만듭니다.
+   */
   generateCandidate(viewer, request) {
     const anomalyOverride = this.createAnomalyOverride(viewer);
     if (anomalyOverride) return anomalyOverride;
@@ -75,6 +81,9 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
     };
   }
 
+  /**
+   * 채팅 폭주에 적합한 짧은 문장을 고르고 페르소나별 이모티콘과 fallback 변형을 적용합니다.
+   */
   generateShortCandidate(viewer, intent, slotHints = {}, fallback = false) {
     const pool = SHORT_LINES[intent] || SHORT_LINES.REACT;
     const unusedPool = fallback ? pool.filter(line => !this.recentOutputs.includes(line)) : pool;
@@ -102,6 +111,9 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
 
   /* ---------- 이상 시청자 ---------- */
 
+  /**
+   * 이상 권한과 현재 장면 컨텍스트로 공포 대사를 선택해 일반 후보를 교체합니다.
+   */
   createAnomalyOverride(viewer, force = false) {
     if (!viewer.anomalous) return null;
     const anomalyLevel = Math.max(1, Math.min(4, viewer.anomalyLevel));
@@ -164,6 +176,9 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
     };
   }
 
+  /**
+   * 요청 힌트, 장면 상태, 기본 슬롯 풀 순서로 템플릿 자리표시자의 실제 값을 결정합니다.
+   */
   resolveSlot(name, hints, viewer) {
     const value = hints?.[name]
       ?? viewer.memorySlots[name]
@@ -173,6 +188,9 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
     return value;
   }
 
+  /**
+   * 받침 유무를 검사해 은/는, 이/가 같은 한국어 조사를 올바르게 붙입니다.
+   */
   attachParticle(value, pair) {
     const lastCharacter = String(value).at(-1);
     const code = lastCharacter?.charCodeAt(0) ?? 0;
@@ -187,6 +205,9 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
 
   /* ---------- 표기 변형기 ---------- */
 
+  /**
+   * 축약·어미·이모티콘·오타 확률을 적용해 정중한 원문을 시청자 고유 채팅 말투로 바꿉니다.
+   */
   transformStyle(input, viewer, factorOverride) {
     const style = PERSONAS[viewer.personaKey].style;
     const factor = factorOverride ?? 1;

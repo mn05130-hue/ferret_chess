@@ -1,6 +1,11 @@
 <!doctype html>
+<!--
+  Buzzi Live Chat의 전체 화면 구조입니다.
+  JavaScript는 아래 id를 상태 변경 지점으로 사용하므로 id를 바꿀 때 관련 모듈도 함께 수정해야 합니다.
+-->
 <html lang="ko">
 <head>
+  <!-- 모바일 세로 화면과 노치 안전 영역을 기준으로 렌더링합니다. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#111214">
@@ -10,11 +15,13 @@
 </head>
 <body>
   <main class="chat-app" aria-label="라이브 채팅">
+    <!-- 게임 시작 전 표시되는 타이틀, 닉네임 입력, 모드 선택 영역입니다. -->
     <section class="title-screen" id="title-screen" aria-labelledby="game-title">
       <div class="title-brand" aria-hidden="true">
         <span class="title-brand-dot"></span>
         BUZZI · MIDNIGHT ROOM
       </div>
+      <!-- 자동 재생 제한을 고려해 사용자가 직접 타이틀 음악을 켜고 음량을 정합니다. -->
       <div class="title-audio-controls" aria-label="타이틀 배경음악 설정">
         <button class="title-music-button" id="title-music-button" type="button" aria-pressed="false" aria-label="타이틀 배경음악 재생">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -30,6 +37,7 @@
         </label>
       </div>
       <audio id="title-music" preload="metadata" loop></audio>
+      <!-- 닉네임 검증 후 스토리 또는 무한 모드 진입을 요청하는 핵심 메뉴입니다. -->
       <div class="title-content">
         <p class="title-alert"><span aria-hidden="true">●</span> UNKNOWN VIEWERS DETECTED</p>
         <h1 class="sr-only" id="game-title">구독 방송</h1>
@@ -60,7 +68,9 @@
       <p class="title-hint">이어폰을 착용하면 더 몰입해서 즐길 수 있습니다.</p>
     </section>
 
+    <!-- 실제 플레이 화면입니다. 타이틀에서는 inert 상태로 두어 키보드 초점도 차단합니다. -->
     <div class="game-screen" id="game-screen" aria-hidden="true" inert>
+    <!-- 가상 브라우저 주소창. 접기 버튼은 방송 영역의 사용 가능한 높이도 함께 조정합니다. -->
     <header class="browser-bar" aria-label="현재 방송 주소">
       <svg class="pin-icon" aria-hidden="true" viewBox="0 0 24 24">
         <path d="m15.8 3.2 5 5-2 2-1-.35-3.45 3.45.35 2-1.4 1.4-2.65-2.65-5.3 5.3-1.4-1.4 5.3-5.3L6.6 10l1.4-1.4 2 .35 3.45-3.45-.35-1 2.7-1.3Z"/>
@@ -74,6 +84,7 @@
       </button>
     </header>
 
+    <!-- 방송 영상, 배경음악, 연결 상태, 제한시간, 클릭형 괴이가 겹쳐지는 무대입니다. -->
     <section class="stream-stage" aria-label="버찌의 실시간 방송 화면">
       <div class="stream-noise" aria-hidden="true"></div>
       <div class="stream-room" aria-hidden="true">
@@ -82,6 +93,7 @@
         <span class="room-light"></span>
       </div>
       <img class="stream-character" src="assets/beorjji-idle-preview.gif" alt="방송을 진행 중인 버찌">
+      <!-- JavaScript가 무작위 위치와 변형 값을 지정하며, 제한시간 안에 누르면 퇴치됩니다. -->
       <button class="stream-apparition" id="stream-apparition" type="button" aria-label="방송 화면의 괴이 퇴치" hidden>
         <span class="apparition-shape" aria-hidden="true">
           <i class="apparition-eye eye-left"></i>
@@ -126,6 +138,7 @@
       <audio id="game-music" preload="metadata" loop></audio>
     </section>
 
+    <!-- 두 모드가 공유하는 체력·진행도·시각·이상 시청자·점수 HUD입니다. -->
     <section class="game-hud" aria-label="게임 상태">
       <div class="hud-stat stage-stat">
         <span id="progress-label">스테이지</span>
@@ -150,6 +163,7 @@
       <button class="help-button" id="help-button" type="button" aria-label="게임 방법">?</button>
     </section>
 
+    <!-- 채팅 메시지는 동적으로 li 요소로 추가되며 aria-live로 새 메시지를 알립니다. -->
     <section class="message-region" aria-label="실시간 메시지">
       <ol class="message-list" id="message-list" aria-live="polite"></ol>
       <button class="new-message-button" id="new-message-button" type="button" hidden>
@@ -158,6 +172,7 @@
       </button>
     </section>
 
+    <!-- 보상 버튼, 사용자 채팅 입력기, 이모지 목록, 하단 메뉴를 묶은 조작 영역입니다. -->
     <section class="chat-controls" aria-label="채팅 작성 도구">
       <button class="reward-banner" id="reward-button" type="button">
         <span class="reward-copy">1시간 시청 통나무 파워 배달 완료!</span>
@@ -210,6 +225,7 @@
       </nav>
     </section>
 
+    <!-- 닉네임 클릭 시 열리는 시청자 기록/강퇴 모달입니다. -->
     <div class="viewer-backdrop" id="viewer-backdrop" aria-hidden="true">
       <section class="viewer-panel" role="dialog" aria-modal="true" aria-labelledby="viewer-name">
         <button class="panel-close" id="panel-close" type="button" aria-label="닫기">×</button>
@@ -221,6 +237,7 @@
       </section>
     </div>
 
+    <!-- 무한 모드의 스테이지 성공·실패 결과 모달입니다. -->
     <div class="stage-overlay" id="stage-overlay" aria-hidden="true">
       <section class="stage-card" role="dialog" aria-modal="true" aria-labelledby="stage-result-title">
         <p class="result-kicker" id="stage-result-kicker">STAGE 01 CLEAR</p>
@@ -237,6 +254,7 @@
       </section>
     </div>
 
+    <!-- 스토리 모드에서 오전 2시에만 판정을 공개하는 공포 전환 및 결과 모달입니다. -->
     <div class="story-night-overlay" id="story-night-overlay" aria-hidden="true">
       <div class="story-night-omen" aria-hidden="true">
         <span class="story-omen-head">
@@ -263,6 +281,7 @@
       </section>
     </div>
 
+    <!-- 체력이 소진되거나 7일을 완주했을 때 표시되는 최종 결과입니다. -->
     <div class="game-overlay" id="game-overlay" aria-hidden="true">
       <section class="result-card" role="dialog" aria-modal="true" aria-labelledby="result-title">
         <p class="result-kicker" id="result-kicker">CONNECTION CLOSED</p>
@@ -277,12 +296,16 @@
       </section>
     </div>
 
+    <!-- 짧은 안내와 전 화면 간섭을 다른 레이아웃 위에 독립적으로 표시합니다. -->
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="screen-interference" id="screen-interference" aria-hidden="true"></div>
     </div>
   </main>
 
-  <!-- Chat engine: data → utilities → runtime layers → public API -->
+  <!--
+    채팅 엔진은 선언 의존성 순서대로 불러옵니다.
+    설정/대사 → 유틸리티 → 엔진 계층 → 공개 API 순서를 바꾸면 전역 lexical binding을 찾지 못합니다.
+  -->
   <script src="chat-engine-config.js"></script>
   <script src="chat-engine-dialogue.js"></script>
   <script src="chat-engine-anomalies.js"></script>
@@ -292,7 +315,10 @@
   <script src="chat-engine-diagnostics.js"></script>
   <script src="chat-engine.js"></script>
 
-  <!-- Game app: shared state → feature systems → event bindings -->
+  <!--
+    게임 앱도 공유 상태를 먼저 만든 뒤 기능 모듈을 로드하고 app.js에서 이벤트를 연결합니다.
+    ES module이 아닌 일반 script를 사용해 file://로 index.html을 열어도 실행되도록 유지합니다.
+  -->
   <script src="app-config.js"></script>
   <script src="app-chat.js"></script>
   <script src="app-audio.js"></script>

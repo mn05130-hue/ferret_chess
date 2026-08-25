@@ -1,6 +1,9 @@
 "use strict";
 
-// Normal chat templates, short lines, slots, and broadcast events.
+/*
+ * 정상 시청자의 대사 재료와 방송 이벤트를 모은 데이터 파일입니다.
+ * 템플릿 ID와 슬롯은 중복 검사에도 쓰이므로 기존 ID를 임의로 재사용하지 않습니다.
+ */
 // Templates use [templateId, formal text, casual chat text].
 const TEMPLATES = Object.freeze({
   GREET: [
@@ -107,6 +110,7 @@ const TEMPLATES = Object.freeze({
 /* ==========================================================================
  * 4. 초단문 풀 — 전체 발화의 절반 이상이 여기서 나갑니다.
  * ======================================================================== */
+// 빠른 채팅 폭주에는 긴 템플릿 대신 의도별 초단문 풀을 사용합니다.
 const SHORT_LINES = Object.freeze({
   GREET: ["ㅎㅇ", "안녕", "왔다", "ㅎㅇㅎㅇ", "출첵", "지금 왔음",
           "안녕하세요", "오늘도 왔다", "이제 봄", "늦게 왔다"],
@@ -136,6 +140,7 @@ const SHORT_LINES = Object.freeze({
               "아까도 봤는데", "닉 두 개임", "소름", "지금 뭐라고 함?"]
 });
 
+// {topic}, {food} 같은 템플릿 슬롯의 기본 후보입니다.
 const SLOT_POOLS = Object.freeze({
   topic: ["어제 얘기", "회사 얘기", "그 드라마", "새로 산 거", "여행 얘기", "그 영화"],
   food:  ["치킨", "떡볶이", "마라탕", "라면", "곱창", "피자", "김밥"],
@@ -149,6 +154,7 @@ const SLOT_POOLS = Object.freeze({
  *    omen은 예언형 이상 시청자가 미리 말해버릴 문구입니다.
  *    게임 쪽에서 emitEvent(type, slots, intensity)로 직접 호출해도 됩니다.
  * ======================================================================== */
+// 실제 방송 행동이 없어도 엔진이 주기적으로 반응할 수 있게 만드는 가상 사건입니다.
 const SYNTHETIC_EVENTS = Object.freeze([
   { type: "STORY_STARTED",  intensity: .35, omen: "새로운 이야기가 시작될 것입니다.",
     slots: { topic: "어제 얘기" } },

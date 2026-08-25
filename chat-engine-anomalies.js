@@ -1,6 +1,9 @@
 "use strict";
 
-// Anomaly dialogue and chat-style transformation resources.
+/*
+ * 이상 시청자만 접근할 수 있는 공포 대사와 표기 변형 자원입니다.
+ * 정상 대사 데이터와 분리해 일반 시청자에게 공포 문장이 섞이는 실수를 방지합니다.
+ */
 // Anomaly entries may read event timing, clocks, nicknames, and recent chat.
 const ANOMALY_LINES = Object.freeze({
 
@@ -141,6 +144,7 @@ const ANOMALY_LINES = Object.freeze({
 });
 
 // 전담 권한으로 배정 가능한 유형. GLITCH는 공용이라 제외합니다.
+// 한 이상 시청자는 아래 권한 중 하나를 받아 일관된 공포 유형을 유지합니다.
 const ANOMALY_PERMISSIONS = Object.freeze(["PROPHECY", "OBSERVER", "MEMORY", "MIMIC", "INTRUDER"]);
 
 /* ==========================================================================
@@ -149,6 +153,7 @@ const ANOMALY_PERMISSIONS = Object.freeze(["PROPHECY", "OBSERVER", "MEMORY", "MI
 
 // 채팅 어미. 문장부호를 뗀 상태에서 매칭하므로 패턴에 부호를 넣지 마세요.
 // 위에서부터 순서대로 검사해 첫 매칭 하나만 적용합니다.
+// 말투 변형기가 원문 끝에 선택적으로 붙이는 실제 채팅식 어미입니다.
 const CHAT_ENDINGS = Object.freeze([
   [/거 같은데$/,   "듯"],
   [/거 같아$/,     "듯"],
@@ -188,6 +193,7 @@ const CHAT_ENDINGS = Object.freeze([
 
 // 초성/밈 축약. 항목마다 abbrev 확률로 개별 판정합니다.
 // 어절 단위 전체 치환만 두세요. 부분 치환은 "ㅁㅊ다" 같은 어색한 결과를 냅니다.
+// 긴 표현을 인터넷 채팅 축약형으로 바꾸는 치환 목록입니다.
 const ABBREVIATIONS = Object.freeze([
   [/정말/g,     "ㄹㅇ"],
   [/진짜/g,     "ㄹㅇ"],
@@ -203,6 +209,7 @@ const ABBREVIATIONS = Object.freeze([
   [/그러니까/g, "ㄱㄴㄲ"]
 ]);
 
+// 낮은 확률로 적용되는 오타와 한글 자모 분해에 필요한 테이블입니다.
 const TYPO_PAIRS = Object.freeze([
   ["지금", "지굼"], ["진짜", "진쨔"], ["그거", "그ㄱ"], ["같이", "가치"],
   ["어디", "어됴"], ["빨리", "빨ㄹ"], ["먹었", "머겄"], ["재밌", "잼있"]

@@ -1,3 +1,12 @@
+/*
+ * Buzzi Live Chat visual system
+ * --------------------------------------------------------------------------
+ * 모바일 세로 방송 화면을 기본으로 하며, 색상 토큰 → 화면 골격 → 개별 기능 →
+ * 오버레이/애니메이션 → 반응형 보정 순서로 구성합니다. JavaScript가 추가하는
+ * .open, .is-playing, .wrong-kick 등의 상태 클래스는 아래 효과의 스위치입니다.
+ */
+
+/* 반복되는 배경·테두리·글자색과 모바일 안전 영역을 한곳에서 관리합니다. */
 :root {
   color-scheme: dark;
   font-family: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
@@ -11,6 +20,7 @@
   --input-border: #7d8491;
 }
 
+/* 모든 요소가 padding과 border를 실제 너비 안에 포함하도록 계산 방식을 통일합니다. */
 * {
   box-sizing: border-box;
 }
@@ -41,6 +51,7 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* 앱 전체를 휴대폰 폭으로 제한하고 타이틀/게임 화면의 기준 좌표계를 만듭니다. */
 .chat-app {
   position: relative;
   width: min(100%, 430px);
@@ -62,6 +73,7 @@ button {
   background: var(--background);
 }
 
+/* 타이틀은 게임 위를 완전히 덮으며 배경 그리드와 비네트로 심야 방송 분위기를 만듭니다. */
 .title-screen {
   position: absolute;
   z-index: 100;
@@ -132,6 +144,7 @@ button {
   box-shadow: 0 0 9px var(--green);
 }
 
+/* 타이틀 음악 버튼과 range 입력을 한 줄에 배치하고 재생 상태를 색으로 구분합니다. */
 .title-audio-controls {
   position: absolute;
   top: max(17px, env(safe-area-inset-top));
@@ -219,6 +232,7 @@ button {
   animation: music-wave 900ms ease-in-out infinite alternate;
 }
 
+/* 시작 메뉴 카드는 경고 문구, 닉네임, 두 모드 버튼, 간단한 규칙 순서로 구성됩니다. */
 .title-content {
   border: 1px solid #8bd6c337;
   border-radius: 15px;
@@ -260,6 +274,7 @@ button {
   gap: 8px;
 }
 
+/* 닉네임 입력은 오류 상태에서 테두리와 안내문을 동시에 갱신하도록 설계했습니다. */
 .player-nickname-field {
   display: grid;
   gap: 5px;
@@ -400,6 +415,7 @@ button {
   text-align: center;
 }
 
+/* 가상 주소창은 실제 방송 페이지처럼 보이게 하며 collapsed 상태에서 높이가 줄어듭니다. */
 .browser-bar {
   z-index: 5;
   height: 52px;
@@ -503,6 +519,7 @@ button {
   grid-template-rows: 12px auto 42px minmax(0, 1fr) auto;
 }
 
+/* 방송 무대는 방 배경, 캐릭터, 괴이, 상태 표시를 겹치는 position 기준 컨테이너입니다. */
 .stream-stage {
   position: relative;
   z-index: 2;
@@ -578,6 +595,7 @@ button {
   user-select: none;
 }
 
+/* 클릭형 괴이는 JavaScript가 --apparition-x/y/scale 값을 바꿔 매번 다른 위치에 나타냅니다. */
 .stream-apparition {
   position: absolute;
   z-index: 4;
@@ -695,6 +713,7 @@ button {
   filter: hue-rotate(115deg);
 }
 
+/* 괴이의 등장과 부유 애니메이션은 짧고 불규칙하게 보여 클릭 목표임을 강조합니다. */
 @keyframes apparition-enter {
   0% { opacity: 0; scale: .2 1.8; }
   45% { opacity: 1; scale: 1.35 .6; }
@@ -726,6 +745,7 @@ button {
   justify-content: space-between;
 }
 
+/* 방송 상단에는 LIVE 상태, 음악 조작, 시청자 수를 겹치지 않게 좌우 배치합니다. */
 .stream-topline {
   top: 8px;
 }
@@ -880,6 +900,7 @@ button {
   font-size: 8px;
 }
 
+/* 무한 모드의 오염 제한시간은 중앙 상단에서 점멸해 즉각적인 행동을 유도합니다. */
 .threat-timer {
   position: absolute;
   z-index: 5;
@@ -915,6 +936,7 @@ button {
 }
 
 .chat-app[data-director-state="TENSE"] .stream-stage,
+/* 채팅 엔진의 director 상태를 방송 화면 밝기·노이즈·캐릭터 흔들림으로 시각화합니다. */
 .chat-app[data-director-state="AFTERMATH"] .stream-stage {
   border-color: #76543c;
 }
@@ -933,6 +955,7 @@ button {
   animation: signal-jump 220ms steps(2) infinite;
 }
 
+/* HUD는 좁은 폭에서도 다섯 지표와 도움말 버튼을 같은 행에 유지합니다. */
 .game-hud {
   position: relative;
   z-index: 4;
@@ -1009,6 +1032,7 @@ button {
   cursor: pointer;
 }
 
+/* 메시지 영역만 내부 스크롤하며, 새 메시지를 놓친 경우 하단 이동 버튼을 띄웁니다. */
 .message-region {
   position: relative;
   min-height: 0;
@@ -1037,6 +1061,7 @@ button {
   background: #444950;
 }
 
+/* 일반 메시지는 배지·닉네임·본문 순서이고, 긴 텍스트는 컨테이너 안에서 줄바꿈합니다. */
 .message {
   min-height: 35px;
   display: flex;
@@ -1124,6 +1149,7 @@ button {
   text-decoration: line-through;
 }
 
+/* 강퇴된 시청자의 과거 메시지는 삭제 대신 비활성화해 판정 기록을 남깁니다. */
 .blinded-message .badge,
 .blinded-message .username {
   filter: grayscale(1);
@@ -1136,6 +1162,7 @@ button {
   font-style: italic;
 }
 
+/* 시스템 메시지는 플레이 규칙과 판정 정보를 일반 채팅과 다른 중앙 정렬로 표시합니다. */
 .system-message {
   min-height: 31px;
   justify-content: center;
@@ -1155,6 +1182,7 @@ button {
   color: #f5f5f5;
 }
 
+/* 이상 채팅은 어두운 배경, 다중 행, 색수차 잔상으로만 강조하고 밝은 노이즈 블록은 쓰지 않습니다. */
 .corrupted-message {
   position: relative;
   min-height: 72px;
@@ -1249,6 +1277,7 @@ button {
   stroke-width: 2;
 }
 
+/* 채팅 조작부는 보상 배너, 입력기, 하단 내비게이션을 화면 아래에 연속 배치합니다. */
 .chat-controls {
   position: relative;
   z-index: 4;
@@ -1319,6 +1348,7 @@ button {
   padding: 0 8px 8px;
 }
 
+/* 입력기는 focus/text 유무에 따라 안내 커서, 이모지 버튼, 전송 버튼 상태를 전환합니다. */
 .composer {
   position: relative;
   height: 54px;
@@ -1421,6 +1451,7 @@ button {
   display: none;
 }
 
+/* 이모지 패널은 hidden 속성과 짧은 등장 애니메이션으로 입력기 위에 펼쳐집니다. */
 .emoji-panel {
   position: absolute;
   z-index: 8;
@@ -1456,6 +1487,7 @@ button {
   background: #373b42;
 }
 
+/* 하단 메뉴는 후원·음성·현재 채팅 탭의 역할을 시각적으로 구분합니다. */
 .bottom-nav {
   min-height: 47px;
   display: flex;
@@ -1526,6 +1558,7 @@ button {
   background: #303339;
 }
 
+/* 토스트는 레이아웃을 밀지 않고 화면 하단 위에 잠시 나타나는 비차단 알림입니다. */
 .toast {
   position: absolute;
   z-index: 20;
@@ -1554,6 +1587,7 @@ button {
 
 .viewer-backdrop,
 .stage-overlay,
+/* 공통 backdrop은 viewer/result 모달이 게임 화면 위에서 입력을 독점하도록 합니다. */
 .game-overlay {
   position: absolute;
   z-index: 30;
@@ -1571,6 +1605,7 @@ button {
   visibility: visible;
 }
 
+/* 시청자 패널은 최근 발화 기록을 보여 주고 강퇴 결정을 내리는 하단 시트입니다. */
 .viewer-panel {
   position: absolute;
   left: 0;
@@ -1670,6 +1705,7 @@ button {
   background: linear-gradient(#a52d3a, #791e29);
 }
 
+/* 무한 모드 스테이지 결과는 성공/실패 클래스에 따라 색상과 다음 행동을 바꿉니다. */
 .stage-overlay {
   z-index: 38;
   display: grid;
@@ -1794,6 +1830,7 @@ button {
   background: linear-gradient(#9b2c38, #721e27);
 }
 
+/* 최종 게임 결과 카드는 점수·진행도와 재시도/타이틀 선택을 함께 제공합니다. */
 .game-overlay {
   z-index: 40;
   display: grid;
@@ -1875,6 +1912,7 @@ button {
   filter: brightness(1.08);
 }
 
+/* 오답과 시간 초과 시 전체 화면 위에 모자이크·색 분리 간섭을 짧게 합성합니다. */
 .screen-interference {
   position: absolute;
   z-index: 60;
@@ -1919,6 +1957,7 @@ button {
   border: 0;
 }
 
+/* 공통 모션 정의: 채팅 진입, 글자 흔들림, 음악 파형, 위협 및 신호 간섭을 담당합니다. */
 @keyframes message-in {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
@@ -2008,12 +2047,14 @@ button {
   100% { translate: -50% 1px; }
 }
 
+/* 넓은 화면에서는 휴대폰 프레임처럼 그림자와 외곽선을 추가합니다. */
 @media (min-width: 431px) {
   .chat-app {
     border-inline: 1px solid #202226;
   }
 }
 
+/* 매우 좁은 기기에서는 텍스트와 버튼 간격을 줄여 가로 넘침을 방지합니다. */
 @media (max-width: 360px) {
   .title-music-button {
     width: 31px;
@@ -2038,6 +2079,7 @@ button {
   }
 }
 
+/* 스토리 하루 종료 연출은 검은 화면 → 불길한 형상 → 결과 카드 순으로 공개됩니다. */
 .story-night-overlay {
   position: absolute;
   z-index: 39;
@@ -2200,6 +2242,7 @@ button {
   display: none;
 }
 
+/* 스토리 오답일 때 형상 접근, 정전기 폭발, 결과 글리치를 단계적으로 재생합니다. */
 @keyframes story-omen-emerge {
   0% { opacity: 0; scale: .35; filter: blur(22px); }
   48% { opacity: .45; scale: .72; filter: blur(13px); }
@@ -2267,6 +2310,7 @@ button {
   word-break: keep-all;
 }
 
+/* 하루 판정 요약과 세부 목록은 정답·오답 색을 분리해 결과를 빠르게 읽게 합니다. */
 .story-night-summary {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -2346,6 +2390,7 @@ button {
   background: #242424;
 }
 
+/* 높이가 낮은 화면에서는 방송·입력 영역을 압축해 결과와 조작부가 잘리지 않게 합니다. */
 @media (max-height: 680px) {
   .stream-stage {
     height: 132px;
@@ -2387,6 +2432,7 @@ button {
   }
 }
 
+/* 운영체제의 모션 감소 설정을 존중해 모든 전환 시간을 사실상 즉시 완료합니다. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

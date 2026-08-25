@@ -2,6 +2,9 @@
 
 // Duplicate filtering, utterance history, bootstrap, observation, and debug state.
 HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
+  /**
+   * 정확 일치, 템플릿, 시그니처, 바이그램 유사도를 검사해 후보를 거절할 이유를 반환합니다.
+   */
   findRejection(candidate) {
     if (this.recentOutputs.includes(candidate.text)) return "exact";
     if (this.recentTemplates.slice(-8).includes(candidate.templateId)) return "template";
@@ -15,10 +18,16 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
     return null;
   }
 
+  /**
+   * 공백과 문장부호를 제거하고 소문자로 바꿔 표기 차이에 흔들리지 않는 비교 문자열을 만듭니다.
+   */
   normalizeForSimilarity(text) {
     return text.normalize("NFKD").replace(/[\s\p{P}\p{S}]/gu, "").toLowerCase();
   }
 
+  /**
+   * 두 문자열의 2글자 집합으로 Jaccard 유사도를 계산합니다.
+   */
   jaccardBigrams(left, right) {
     const toBigrams = value => {
       const set = new Set();
@@ -33,12 +42,18 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
     return intersection / (leftSet.size + rightSet.size - intersection || 1);
   }
 
+  /**
+   * 템플릿 ID와 정렬된 슬롯 값을 합쳐 의미가 같은 문장을 식별할 키를 만듭니다.
+   */
   signature(templateId, slots) {
     return `${templateId}:${Object.entries(slots).map(([key, value]) => `${key}=${value}`).join("|")}`;
   }
 
   /* ---------- 기록 및 출력 ---------- */
 
+  /**
+   * 승인된 발화를 최근 기록·시청자 기록·통계에 저장하고 외부 onMessage 콜백을 호출합니다.
+   */
   recordUtterance(viewer, request, utterance, options) {
     viewer.lastSpokeAt = this.simTime;
     viewer.engineSpeechCount += 1;
@@ -82,6 +97,9 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
     });
   }
 
+  /**
+   * 엔진 시작 직후 채팅창이 비어 보이지 않도록 서로 다른 화자의 초기 발화를 예약합니다.
+   */
   bootstrapMessages() {
     // 채팅창을 켰을 때 이미 굴러가고 있던 것처럼 보이게 하는 초기 로그
     this.viewers.forEach(viewer => {
@@ -117,6 +135,9 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
     });
   }
 
+  /**
+   * 게임 UI가 특정 시청자 기록을 열 때 엔진 관찰 통계와 마지막 확인 시각을 갱신합니다.
+   */
   observeViewer(viewerId) {
     const viewer = this.viewers.find(candidate => candidate.id === viewerId && candidate.active);
     if (!viewer?.anomalous || this.state === "BURST" || this.paused) return;
@@ -127,6 +148,9 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
 
   /* ---------- 디버그 ---------- */
 
+  /**
+   * 현재 디렉터·큐·사건·시청자·필터 통계를 변경 불가능한 진단용 사본으로 반환합니다.
+   */
   getDebugSnapshot() {
     const outputs = this.debug.outputCount || 1;
     return {

@@ -1,6 +1,9 @@
 "use strict";
 
 // Screens, viewer actions, stage lifecycle, and game startup.
+/**
+ * 진행 중인 타이머·엔진·오버레이·음악을 정리하고 안전하게 타이틀 화면으로 돌아갑니다.
+ */
 function showTitle(shouldFocus = true) {
   window.clearTimeout(interferenceTimer);
   window.clearTimeout(corruptedChatTimer);
@@ -30,6 +33,9 @@ function showTitle(shouldFocus = true) {
   if (shouldFocus) requestAnimationFrame(() => storyStart.focus());
 }
 
+/**
+ * 닉네임 검증 후 선택 모드를 저장하고 타이틀에서 게임 화면으로 전환합니다.
+ */
 function enterGame(mode = GAME_MODES.ENDLESS) {
   if (!commitPlayerNickname()) return;
   gameMode = mode;
@@ -44,6 +50,9 @@ function enterGame(mode = GAME_MODES.ENDLESS) {
   startGame();
 }
 
+/**
+ * 활성 시청자를 찾아 최근 발화 이력을 모달에 렌더링하고 강퇴 대상을 지정합니다.
+ */
 function openViewerPanel(viewerId) {
   if (gameOver || stageReviewOpen) return;
   const viewer = viewers.find(candidate => candidate.id === viewerId && candidate.active);
@@ -63,12 +72,18 @@ function openViewerPanel(viewerId) {
   kickButton.focus();
 }
 
+/**
+ * 선택된 시청자를 해제하고 기록 모달을 접근성 트리에서도 닫습니다.
+ */
 function closeViewerPanel() {
   selectedViewerId = null;
   viewerBackdrop.classList.remove("open");
   viewerBackdrop.setAttribute("aria-hidden", "true");
 }
 
+/**
+ * 강퇴된 시청자의 기존 메시지를 블라인드 문구로 바꾸고 재선택할 수 없게 합니다.
+ */
 function markViewerAsKicked(viewer, replacementText = "블라인드 처리 된 시청자입니다.") {
   document.querySelectorAll(`.message[data-viewer-id="${viewer.id}"]`).forEach(message => {
     message.classList.add("blinded-message");
@@ -89,6 +104,9 @@ function markViewerAsKicked(viewer, replacementText = "블라인드 처리 된 �
   });
 }
 
+/**
+ * 모든 진행 시스템을 중단하고 누적 결과에 맞는 최종 게임오버/승리 카드를 구성합니다.
+ */
 function endGame() {
   gameOver = true;
   stageReviewOpen = false;
@@ -125,6 +143,9 @@ function endGame() {
   gameRestart.focus();
 }
 
+/**
+ * 선택 시청자를 비활성화하고 모드에 따라 즉시 판정하거나 하루 종료까지 결과를 숨깁니다.
+ */
 function kickSelectedViewer() {
   const viewer = viewers.find(candidate => candidate.id === selectedViewerId && candidate.active);
   if (!viewer) return;
@@ -173,10 +194,16 @@ function kickSelectedViewer() {
   }
 }
 
+/**
+ * 입력값 존재 여부를 composer 클래스에 반영해 전송 버튼 시각 상태를 바꿉니다.
+ */
 function updateComposerState() {
   messageForm.classList.toggle("has-text", messageInput.value.trim().length > 0);
 }
 
+/**
+ * 현재 커서와 선택 범위를 보존하면서 이모지 문자열을 입력창에 삽입합니다.
+ */
 function insertAtCursor(value) {
   const start = messageInput.selectionStart ?? messageInput.value.length;
   const end = messageInput.selectionEnd ?? start;
@@ -185,11 +212,17 @@ function insertAtCursor(value) {
   updateComposerState();
 }
 
+/**
+ * 이모지 선택창을 닫고 aria-expanded를 false로 맞춥니다.
+ */
 function closeEmojiPanel() {
   emojiPanel.hidden = true;
   emojiButton.setAttribute("aria-expanded", "false");
 }
 
+/**
+ * 개발 검증용 엔진 상태·이벤트·괴이·재시작 기능을 window.horrorChatGame에 공개합니다.
+ */
 function exposeDebugApi() {
   window.horrorChatGame = {
     seed: currentSeed,
@@ -224,6 +257,9 @@ function exposeDebugApi() {
   };
 }
 
+/**
+ * 고정 시드 테스트에서는 스테이지 번호를 혼합하고 일반 플레이에서는 새 시드를 만듭니다.
+ */
 function createStageSeed() {
   if (fixedSeed !== null) {
     return (fixedSeed + Math.imul(currentStage, 0x9e3779b9)) >>> 0;
@@ -231,6 +267,9 @@ function createStageSeed() {
   return createSeed();
 }
 
+/**
+ * 스테이지/하루의 시청자·엔진·화면·타이머를 초기화하고 해당 모드 진행을 시작합니다.
+ */
 function startStage() {
   window.clearTimeout(corruptedChatTimer);
   corruptedChatTimer = undefined;
@@ -294,6 +333,9 @@ function startStage() {
   scheduleStreamApparition(true);
 }
 
+/**
+ * 새 게임의 체력·점수·누적 통계를 초기화한 뒤 첫 스테이지를 시작합니다.
+ */
 function startGame() {
   window.clearTimeout(interferenceTimer);
   interferenceTimer = undefined;

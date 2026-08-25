@@ -1,6 +1,9 @@
 "use strict";
 
 // Viewer creation, nickname handling, and chat rendering.
+/**
+ * 주어진 시드로 항상 같은 순서를 내는 난수 함수를 만들어 스테이지를 재현 가능하게 합니다.
+ */
 function createRoundRandom(seed) {
   let state = (Number(seed) >>> 0) || 0x6d2b79f5;
   return () => {
@@ -12,6 +15,9 @@ function createRoundRandom(seed) {
   };
 }
 
+/**
+ * Fisher–Yates 방식으로 배열 사본을 섞어 원본 데이터의 순서는 보존합니다.
+ */
 function shuffle(items, random) {
   const output = [...items];
   for (let index = output.length - 1; index > 0; index -= 1) {
@@ -21,6 +27,9 @@ function shuffle(items, random) {
   return output;
 }
 
+/**
+ * 사용 중인 이름을 피하면서 형용사·명사·숫자를 조합한 시청자 닉네임을 만듭니다.
+ */
 function createNickname(usedNicknames, random) {
   let nickname;
   do {
@@ -33,6 +42,9 @@ function createNickname(usedNicknames, random) {
   return nickname;
 }
 
+/**
+ * 암호학 난수를 우선 사용하고 불가능하면 시간과 Math.random을 조합해 새 시드를 만듭니다.
+ */
 function createSeed() {
   if (fixedSeed !== null) return fixedSeed;
   if (window.crypto?.getRandomValues) {
@@ -43,6 +55,9 @@ function createSeed() {
   return Date.now() >>> 0;
 }
 
+/**
+ * 시드에 맞춰 시청자 외형과 채팅 엔진 모델을 만들고 그중 정해진 수를 이상 시청자로 지정합니다.
+ */
 function createViewers(seed) {
   const random = createRoundRandom(seed);
   const usedNicknames = new Set(myNickname ? [myNickname] : []);
@@ -59,10 +74,16 @@ function createViewers(seed) {
   return createdViewers;
 }
 
+/**
+ * 사용자 입력의 연속 공백을 정리하고 최대 길이를 적용해 화면에 쓸 닉네임으로 정규화합니다.
+ */
 function normalizePlayerNickname(value) {
   return String(value || "").trim().replace(/\s+/g, " ").slice(0, 16);
 }
 
+/**
+ * 닉네임 오류 문구, hidden 상태, aria-invalid를 동시에 갱신해 시각/접근성 상태를 맞춥니다.
+ */
 function setNicknameError(message = "") {
   const hasError = Boolean(message);
   nicknameError.textContent = message;
@@ -70,6 +91,9 @@ function setNicknameError(message = "") {
   playerNicknameInput.setAttribute("aria-invalid", String(hasError));
 }
 
+/**
+ * 입력값을 검증한 뒤 현재 플레이어 이름과 localStorage에 확정 저장합니다.
+ */
 function commitPlayerNickname() {
   const nickname = normalizePlayerNickname(playerNicknameInput.value);
   if (!nickname) {
@@ -89,6 +113,9 @@ function commitPlayerNickname() {
   return true;
 }
 
+/**
+ * 저장된 닉네임을 안전하게 복원하며 저장소 접근이 막힌 환경도 오류 없이 처리합니다.
+ */
 function initializePlayerNickname() {
   try {
     const savedNickname = normalizePlayerNickname(window.localStorage.getItem(PLAYER_NICKNAME_STORAGE_KEY));
@@ -99,6 +126,9 @@ function initializePlayerNickname() {
   setNicknameError();
 }
 
+/**
+ * 문자열을 32비트 해시로 바꿔 같은 이상 채팅이 같은 시각 효과를 갖도록 합니다.
+ */
 function hashText(value) {
   let hash = 2166136261;
   for (const character of String(value)) {
@@ -108,6 +138,9 @@ function hashText(value) {
   return hash >>> 0;
 }
 
+/**
+ * 이상 대사의 원문을 한글·라틴 문자·기호가 섞인 여러 줄의 불명확한 문장으로 변환합니다.
+ */
 function createUnknownChatText(text, viewer) {
   const seed = hashText(`${currentSeed}:${viewer?.id || "unknown"}:${viewer?.history?.length || 0}:${text}`);
   const random = createRoundRandom(seed);
@@ -135,6 +168,9 @@ function createUnknownChatText(text, viewer) {
   return lines.slice(0, 4).join("\n");
 }
 
+/**
+ * 이상 채팅 도착 순간 메시지 영역의 짧은 흔들림 애니메이션을 다시 시작합니다.
+ */
 function triggerCorruptedChatPulse() {
   window.clearTimeout(corruptedChatTimer);
   chatApp.classList.remove("corrupted-chat-hit");
@@ -143,6 +179,9 @@ function triggerCorruptedChatPulse() {
   corruptedChatTimer = window.setTimeout(() => chatApp.classList.remove("corrupted-chat-hit"), 480);
 }
 
+/**
+ * 시청자 배지·닉네임·본문과 판정 메타데이터를 포함하는 안전한 li DOM 요소를 생성합니다.
+ */
 function createMessage(viewer, text, ownMessage = false, metadata = {}) {
   const item = document.createElement("li");
   item.className = "message";
@@ -178,6 +217,9 @@ function createMessage(viewer, text, ownMessage = false, metadata = {}) {
   return item;
 }
 
+/**
+ * 게임 규칙이나 판정 안내를 일반 발화와 구분되는 시스템 메시지 요소로 만듭니다.
+ */
 function createSystemMessage(text, danger = false) {
   const item = document.createElement("li");
   item.className = `message system-message${danger ? " danger" : ""}`;
@@ -185,15 +227,24 @@ function createSystemMessage(text, danger = false) {
   return item;
 }
 
+/**
+ * 현재 스크롤이 채팅 맨 아래에서 허용 오차 이내인지 계산합니다.
+ */
 function isNearLatest() {
   return messageList.scrollHeight - messageList.scrollTop - messageList.clientHeight < 54;
 }
 
+/**
+ * 채팅을 최신 위치로 이동시키고 더 이상 필요 없는 새 메시지 버튼을 숨깁니다.
+ */
 function scrollToLatest(behavior = "auto") {
   messageList.scrollTo({ top: messageList.scrollHeight, behavior });
   newMessageButton.hidden = true;
 }
 
+/**
+ * 메시지를 추가하고 최대 개수를 유지하면서 사용자의 기존 스크롤 위치를 보존합니다.
+ */
 function appendElement(element, behavior = "smooth") {
   const wasNearLatest = isNearLatest();
   messageList.append(element);
@@ -209,6 +260,9 @@ function appendElement(element, behavior = "smooth") {
   else newMessageButton.hidden = false;
 }
 
+/**
+ * 엔진 발화를 기록·렌더링하고 이상 대사 변환 및 무한 모드 제한시간을 연결합니다.
+ */
 function handleEngineMessage(message) {
   const { viewer, text, historyOnly, behavior } = message;
   const isCorruptedMessage = viewer.anomalous && Boolean(message.anomalyEvidence || message.anomalyMode);
@@ -224,10 +278,16 @@ function handleEngineMessage(message) {
   if (isAnomalousLine && gameMode === GAME_MODES.ENDLESS) startThreatCountdown(viewer);
 }
 
+/**
+ * 시스템 메시지를 생성해 공통 메시지 추가 흐름으로 전달합니다.
+ */
 function appendSystemMessage(text, danger = false) {
   appendElement(createSystemMessage(text, danger));
 }
 
+/**
+ * 현재 모드와 게임 상태를 HUD 숫자, 라벨, 접근성 텍스트에 반영합니다.
+ */
 function updateHud() {
   const storyMode = gameMode === GAME_MODES.STORY;
   progressLabel.textContent = storyMode ? "일차" : "스테이지";
@@ -241,6 +301,9 @@ function updateHud() {
   if (!storyMode) storyClock.textContent = "∞";
 }
 
+/**
+ * 기존 토스트 타이머를 교체해 짧은 안내 문구가 지정 시간 동안 한 번만 표시되게 합니다.
+ */
 function showToast(message) {
   window.clearTimeout(toastTimer);
   toast.textContent = message;
@@ -248,6 +311,9 @@ function showToast(message) {
   toastTimer = window.setTimeout(() => toast.classList.remove("show"), 2300);
 }
 
+/**
+ * 채팅 디렉터의 내부 상태 코드를 방송 화면의 연결 상태 문구로 변환합니다.
+ */
 function updateStreamState(state) {
   streamSignal.textContent = STREAM_STATE_LABELS[state] || STREAM_STATE_LABELS.AMBIENT;
 }

@@ -1,11 +1,11 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    // VS Code Firefox 디버거용 실행 구성을 모아 둔 JSONC 파일입니다.
+    // 첫 번째 구성은 별도 서버 없이 index.html을 직접 열어 빠르게 확인합니다.
     "version": "0.2.0",
     "configurations": [
         
         {
+            // 로컬 파일 모드: 게임이 file://에서도 정상 동작하는지 검증할 때 사용합니다.
             "name": "Launch index.html",
             "type": "firefox",
             "request": "launch",
@@ -13,6 +13,7 @@
             "file": "${workspaceFolder}/index.html"
         },
         {
+            // 웹 서버 모드: localhost 서버가 이미 실행 중일 때 네트워크 환경으로 디버깅합니다.
             "name": "Launch localhost",
             "type": "firefox",
             "request": "launch",
@@ -21,11 +22,13 @@
             "webRoot": "${workspaceFolder}"
         },
         {
+            // 실행 중인 Firefox 디버그 세션에 연결할 때 사용합니다.
             "name": "Attach",
             "type": "firefox",
             "request": "attach"
         },
         {
+            // 브라우저 확장 기능 형태로 패키징할 경우 작업 폴더를 애드온으로 실행합니다.
             "name": "Launch WebExtension",
             "type": "firefox",
             "request": "launch",

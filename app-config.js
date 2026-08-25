@@ -1,6 +1,11 @@
 "use strict";
 
-// Shared configuration, DOM references, and mutable game state.
+/*
+ * 게임 앱의 공유 선언 파일입니다.
+ * 이후 로드되는 app-*.js는 이 파일의 전역 lexical binding을 순서대로 참조합니다.
+ */
+
+// 랜덤 시청자 닉네임은 형용사+명사+숫자로 만들며 같은 스테이지 안에서는 중복되지 않습니다.
 const NICKNAME_ADJECTIVES = [
   "금손", "즐거운", "빛나는", "신나는", "용감한", "엉뚱한",
   "행복한", "졸린", "재빠른", "유쾌한", "반짝이는", "집중한","야무진",
@@ -24,6 +29,7 @@ const VIEWER_STYLES = [
   { badge: "", badgeClass: "empty", color: "#75a7dc" }
 ];
 
+// 난이도, 스토리 시간, 괴이 출현 주기를 조절하는 게임플레이 상수입니다.
 const ANOMALIES_PER_STAGE = 1;
 const BASE_ANOMALY_GRACE_MS = 20000;
 const MIN_ANOMALY_GRACE_MS = 6000;
@@ -54,6 +60,7 @@ const UNKNOWN_CHAT_TOKENS = Object.freeze([
   "ㅿ", "▥ɯR", "J. JJ", "G…p", "R▤ɯR", "GG그", "RRG", "j▥ɯ"
 ]);
 
+// HTML의 주요 조작 지점을 한 번만 조회해 모든 기능 모듈이 같은 요소를 공유합니다.
 const chatApp = document.querySelector(".chat-app");
 const titleScreen = document.querySelector("#title-screen");
 const gameScreen = document.querySelector("#game-screen");
@@ -134,6 +141,7 @@ const threatSeconds = document.querySelector("#threat-seconds");
 const streamApparition = document.querySelector("#stream-apparition");
 const screenInterference = document.querySelector("#screen-interference");
 
+// 채팅 디렉터 내부 상태를 플레이어에게 보여 줄 한국어 신호 문구로 변환합니다.
 const STREAM_STATE_LABELS = {
   AMBIENT: "연결 안정",
   TENSE: "신호 흔들림",
@@ -155,6 +163,7 @@ const AUDIO_SETTINGS = Object.freeze({
 });
 const PLAYER_NICKNAME_STORAGE_KEY = "ferret-chess-player-nickname";
 
+// URL 파라미터는 재현 가능한 테스트(seed)와 빠른 스토리 테스트(storyDayMs)를 지원합니다.
 const seedParameter = new URLSearchParams(window.location.search).get("seed");
 const fixedSeed = seedParameter !== null && /^\d+$/.test(seedParameter) ? Number(seedParameter) >>> 0 : null;
 const storyDayDurationParameter = new URLSearchParams(window.location.search).get("storyDayMs");
@@ -165,6 +174,7 @@ const storyDayDurationMs = storyDayDurationParameter !== null
   ? Math.max(1000, parsedStoryDayDuration)
   : DEFAULT_STORY_DAY_DURATION_MS;
 
+// 점수, 모드, 스테이지, 판정 결과처럼 한 게임 전체에서 유지되는 핵심 상태입니다.
 let viewers = [];
 let myNickname = "";
 let health = MAX_HEALTH;
@@ -178,6 +188,7 @@ let selectedViewerId = null;
 let gameMode = GAME_MODES.ENDLESS;
 let gameOver = false;
 let stageReviewOpen = false;
+// 무한 모드의 이상 채팅 제한시간과 채팅 엔진 인스턴스 상태입니다.
 let pendingThreat = null;
 let threatRemainingMs = 0;
 let chatEngine = null;
@@ -186,11 +197,13 @@ let threatInterval;
 let threatLastTick = 0;
 let interferenceTimer;
 let currentSeed = 0;
+// 스토리 모드의 오후 7시~오전 2시 가상 시계를 실제 경과 시간에 매핑합니다.
 let storyClockInterval;
 let storyElapsedMs = 0;
 let storyLastTick = 0;
 let storyVictory = false;
 let lastDamageReason = "missed";
+// 방송 화면 괴이의 난수, 출현/만료 타이머, 누적 퇴치 결과입니다.
 let apparitionRandom = Math.random;
 let apparitionSpawnTimer;
 let apparitionExpireTimer;
@@ -199,6 +212,7 @@ let banishedApparitions = 0;
 let missedApparitions = 0;
 let dayBanishedApparitions = 0;
 let dayMissedApparitions = 0;
+// 하루 결과 공포 연출, 오답 효과음, 이상 채팅 흔들림에 사용하는 일회성 자원입니다.
 let storyRevealTimer;
 let storyScareTimer;
 let scareAudioContext;

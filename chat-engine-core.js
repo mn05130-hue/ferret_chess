@@ -2,6 +2,9 @@
 
 // Scheduling, director state, speaker selection, and event intake.
 class HorrorChatEngine {
+  /**
+   * 외부 콜백·시청자·시드·난이도를 저장하고 큐, 디렉터, 중복 검사 통계를 초기화합니다.
+   */
   constructor(options) {
     this.viewers = options.viewers;
     this.onMessage = options.onMessage;
@@ -49,6 +52,9 @@ class HorrorChatEngine {
     this.assignViewerModels();
   }
 
+  /**
+   * 시청자마다 일반 페르소나와 이상 권한을 배정하고 발화 추적 필드를 준비합니다.
+   */
   assignViewerModels() {
     const personaKeys = this.random.shuffle(Object.keys(PERSONAS));
     const permissions = this.random.shuffle([...ANOMALY_PERMISSIONS]);
@@ -68,6 +74,9 @@ class HorrorChatEngine {
 
   /* ---------- 수명 주기 ---------- */
 
+  /**
+   * 초기 채팅을 큐에 넣고 가상 방송 사건과 주기 tick을 시작합니다.
+   */
   start() {
     if (this.running) return;
     this.running = true;
@@ -77,6 +86,9 @@ class HorrorChatEngine {
     this.timer = window.setInterval(() => this.tick(), TUNING.tickMs);
   }
 
+  /**
+   * 엔진 실행 플래그를 내리고 예약된 interval을 해제합니다.
+   */
   stop() {
     this.running = false;
     window.clearInterval(this.timer);
@@ -84,10 +96,16 @@ class HorrorChatEngine {
     this.queue.length = 0;
   }
 
+  /**
+   * 탭 비활성화나 모달 표시 중 발화 생성을 일시정지하거나 다시 시작합니다.
+   */
   setPaused(paused) {
     this.paused = Boolean(paused);
   }
 
+  /**
+   * 시뮬레이션 시간을 전진시키며 사건 실행, 상태 갱신, 만료 요청 처리, 다음 발화를 수행합니다.
+   */
   tick() {
     if (!this.running || this.paused) return;
     this.simTime += TUNING.tickMs;
@@ -114,6 +132,9 @@ class HorrorChatEngine {
     if (!this.ambientQueued) this.enqueueAmbient();
   }
 
+  /**
+   * 긴장도와 burst/aftermath/lull 시간을 바탕으로 현재 채팅 분위기 상태를 결정합니다.
+   */
   updateDirectorState() {
     let nextState = "AMBIENT";
     if (this.simTime < this.burstUntil) nextState = "BURST";
@@ -131,11 +152,17 @@ class HorrorChatEngine {
 
   /* ---------- 큐 ---------- */
 
+  /**
+   * 새 발화 요청을 시간순 큐에 추가하고 디버그용 최대 큐 크기를 기록합니다.
+   */
   enqueue(request) {
     this.queue.push({ priority: 1, threadId: null, ...request });
     this.queue.sort((left, right) => left.scheduledAt - right.scheduledAt || right.priority - left.priority);
   }
 
+  /**
+   * 현재 디렉터 상태에 적합한 일반 발화 요청을 지정 지연 뒤 큐에 넣습니다.
+   */
   enqueueAmbient(delay) {
     if (this.ambientQueued) return;
     const interval = TUNING.intervals[this.state];
@@ -150,6 +177,9 @@ class HorrorChatEngine {
     this.ambientQueued = true;
   }
 
+  /**
+   * 상태별 의도 가중치와 최근 사용 쿨다운을 결합해 다음 발화 의도를 선택합니다.
+   */
   chooseIntent(state) {
     const weights = TUNING.stateIntents[state];
     const entries = Object.entries(weights).map(([intent, weight]) => {
@@ -160,6 +190,9 @@ class HorrorChatEngine {
     return this.random.weighted(entries);
   }
 
+  /**
+   * 외부 또는 합성 방송 사건을 장면 상태에 반영하고 여러 반응 채팅을 예약합니다.
+   */
   emitEvent(type, slots = {}, intensityOverride) {
     const preset = SYNTHETIC_EVENTS.find(event => event.type === type);
     const intensity = Math.min(1, Math.max(0, intensityOverride ?? preset?.intensity ?? .5));
@@ -198,6 +231,9 @@ class HorrorChatEngine {
     this.updateDirectorState();
   }
 
+  /**
+   * 합성 사건 모드에서 다음 방송 사건과 발생 시각을 미리 선택합니다.
+   */
   planFutureEvent() {
     if (!this.syntheticEvents || this.futureEvent) return;
     const event = this.random.pick(SYNTHETIC_EVENTS);
@@ -210,6 +246,9 @@ class HorrorChatEngine {
 
   /* ---------- 화자 선택 ---------- */
 
+  /**
+   * 활성 시청자의 페르소나 적합도·침묵 시간·쿨다운·긴장 반응을 계산해 화자를 고릅니다.
+   */
   chooseSpeaker(intent, forcedSpeakerId) {
     if (forcedSpeakerId) return this.viewers.find(viewer => viewer.id === forcedSpeakerId && viewer.active);
     const active = this.viewers.filter(viewer => viewer.active);
