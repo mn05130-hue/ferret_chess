@@ -31,11 +31,16 @@
   const MAX_MESSAGES = 100;
   const MAX_HEALTH = 3;
   const MAX_TRUST = 3;
+  const WEEK_TOTAL_DAYS = 7;
+  const WEEK_DAY_DURATION_MS = 64000;
+  const WEEK_START_MINUTES = 17 * 60;
+  const WEEK_BROADCAST_MINUTES = 8 * 60;
 
   const chatApp = document.querySelector(".chat-app");
   const titleScreen = document.querySelector("#title-screen");
   const gameScreen = document.querySelector("#game-screen");
   const gameStart = document.querySelector("#game-start");
+  const weekGameStart = document.querySelector("#week-game-start");
   const titleMusic = document.querySelector("#title-music");
   const titleMusicButton = document.querySelector("#title-music-button");
   const titleMusicLabel = document.querySelector("#title-music-label");
@@ -52,6 +57,7 @@
   const trustDisplay = document.querySelector("#trust-display");
   const anomalyDisplay = document.querySelector("#anomaly-display");
   const scoreDisplay = document.querySelector("#score-display");
+  const stageLabel = document.querySelector("#stage-label");
   const stageDisplay = document.querySelector("#stage-display");
   const healthDisplay = document.querySelector("#health-display");
   const helpButton = document.querySelector("#help-button");
@@ -65,6 +71,7 @@
   const resultTitle = document.querySelector("#result-title");
   const resultCopy = document.querySelector("#result-copy");
   const finalScore = document.querySelector("#final-score");
+  const finalProgressLabel = document.querySelector("#final-progress-label");
   const finalStage = document.querySelector("#final-stage");
   const gameRetry = document.querySelector("#game-retry");
   const gameRestart = document.querySelector("#game-restart");
@@ -84,6 +91,7 @@
   const streamSignal = document.querySelector("#stream-signal");
   const threatTimer = document.querySelector("#threat-timer");
   const threatSeconds = document.querySelector("#threat-seconds");
+  const broadcastClock = document.querySelector("#broadcast-clock");
   const screenInterference = document.querySelector("#screen-interference");
 
   const STREAM_STATE_LABELS = {
@@ -121,6 +129,15 @@
   let threatLastTick = 0;
   let interferenceTimer;
   let currentSeed = 0;
+  let selectedGameMode = "infinite";
+  let broadcastElapsedMs = 0;
+  let broadcastLastTick = 0;
+  let broadcastInterval;
+  let currentDayFailed = false;
+
+  function isWeekMode() {
+    return selectedGameMode === "week";
+  }
 
   function createRoundRandom(seed) {
     let state = (Number(seed) >>> 0) || 0x6d2b79f5;
@@ -251,8 +268,7 @@
     if (historyOnly) return;
     appendElement(createMessage(viewer, text, false, message), behavior);
 
-    const isAnomalousLine = viewer.anomalous
-      && (message.anomalyEvidence || viewer.anomalyLevel >= 3);
+    const isAnomalousLine = viewer.anomalous && Boolean(message.anomalyEvidence);
     if (isAnomalousLine) startThreatCountdown(viewer);
   }
 
@@ -265,7 +281,8 @@
     trustDisplay.setAttribute("aria-label", `신뢰도 ${trust}`);
     anomalyDisplay.textContent = String(remainingAnomalies);
     scoreDisplay.textContent = String(score).padStart(4, "0");
-    stageDisplay.textContent = String(currentStage);
+    stageLabel.textContent = isWeekMode() ? "날짜" : "스테이지";
+    stageDisplay.textContent = isWeekMode() ? `${currentStage}/${WEEK_TOTAL_DAYS}` : String(currentStage);
     healthDisplay.textContent = String(health);
     healthDisplay.setAttribute("aria-label", `체력 ${health}`);
   }
@@ -360,6 +377,47 @@
     );
   }
 
+  function formatBroadcastClock(elapsedMs = broadcastElapsedMs) {
+    const ratio = Math.min(1, Math.max(0, elapsedMs / WEEK_DAY_DURATION_MS));
+    let totalMinutes = WEEK_START_MINUTES + Math.floor(WEEK_BROADCAST_MINUTES * ratio);
+    totalMinutes %= 24 * 60;
+    const hours = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+    const minutes = String(totalMinutes % 60).padStart(2, "0");
+    return `${hours}:${minutes}`;
+  }
+
+  function renderBroadcastClock() {
+    broadcastClock.textContent = `DAY ${currentStage} · ${formatBroadcastClock()}`;
+  }
+
+  function clearBroadcastClock(hide = false) {
+    window.clearInterval(broadcastInterval);
+    broadcastInterval = undefined;
+    if (hide) broadcastClock.hidden = true;
+  }
+
+  function updateBroadcastClock() {
+    const now = performance.now();
+    if (document.hidden || gameOver || stageReviewOpen) {
+      broadcastLastTick = now;
+      return;
+    }
+
+    broadcastElapsedMs += Math.max(0, now - broadcastLastTick);
+    broadcastLastTick = now;
+    renderBroadcastClock();
+    if (broadcastElapsedMs >= WEEK_DAY_DURATION_MS) finishBroadcastDay();
+  }
+
+  function startBroadcastClock() {
+    clearBroadcastClock();
+    broadcastElapsedMs = 0;
+    broadcastLastTick = performance.now();
+    broadcastClock.hidden = false;
+    renderBroadcastClock();
+    broadcastInterval = window.setInterval(updateBroadcastClock, 100);
+  }
+
   function startThreatCountdown(viewer) {
     if (pendingThreat || gameOver || stageReviewOpen || !viewer.active) return;
     const graceMs = getStageGraceMs();
@@ -385,14 +443,16 @@
   function finishStage({ success, title, copy }) {
     if (stageReviewOpen || gameOver) return;
     stageReviewOpen = true;
+    clearBroadcastClock();
     clearThreatCountdown(false);
-    streamSignal.textContent = "스테이지 정산 중";
+    streamSignal.textContent = isWeekMode() ? "일일 방송 정산 중" : "스테이지 정산 중";
     closeEmojiPanel();
     closeViewerPanel();
     syncEnginePause();
 
     stageCard.classList.toggle("failed", !success);
-    stageResultKicker.textContent = `STAGE ${String(currentStage).padStart(2, "0")} ${success ? "CLEAR" : "FAILED"}`;
+    const progressName = isWeekMode() ? "DAY" : "STAGE";
+    stageResultKicker.textContent = `${progressName} ${String(currentStage).padStart(2, "0")} ${success ? "CLEAR" : "FAILED"}`;
     stageResultMark.textContent = success ? "✓" : "!";
     stageResultTitle.textContent = title;
     stageResultCopy.textContent = copy;
@@ -401,11 +461,58 @@
     stageHealth.textContent = String(health);
     stageTrust.textContent = String(trust);
 
-    const gameEnded = health === 0 || trust === 0;
-    stageContinue.textContent = gameEnded ? "최종 결과 보기" : "다음 스테이지";
+    const gameEnded = health === 0 || trust === 0 || (isWeekMode() && currentStage >= WEEK_TOTAL_DAYS);
+    stageContinue.textContent = gameEnded
+      ? "최종 결과 보기"
+      : isWeekMode() ? "다음 날 방송" : "다음 스테이지";
     stageOverlay.classList.add("open");
     stageOverlay.setAttribute("aria-hidden", "false");
     stageContinue.focus();
+  }
+
+  function finishBroadcastDay() {
+    if (!isWeekMode() || stageReviewOpen || gameOver) return;
+    broadcastElapsedMs = WEEK_DAY_DURATION_MS;
+    renderBroadcastClock();
+    clearBroadcastClock();
+
+    const unresolved = viewers.filter(viewer => viewer.active && viewer.anomalous);
+    if (unresolved.length) {
+      unresolved.forEach(viewer => {
+        viewer.active = false;
+        markViewerAsKicked(viewer, "방송 종료와 함께 사라진 시청자입니다.");
+      });
+      remainingAnomalies = 0;
+      missedAnomalies += unresolved.length;
+      health = Math.max(0, health - unresolved.length);
+      score = Math.max(0, score - 100 * unresolved.length);
+      appendSystemMessage(`01:00까지 ${unresolved.length}명의 이상 시청자를 처리하지 못했습니다.`, true);
+      updateHud();
+      triggerScreenInterference("color");
+      finishStage({
+        success: false,
+        title: `${currentStage}일차 이상 신호 미처리`,
+        copy: "방송 종료 시각까지 남아 있던 이상 신호가 침투해 체력이 감소했습니다."
+      });
+      return;
+    }
+
+    if (currentDayFailed) {
+      finishStage({
+        success: false,
+        title: `${currentStage}일차 이상 신호 침투`,
+        copy: "이상 채팅을 제때 처리하지 못했지만 01:00까지 방송은 유지했습니다."
+      });
+      return;
+    }
+
+    score += 200;
+    updateHud();
+    finishStage({
+      success: true,
+      title: `${currentStage}일차 방송 완료`,
+      copy: "17:00부터 01:00까지 방송을 유지하고 이상 신호를 모두 차단했습니다. +200점"
+    });
   }
 
   function expireThreat() {
@@ -418,12 +525,19 @@
     viewer.active = false;
     remainingAnomalies -= 1;
     missedAnomalies += 1;
+    currentDayFailed = true;
     health = Math.max(0, health - 1);
     score = Math.max(0, score - 100);
     markViewerAsKicked(viewer, "이상 신호에 잠식되어 연결이 끊겼습니다.");
     appendSystemMessage(`${viewer.name}의 이상 신호가 방송에 침투했습니다.`, true);
     updateHud();
     triggerScreenInterference("color");
+    clearThreatCountdown();
+    if (isWeekMode() && health > 0) {
+      streamSignal.textContent = "방송 유지 중";
+      showToast("이상 신호가 침투했습니다. 01:00까지 버티세요.");
+      return;
+    }
     finishStage({
       success: false,
       title: "이상 신호 추적 실패",
@@ -441,6 +555,12 @@
       return;
     }
 
+    if (isWeekMode() && currentStage >= WEEK_TOTAL_DAYS) {
+      stageReviewOpen = false;
+      endGame("campaign-complete");
+      return;
+    }
+
     currentStage += 1;
     stageReviewOpen = false;
     startStage();
@@ -451,6 +571,7 @@
     interferenceTimer = undefined;
     gameOver = true;
     stageReviewOpen = false;
+    clearBroadcastClock(true);
     clearThreatCountdown();
     chatEngine?.stop();
     chatEngine = null;
@@ -460,6 +581,7 @@
     stageOverlay.classList.remove("open");
     stageOverlay.setAttribute("aria-hidden", "true");
     gameOverlay.classList.remove("open");
+    gameOverlay.classList.remove("victory");
     gameOverlay.setAttribute("aria-hidden", "true");
     gameScreen.inert = true;
     gameScreen.setAttribute("aria-hidden", "true");
@@ -469,7 +591,8 @@
     if (shouldFocus) requestAnimationFrame(() => gameStart.focus());
   }
 
-  function enterGame() {
+  function enterGame(mode = "infinite") {
+    selectedGameMode = mode;
     stopTitleMusic();
     titleScreen.hidden = true;
     titleScreen.setAttribute("aria-hidden", "true");
@@ -519,21 +642,33 @@
     });
   }
 
-  function endGame() {
+  function endGame(reason = "failed") {
+    const completedCampaign = reason === "campaign-complete";
     gameOver = true;
     stageReviewOpen = false;
+    clearBroadcastClock(false);
     clearThreatCountdown(false);
     chatEngine?.stop();
     closeViewerPanel();
     stageOverlay.classList.remove("open");
     stageOverlay.setAttribute("aria-hidden", "true");
-    resultKicker.textContent = health === 0 ? "SIGNAL DESTROYED" : "TRUST LOST";
-    resultTitle.textContent = health === 0 ? "방송이 잠식되었습니다" : "방송 신뢰도가 무너졌습니다";
-    resultCopy.textContent = health === 0
-      ? `${missedAnomalies}개의 이상 신호가 방송에 침투해 더 이상 송출을 유지할 수 없습니다.`
-      : "정상 시청자를 반복해서 차단해 더 이상 방송을 유지할 수 없습니다.";
+    gameOverlay.classList.toggle("victory", completedCampaign);
+    if (completedCampaign) {
+      resultKicker.textContent = "SEVEN DAYS COMPLETE";
+      resultTitle.textContent = "7일 방송을 완주했습니다";
+      resultCopy.textContent = `매일 17:00부터 01:00까지 방송을 지켜냈습니다. 이상 시청자 ${caughtAnomalies}명을 차단했습니다.`;
+    } else {
+      resultKicker.textContent = health === 0 ? "SIGNAL DESTROYED" : "TRUST LOST";
+      resultTitle.textContent = health === 0 ? "방송이 잠식되었습니다" : "방송 신뢰도가 무너졌습니다";
+      resultCopy.textContent = health === 0
+        ? `${missedAnomalies}개의 이상 신호가 방송에 침투해 더 이상 송출을 유지할 수 없습니다.`
+        : "정상 시청자를 반복해서 차단해 더 이상 방송을 유지할 수 없습니다.";
+    }
     finalScore.textContent = `${String(score).padStart(4, "0")}점`;
-    finalStage.textContent = String(currentStage);
+    finalProgressLabel.textContent = isWeekMode()
+      ? completedCampaign ? "완료한 날짜" : "도달 날짜"
+      : "도달 스테이지";
+    finalStage.textContent = isWeekMode() ? `${currentStage} / ${WEEK_TOTAL_DAYS}` : String(currentStage);
     gameOverlay.classList.add("open");
     gameOverlay.setAttribute("aria-hidden", "false");
     gameRestart.focus();
@@ -553,6 +688,12 @@
       appendSystemMessage(`${viewer.name}의 비정상 연결을 차단했습니다.`);
       showToast("이상 신호를 발견했습니다. +150점");
       updateHud();
+      if (isWeekMode()) {
+        if (pendingThreat?.id === viewer.id) clearThreatCountdown();
+        streamSignal.textContent = "01:00까지 방송 유지";
+        appendSystemMessage(`이상 신호를 차단했습니다. ${formatBroadcastClock()} · 방송을 계속하세요.`);
+        return;
+      }
       finishStage({
         success: true,
         title: "이상 시청자 차단",
@@ -622,11 +763,13 @@
   }
 
   function startStage() {
+    clearBroadcastClock(false);
     clearThreatCountdown(false);
     chatEngine?.stop();
     currentSeed = createStageSeed();
     viewers = createViewers(currentSeed);
     remainingAnomalies = ANOMALIES_PER_STAGE;
+    currentDayFailed = false;
     selectedViewerId = null;
     gameOver = false;
     stageReviewOpen = false;
@@ -663,7 +806,13 @@
     chatEngine.start();
 
     const graceSeconds = (getStageGraceMs() / 1000).toFixed(1).replace(".0", "");
-    appendSystemMessage(`스테이지 ${currentStage} 시작. 이상 채팅은 ${graceSeconds}초 안에 처리하세요.`);
+    if (isWeekMode()) {
+      startBroadcastClock();
+      appendSystemMessage(`${currentStage}일차 방송 시작 · 17:00 → 01:00. 이상 채팅은 ${graceSeconds}초 안에 처리하세요.`);
+    } else {
+      broadcastClock.hidden = true;
+      appendSystemMessage(`스테이지 ${currentStage} 시작. 이상 채팅은 ${graceSeconds}초 안에 처리하세요.`);
+    }
     requestAnimationFrame(() => scrollToLatest());
     exposeDebugApi();
   }
@@ -673,6 +822,7 @@
     interferenceTimer = undefined;
     gameOver = true;
     stageReviewOpen = false;
+    clearBroadcastClock(false);
     clearThreatCountdown(false);
     chatEngine?.stop();
     trust = MAX_TRUST;
@@ -714,7 +864,8 @@
     if (titleMusic.paused) playTitleMusic();
     else stopTitleMusic(false);
   });
-  gameStart.addEventListener("click", enterGame);
+  gameStart.addEventListener("click", () => enterGame("infinite"));
+  weekGameStart.addEventListener("click", () => enterGame("week"));
   gameRetry.addEventListener("click", startGame);
   gameRestart.addEventListener("click", () => showTitle());
   stageContinue.addEventListener("click", continueFromStageResult);
@@ -759,7 +910,9 @@
   document.querySelector("#support-button").addEventListener("click", () => showToast("지금은 후원할 수 없습니다."));
   document.querySelector("#voice-button").addEventListener("click", () => showToast("알 수 없는 잡음이 들립니다…"));
   document.querySelector("#chat-tab").addEventListener("click", () => scrollToLatest("smooth"));
-  helpButton.addEventListener("click", () => showToast("이상 채팅을 제한시간 안에 처리하세요. 스테이지가 오를수록 시간이 짧아집니다."));
+  helpButton.addEventListener("click", () => showToast(isWeekMode()
+    ? "매일 17:00부터 01:00까지 방송하며 이상 시청자를 찾아 차단하세요."
+    : "이상 채팅을 제한시간 안에 처리하세요. 스테이지가 오를수록 시간이 짧아집니다."));
 
   document.addEventListener("pointerdown", event => {
     if (!emojiPanel.hidden && !emojiPanel.contains(event.target) && !emojiButton.contains(event.target)) closeEmojiPanel();

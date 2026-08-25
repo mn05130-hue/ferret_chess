@@ -223,7 +223,7 @@ button {
   height: 49px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 7px;
   border: 1px solid #57e3ba;
   border-radius: 9px;
@@ -233,6 +233,34 @@ button {
   font-size: 16px;
   font-weight: 950;
   cursor: pointer;
+}
+
+.title-mode-list {
+  display: grid;
+  gap: 9px;
+}
+
+.mode-button-copy {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+
+.mode-button-copy strong {
+  font-size: 15px;
+}
+
+.mode-button-copy small {
+  font-size: 9px;
+  font-weight: 750;
+  opacity: .7;
+}
+
+.week-mode-button {
+  border-color: #d7a45c;
+  color: #fff8e9;
+  background: linear-gradient(180deg, #73542c, #49351f);
+  box-shadow: 0 8px 25px #d59a4822, inset 0 1px #fff1cb35;
 }
 
 .title-start-button:hover,
@@ -479,6 +507,7 @@ button {
 }
 
 .live-badge,
+.broadcast-clock,
 .viewer-count,
 .signal-status {
   display: inline-flex;
@@ -490,6 +519,17 @@ button {
   font-family: ui-monospace, "Cascadia Mono", monospace;
   font-size: 10px;
   font-weight: 850;
+}
+
+.broadcast-clock {
+  padding: 5px 8px;
+  border-color: #deb36b55;
+  color: #f5d493;
+  letter-spacing: .05em;
+}
+
+.broadcast-clock[hidden] {
+  display: none;
 }
 
 .live-badge {
@@ -1421,6 +1461,13 @@ button {
 
 .game-overlay.open .result-card {
   scale: 1;
+}
+
+.game-overlay.victory .result-card {
+  border-color: #397d69;
+  background:
+    radial-gradient(circle at 50% 0, #39bd952d, transparent 58%),
+    #171b1a;
 }
 
 .result-card h2 {
