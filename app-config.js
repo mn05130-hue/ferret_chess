@@ -63,6 +63,7 @@ const UNKNOWN_CHAT_TOKENS = Object.freeze([
 // HTML의 주요 조작 지점을 한 번만 조회해 모든 기능 모듈이 같은 요소를 공유합니다.
 const chatApp = document.querySelector(".chat-app");
 const entryScreen = document.querySelector("#entry-screen");
+const entryForm = document.querySelector("#entry-form");
 const entryGate = document.querySelector("#entry-gate");
 const titleScreen = document.querySelector("#title-screen");
 const gameScreen = document.querySelector("#game-screen");
@@ -140,7 +141,9 @@ const streamViewerCount = document.querySelector("#stream-viewer-count");
 const streamSignal = document.querySelector("#stream-signal");
 const threatTimer = document.querySelector("#threat-timer");
 const threatSeconds = document.querySelector("#threat-seconds");
-const streamApparition = document.querySelector("#stream-apparition");
+const connectionWidget = document.querySelector("#connection-widget");
+const connectionStatus = document.querySelector("#connection-status");
+const reconnectButton = document.querySelector("#reconnect-button");
 const screenInterference = document.querySelector("#screen-interference");
 
 // 채팅 디렉터 내부 상태를 플레이어에게 보여 줄 한국어 신호 문구로 변환합니다.
@@ -160,7 +163,7 @@ const GAME_MUSIC_TRACKS = Object.freeze([
   "assets/gameplay-2.mp3"
 ]);
 const AUDIO_SETTINGS = Object.freeze({
-  title: { storageKey: "ferret-chess-title-volume", defaultVolume: 45 },
+  title: { storageKey: "ferret-chess-title-volume", defaultVolume: 15 },
   game: { storageKey: "ferret-chess-game-volume", defaultVolume: 10 }
 });
 const PLAYER_NICKNAME_STORAGE_KEY = "ferret-chess-player-nickname";
@@ -205,11 +208,14 @@ let storyElapsedMs = 0;
 let storyLastTick = 0;
 let storyVictory = false;
 let lastDamageReason = "missed";
-// 방송 화면 괴이의 난수, 출현/만료 타이머, 누적 퇴치 결과입니다.
+// 상단 연결 괴이의 난수, 출현/만료/오판 타이머와 누적 복구 결과입니다.
 let apparitionRandom = Math.random;
 let apparitionSpawnTimer;
 let apparitionExpireTimer;
+let connectionFeedbackTimer;
 let apparitionActive = false;
+let apparitionExpired = false;
+let falseReconnects = 0;
 let banishedApparitions = 0;
 let missedApparitions = 0;
 let dayBanishedApparitions = 0;

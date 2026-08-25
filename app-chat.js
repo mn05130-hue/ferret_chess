@@ -97,7 +97,7 @@ function setNicknameError(message = "") {
 function commitPlayerNickname() {
   const nickname = normalizePlayerNickname(playerNicknameInput.value);
   if (!nickname) {
-    setNicknameError("게임을 시작하려면 닉네임을 입력하세요.");
+    setNicknameError("타이틀로 이동하려면 닉네임을 입력하세요.");
     playerNicknameInput.focus();
     return false;
   }

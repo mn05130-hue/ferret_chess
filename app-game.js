@@ -2,7 +2,7 @@
 
 // Screens, viewer actions, stage lifecycle, and game startup.
 /**
- * 최초 로드에서는 타이틀과 게임을 모두 비활성화하고 오디오 권한을 받을 흰 진입 화면만 표시합니다.
+ * 최초 로드에서는 타이틀과 게임을 비활성화하고 닉네임을 입력받을 진입 화면만 표시합니다.
  */
 function showEntryScreen() {
   window.clearTimeout(entryTransitionTimer);
@@ -18,14 +18,14 @@ function showEntryScreen() {
   gameScreen.setAttribute("aria-hidden", "true");
   stopTitleMusic();
   stopGameMusic();
-  requestAnimationFrame(() => entryGate.focus());
+  requestAnimationFrame(() => playerNicknameInput.focus());
 }
 
 /**
- * 첫 화면의 사용자 클릭 안에서 타이틀을 열고 음악 재생을 요청한 뒤 진입 화면을 자동으로 제거합니다.
+ * 첫 화면에서 닉네임을 검증한 뒤 제출 제스처 안에서 음악 재생과 타이틀 전환을 시작합니다.
  */
 function enterTitleFromEntry() {
-  if (entryGate.disabled) return;
+  if (entryGate.disabled || !commitPlayerNickname()) return;
   entryGate.disabled = true;
   entryScreen.setAttribute("aria-hidden", "true");
   entryScreen.classList.add("is-leaving");
@@ -170,8 +170,10 @@ function endGame() {
     resultTitle.textContent = "방송을 유지하지 못했습니다";
     if (lastDamageReason === "wrong-kick") {
       resultCopy.textContent = `정상 시청자를 반복해서 오판해 체력을 모두 잃었습니다. 총 오판 ${wrongKicks}회.`;
+    } else if (lastDamageReason === "false-reconnect") {
+      resultCopy.textContent = `정상 연결을 반복해서 재설정해 체력을 모두 잃었습니다. 총 ${falseReconnects}회 오판했습니다.`;
     } else if (lastDamageReason === "apparition") {
-      resultCopy.textContent = `방송 화면의 괴이를 놓쳐 체력을 모두 잃었습니다. 총 ${missedApparitions}회 놓쳤습니다.`;
+      resultCopy.textContent = `약해진 방송 연결을 복구하지 못해 체력을 모두 잃었습니다. 총 ${missedApparitions}회 실패했습니다.`;
     } else {
       resultCopy.textContent = `${missedAnomalies}개의 이상 신호를 놓쳐 체력을 모두 잃었습니다.`;
     }
@@ -290,6 +292,7 @@ function exposeDebugApi() {
         active: apparitionActive,
         banished: banishedApparitions,
         missed: missedApparitions,
+        falseReconnects,
         dayBanished: dayBanishedApparitions,
         dayMissed: dayMissedApparitions
       };
@@ -327,6 +330,7 @@ function startStage() {
   selectedViewerId = null;
   gameOver = false;
   stageReviewOpen = false;
+  gameScreen.inert = false;
   messageList.replaceChildren();
   stageOverlay.classList.remove("open");
   stageOverlay.setAttribute("aria-hidden", "true");
@@ -392,6 +396,7 @@ function startGame() {
   caughtAnomalies = 0;
   missedAnomalies = 0;
   wrongKicks = 0;
+  falseReconnects = 0;
   banishedApparitions = 0;
   missedApparitions = 0;
   dayBanishedApparitions = 0;

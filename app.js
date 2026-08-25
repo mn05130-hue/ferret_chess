@@ -5,8 +5,11 @@
  * DOM 이벤트를 기능 함수에 연결하고 저장된 설정을 복원한 다음 최초 진입 화면을 표시합니다.
  */
 
-// 첫 화면의 단 한 번의 클릭으로 오디오 권한을 얻고 타이틀 전환을 시작합니다.
-entryGate.addEventListener("click", enterTitleFromEntry);
+// 닉네임 폼의 버튼 클릭이나 Enter 제출로 오디오 권한을 얻고 타이틀 전환을 시작합니다.
+entryForm.addEventListener("submit", event => {
+  event.preventDefault();
+  enterTitleFromEntry();
+});
 
 // 채팅 닉네임을 클릭하면 해당 시청자의 최근 발화 기록을 엽니다.
 messageList.addEventListener("click", event => {
@@ -31,7 +34,7 @@ messageInput.addEventListener("input", updateComposerState);
 newMessageButton.addEventListener("click", () => scrollToLatest("smooth"));
 panelClose.addEventListener("click", closeViewerPanel);
 kickButton.addEventListener("click", kickSelectedViewer);
-streamApparition.addEventListener("click", banishStreamApparition);
+reconnectButton.addEventListener("click", reconnectStreamConnection);
 titleMusicButton.addEventListener("click", () => {
   if (titleMusic.paused) playTitleMusic();
   else stopTitleMusic(false);

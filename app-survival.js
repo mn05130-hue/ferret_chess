@@ -1,6 +1,6 @@
 "use strict";
 
-// Story clock, threat timer, and stream apparition encounters.
+// Story clock, threat timer, and compact Wi-Fi connection encounters.
 /**
  * 스토리 시계 interval을 중지하고 마지막 tick 기준값을 제거합니다.
  */
@@ -133,13 +133,19 @@ function getApparitionDelay([minimum, maximum]) {
 }
 
 /**
- * 괴이 버튼을 숨기고 활성 상태 및 만료 타이머를 정리합니다.
+ * 연결 관련 타이머와 작은 상단 위젯을 정상 와이파이 상태로 되돌립니다.
  */
-function hideStreamApparition() {
+function resetConnectionWidget() {
   window.clearTimeout(apparitionExpireTimer);
+  window.clearTimeout(connectionFeedbackTimer);
   apparitionExpireTimer = undefined;
+  connectionFeedbackTimer = undefined;
   apparitionActive = false;
-  streamApparition.hidden = true;
+  apparitionExpired = false;
+  connectionWidget.classList.remove("is-weak", "is-failed", "is-false-reconnect");
+  connectionWidget.setAttribute("aria-label", "방송 연결 상태: 안정");
+  connectionStatus.textContent = "연결 안정";
+  reconnectButton.setAttribute("aria-label", "방송 재연결");
 }
 
 /**
@@ -148,7 +154,7 @@ function hideStreamApparition() {
 function clearStreamApparition() {
   window.clearTimeout(apparitionSpawnTimer);
   apparitionSpawnTimer = undefined;
-  hideStreamApparition();
+  resetConnectionWidget();
 }
 
 /**
@@ -169,78 +175,113 @@ function scheduleStreamApparition(initial = false) {
 }
 
 /**
- * 괴이의 위치·크기·변형을 정하고 제한시간 동안 방송 화면에 노출합니다.
+ * 별도 알림 메시지나 큰 화면 변화 없이 상단 와이파이 위젯만 약한 연결 상태로 전환합니다.
  */
 function spawnStreamApparition() {
   if (apparitionActive || gameOver || stageReviewOpen || titleScreen.hidden === false) return false;
   window.clearTimeout(apparitionSpawnTimer);
   apparitionSpawnTimer = undefined;
   apparitionActive = true;
-  streamApparition.dataset.variant = String(1 + Math.floor(apparitionRandom() * 3));
-  streamApparition.style.setProperty("--apparition-x", `${16 + apparitionRandom() * 68}%`);
-  streamApparition.style.setProperty("--apparition-y", `${36 + apparitionRandom() * 28}%`);
-  streamApparition.hidden = false;
-  showToast("방송 화면에 괴이가 나타났습니다. 클릭해서 퇴치하세요!");
+  apparitionExpired = false;
+  window.clearTimeout(connectionFeedbackTimer);
+  connectionFeedbackTimer = undefined;
+  connectionWidget.classList.remove("is-failed", "is-false-reconnect");
+  connectionWidget.classList.add("is-weak");
+  connectionWidget.setAttribute("aria-label", "방송 연결 상태: 약함");
+  connectionStatus.textContent = "연결 약함";
+  reconnectButton.setAttribute("aria-label", "약해진 방송 연결 재연결");
   apparitionExpireTimer = window.setTimeout(expireStreamApparition, APPARITION_LIFETIME_MS);
   return true;
 }
 
 /**
- * 플레이어가 제때 누르지 못한 괴이를 실패로 집계하고 체력/점수에 반영합니다.
+ * 제한시간 안에 재접속하지 못한 경우 한 번만 실패로 기록하고 상단 위젯을 끊김 상태로 유지합니다.
  */
 function expireStreamApparition() {
-  if (!apparitionActive) return;
+  if (!apparitionActive || apparitionExpired) return;
   if (document.hidden) {
     apparitionExpireTimer = window.setTimeout(expireStreamApparition, 1000);
     return;
   }
 
-  hideStreamApparition();
+  window.clearTimeout(apparitionExpireTimer);
+  apparitionExpireTimer = undefined;
+  apparitionExpired = true;
+  connectionWidget.classList.add("is-failed");
+  connectionWidget.setAttribute("aria-label", "방송 연결 상태: 끊김");
+  connectionStatus.textContent = "연결 끊김";
   missedApparitions += 1;
   dayMissedApparitions += 1;
-  if (gameMode === GAME_MODES.STORY) {
-    showToast("괴이가 화면 안쪽으로 숨어들었습니다.");
-    scheduleStreamApparition();
-    return;
-  }
+  if (gameMode === GAME_MODES.STORY) return;
 
   health = Math.max(0, health - 1);
   score = Math.max(0, score - 75);
   lastDamageReason = "apparition";
   updateHud();
-  triggerScreenInterference("color");
   if (health === 0) {
     finishStage({
       success: false,
-      title: "화면 괴이 침투",
-      copy: "방송 화면의 괴이를 제때 퇴치하지 못해 체력을 모두 잃었습니다."
+      title: "연결 복구 실패",
+      copy: "약해진 방송 연결에 제때 다시 접속하지 못해 체력을 모두 잃었습니다."
     });
+  }
+}
+
+/**
+ * 재연결 버튼은 실제 괴이 연결이면 복구하고, 정상 연결에서 누르면 오판으로 체력을 감소시킵니다.
+ */
+function reconnectStreamConnection() {
+  if (gameOver || stageReviewOpen) return;
+  if (!apparitionActive) {
+    health = Math.max(0, health - 1);
+    falseReconnects += 1;
+    lastDamageReason = "false-reconnect";
+    updateHud();
+    window.clearTimeout(connectionFeedbackTimer);
+    connectionWidget.classList.remove("is-false-reconnect");
+    void connectionWidget.offsetWidth;
+    connectionWidget.classList.add("is-false-reconnect");
+    connectionWidget.setAttribute("aria-label", "방송 연결 상태: 정상, 불필요한 재연결");
+    connectionStatus.textContent = "정상 연결 · 오판";
+
+    if (health === 0) {
+      if (gameMode === GAME_MODES.STORY) endGame();
+      else finishStage({
+        success: false,
+        title: "불필요한 재연결",
+        copy: "정상 연결을 반복해서 재설정해 체력을 모두 잃었습니다."
+      });
+      return;
+    }
+
+    connectionFeedbackTimer = window.setTimeout(() => {
+      connectionWidget.classList.remove("is-false-reconnect");
+      connectionWidget.setAttribute("aria-label", "방송 연결 상태: 안정");
+      connectionStatus.textContent = "연결 안정";
+      connectionFeedbackTimer = undefined;
+    }, 1100);
     return;
   }
-  showToast("괴이를 놓쳐 체력이 1 감소했습니다.");
+
+  const recoveredInTime = !apparitionExpired;
+  resetConnectionWidget();
+  if (recoveredInTime) {
+    banishedApparitions += 1;
+    dayBanishedApparitions += 1;
+    score += 100;
+    updateHud();
+  }
   scheduleStreamApparition();
 }
 
 /**
- * 활성 괴이를 클릭했을 때 퇴치 수와 보상을 기록하고 다음 출현을 예약합니다.
- */
-function banishStreamApparition() {
-  if (!apparitionActive || gameOver || stageReviewOpen) return;
-  hideStreamApparition();
-  banishedApparitions += 1;
-  dayBanishedApparitions += 1;
-  score += 100;
-  updateHud();
-  showToast("화면 괴이를 퇴치했습니다. +100점");
-  scheduleStreamApparition();
-}
-
-/**
- * 하루 또는 스테이지 종료 순간 남아 있던 괴이를 놓친 것으로 확정합니다.
+ * 하루 또는 스테이지 종료 순간 복구하지 않은 연결을 중복 없이 실패로 확정합니다.
  */
 function settleActiveApparitionAsMissed() {
   if (!apparitionActive) return;
-  hideStreamApparition();
-  missedApparitions += 1;
-  dayMissedApparitions += 1;
+  if (!apparitionExpired) {
+    missedApparitions += 1;
+    dayMissedApparitions += 1;
+  }
+  resetConnectionWidget();
 }

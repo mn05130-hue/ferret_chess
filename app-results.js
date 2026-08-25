@@ -61,7 +61,6 @@ function expireThreat() {
   lastDamageReason = "missed";
   score = Math.max(0, score - 100);
   markViewerAsKicked(viewer, "이상 신호에 잠식되어 연결이 끊겼습니다.");
-  appendSystemMessage(`${viewer.name}의 이상 신호가 방송에 침투했습니다.`, true);
   updateHud();
   triggerScreenInterference("color");
   finishStage({
@@ -172,7 +171,7 @@ function finishStoryDay() {
     const reasons = [];
     if (missedToday.length) reasons.push(`이상 시청자 ${missedToday.length}명 놓침`);
     if (wrongToday.length) reasons.push(`정상 시청자 ${wrongToday.length}명 오판`);
-    if (dayMissedApparitions) reasons.push(`화면 괴이 ${dayMissedApparitions}회 놓침`);
+    if (dayMissedApparitions) reasons.push(`연결 복구 ${dayMissedApparitions}회 실패`);
     storyResultCopy.textContent = `${reasons.join(", ")}으로 체력이 ${appliedDamage} 감소했습니다.`;
   }
 
@@ -185,8 +184,8 @@ function finishStoryDay() {
   caughtToday.forEach(viewer => appendStoryResultDetail(`이상 연결 차단 성공 · ${viewer.name}`, "correct"));
   missedToday.forEach(viewer => appendStoryResultDetail(`놓친 이상 시청자 · ${viewer.name}`, "danger"));
   wrongToday.forEach(viewer => appendStoryResultDetail(`정상 시청자 오판 · ${viewer.name}`, "danger"));
-  if (dayBanishedApparitions) appendStoryResultDetail(`방송 화면 괴이 퇴치 · ${dayBanishedApparitions}회`, "correct");
-  if (dayMissedApparitions) appendStoryResultDetail(`방송 화면 괴이 놓침 · ${dayMissedApparitions}회`, "danger");
+  if (dayBanishedApparitions) appendStoryResultDetail(`방송 연결 복구 성공 · ${dayBanishedApparitions}회`, "correct");
+  if (dayMissedApparitions) appendStoryResultDetail(`방송 연결 복구 실패 · ${dayMissedApparitions}회`, "danger");
   if (!storyResultDetails.childElementCount) appendStoryResultDetail("오늘 기록에는 판정할 연결이 없습니다.");
 
   if (health === 0) storyContinue.textContent = "최종 결과 보기";

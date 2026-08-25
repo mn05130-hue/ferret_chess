@@ -53,9 +53,10 @@ index.html + styles.css
 | 영역 | 주요 ID/클래스 | 역할 |
 |---|---|---|
 | 전체 앱 | `.chat-app` | 화면 크기와 디렉터 상태의 기준 요소 |
-| 첫 진입 화면 | `#entry-screen`, `#entry-gate` | 사용자 클릭으로 오디오 권한을 얻고 로고 화면에서 타이틀로 전환 |
-| 타이틀 | `#title-screen` | 닉네임, 모드 선택, 타이틀 음악 설정 |
+| 첫 진입 화면 | `#entry-screen`, `#entry-form`, `#player-nickname` | 닉네임을 검증·저장하고 제출 제스처로 오디오 권한을 얻은 뒤 타이틀로 전환 |
+| 타이틀 | `#title-screen` | 모드 선택과 타이틀 음악 설정 |
 | 실제 게임 | `#game-screen` | 방송, HUD, 채팅, 조작부를 포함 |
+| 연결 상태 | `#connection-widget`, `#reconnect-button` | 화면 상단의 작은 와이파이 상태와 수동 재연결 버튼 |
 | 가상 주소창 | `.browser-bar` | 접기 가능한 방송 페이지 상단 바 |
 | 방송 화면 | `.stream-stage` | 캐릭터, 괴이, 음악, 제한시간 표시 |
 | 상태 HUD | `.game-hud` | 스테이지/일차, 체력, 시각, 이상 시청자, 점수 |
@@ -86,13 +87,16 @@ index.html + styles.css
 | 상태 | 추가 위치 | 결과 |
 |---|---|---|
 | `.open` | 모달/오버레이 | 숨겨진 모달을 표시 |
-| `.is-leaving` | 첫 진입 화면 | 클릭 뒤 흰 로고 화면을 페이드아웃 |
+| `.is-leaving` | 첫 진입 화면 | 닉네임 제출 뒤 로고와 접속 패널을 페이드아웃 |
 | `.is-playing` | 음악 버튼 | 재생 중 색상과 파형 표시 |
 | `.has-text` | `.composer` | 전송 버튼 활성 모양 표시 |
 | `.claimed` | 보상 버튼 | 수령 완료 상태 표시 |
 | `.blinded-message` | 강퇴된 메시지 | 닉네임과 본문을 비활성화 |
 | `.corrupted-message` | 이상 채팅 | 여러 줄 깨진 문자, 잔상, 흔들림 표시 |
 | `.corrupted-chat-hit` | `.chat-app` | 이상 채팅 도착 순간 메시지 영역 흔들림 |
+| `.is-weak` | 연결 위젯 | 괴이 발생 중 와이파이 막대와 상태를 약한 연결로 표시 |
+| `.is-failed` | 연결 위젯 | 제한시간 초과 뒤 끊긴 연결 상태 표시 |
+| `.is-false-reconnect` | 연결 위젯 | 정상 연결을 잘못 재연결했을 때 짧은 오판 흔들림 표시 |
 | `.interference-mosaic` | `.chat-app` | 모자이크 간섭 효과 |
 | `.interference-color` | `.chat-app` | 색 분리 간섭 효과 |
 | `.wrong-kick` | `.chat-app` | 오답 화면 흔들림 |
@@ -101,7 +105,6 @@ index.html + styles.css
 | `.results-visible` | 스토리 결과 | 공포 전환 뒤 결과 카드 공개 |
 | `data-director-state` | `.chat-app` | 채팅 분위기에 맞춰 방송 노이즈 변경 |
 | `data-game-mode` | `.chat-app` | 무한/스토리 모드별 화면 구분 |
-| `data-variant` | 괴이 | 괴이 외형 변형 선택 |
 
 CSS는 게임 규칙을 직접 계산하지 않습니다. JavaScript가 상태 클래스, `hidden`, `aria-hidden`, `inert`, `data-*` 값을 변경하면 CSS가 그 상태를 시각화합니다.
 
@@ -134,13 +137,13 @@ showEntryScreen()
 ### `showEntryScreen()`
 
 1. 타이틀과 게임 화면을 비활성화합니다.
-2. 흰 배경의 `assets/splash-logo.png` 로고 화면만 표시합니다.
-3. 화면 전체 버튼인 `#entry-gate`에 키보드 초점을 둡니다.
+2. `assets/splash-logo.png`, 경고문, 설명, 닉네임 폼을 표시합니다.
+3. `#player-nickname`에 키보드 초점을 둡니다.
 4. 타이틀과 게임 음악은 아직 재생하지 않습니다.
 
-사용자가 첫 화면을 클릭하거나 Enter/Space를 누르면 `enterTitleFromEntry()`가 실행됩니다. 이 사용자 제스처 안에서 `showTitle(false)`와 `prepareTitleMusic()`을 호출하므로 브라우저가 타이틀 BGM 재생을 허용할 수 있습니다. 흰 화면은 720ms 동안 페이드아웃되고 그 아래에 준비된 타이틀 화면이 자동으로 나타납니다.
+사용자가 닉네임을 입력하고 폼 버튼을 클릭하거나 Enter를 누르면 `enterTitleFromEntry()`가 실행됩니다. 먼저 `commitPlayerNickname()`이 공백과 길이를 정리하고 빈 값을 차단한 뒤 닉네임을 저장합니다. 유효한 경우에만 같은 제출 제스처 안에서 `showTitle(false)`와 `prepareTitleMusic()`을 호출하므로 브라우저가 타이틀 BGM 재생을 허용할 수 있습니다. 진입 화면은 720ms 동안 페이드아웃되고 그 아래에 준비된 타이틀 화면이 자동으로 나타납니다.
 
-자동 타이머만으로 화면을 넘기면 사용자 제스처가 없어 자동 재생 제한을 해결할 수 없습니다. 따라서 **첫 화면은 반드시 한 번 클릭해야 하고, 클릭한 뒤의 타이틀 전환은 자동**입니다.
+자동 타이머만으로 화면을 넘기면 사용자 제스처가 없어 자동 재생 제한을 해결할 수 없습니다. 따라서 **닉네임 입력 후 폼을 한 번 제출해야 하며, 제출 뒤의 타이틀 전환은 자동**입니다.
 
 ## 6. 타이틀에서 게임으로 들어가는 순서
 
@@ -153,7 +156,7 @@ showEntryScreen()
 
 `enterGame(mode)`의 처리 순서는 다음과 같습니다.
 
-1. `commitPlayerNickname()`으로 닉네임을 검증하고 저장합니다.
+1. `commitPlayerNickname()`으로 첫 화면에서 확정한 닉네임을 한 번 더 안전하게 검증합니다.
 2. `gameMode`와 `.chat-app.dataset.gameMode`를 갱신합니다.
 3. 스토리 모드이면 공포 효과음용 `AudioContext`를 준비합니다.
 4. 타이틀 음악을 중지합니다.
@@ -319,6 +322,8 @@ findRejection()
 6. 무한 모드이면 `startThreatCountdown(viewer)`가 즉시 시작됩니다.
 7. 스토리 모드이면 즉시 제한시간을 만들지 않고 오전 2시에 판정합니다.
 
+이 과정에서는 이상 채팅 자체 외에 별도의 시스템 메시지나 토스트를 추가하지 않습니다. 플레이어는 깨진 채팅 모양과 무한 모드의 기존 제한시간 UI만 보고 판단합니다.
+
 ### 메시지 목록 관리
 
 `appendElement()`는 메시지를 `#message-list`에 추가합니다.
@@ -413,7 +418,7 @@ beginStoryNightReveal()
 - 강퇴한 이상 시청자 수
 - 강퇴한 정상 시청자 수
 - 처리하지 못한 이상 시청자 수
-- 놓친 방송 화면 괴이 수
+- 실패한 방송 연결 복구 수
 - 하루 동안 감소할 체력
 
 결과 계속 버튼은 `continueFromStoryResult()`를 호출합니다.
@@ -422,36 +427,45 @@ beginStoryNightReveal()
 - 7일차를 완료하면 `storyVictory = true`로 최종 승리
 - 그 외에는 `currentStage`를 하루 증가시키고 `startStage()` 실행
 
-## 14. 방송 화면 괴이
+## 14. 방송 연결 괴이
 
 `scheduleStreamApparition()`은 현재 게임과 모달 상태를 확인한 뒤 다음 출현을 예약합니다.
 
 ### 출현
 
-`spawnStreamApparition()`은 다음 CSS 변수를 설정합니다.
+`spawnStreamApparition()`은 시스템 메시지나 토스트를 만들지 않고 다음 상태를 적용합니다.
 
-- `--apparition-x`: 가로 위치
-- `--apparition-y`: 세로 위치
-- `--apparition-scale`: 크기
-- `data-variant`: 외형 변형
-
-그 후 `APPARITION_LIFETIME_MS` 동안 버튼을 표시합니다.
+- 화면 전체를 바꾸거나 게임 조작을 막지 않습니다.
+- 항상 상단에 있는 `#connection-widget`에 `.is-weak`을 추가합니다.
+- 와이파이 바깥 막대가 흐려지고 상태 문구가 `연결 약함`으로 바뀝니다.
+- 플레이어의 현재 초점을 강제로 이동하지 않습니다.
+- `APPARITION_LIFETIME_MS` 동안 제한시간 측정
 
 ### 성공
 
-괴이를 누르면 `banishStreamApparition()`이 실행됩니다.
+재연결 버튼을 누르면 `reconnectStreamConnection()`이 실행됩니다.
 
-- 활성 괴이를 숨김
-- 퇴치 수 증가
-- 점수 증가
+- 작은 와이파이 위젯을 `연결 안정` 상태로 복구
+- 제한시간 안이면 복구 성공 수와 점수 증가
 - 다음 출현 예약
+
+### 정상 연결에서 누른 경우
+
+괴이가 없어 `연결 안정`인 상태에서도 재연결 버튼은 계속 누를 수 있습니다. 이때는 오판으로 처리합니다.
+
+- 체력 1 감소
+- `falseReconnects` 누계 증가
+- 위젯에 `.is-false-reconnect`를 적용하고 `정상 연결 · 오판`을 잠시 표시
+- 체력이 0이면 현재 모드의 게임오버 흐름으로 이동
 
 ### 실패
 
-시간 안에 누르지 않으면 `expireStreamApparition()`이 실행됩니다.
+시간 안에 연결을 누르지 않으면 `expireStreamApparition()`이 실행됩니다.
 
+- 실패는 한 번만 기록되고 위젯에 `.is-failed`와 `연결 끊김`이 표시됩니다.
 - 스토리 모드: 하루 실패 수에 기록하고 오전 2시에 체력 반영
 - 무한 모드: 즉시 체력과 점수 감소
+- 실패 후에도 위젯은 자동 복구되지 않으며 반드시 `재연결` 버튼을 눌러야 안정 상태로 돌아갑니다.
 
 ## 15. 오디오 흐름
 
@@ -471,7 +485,7 @@ const AUDIO_SETTINGS = Object.freeze({
 ### 타이틀 음악
 
 ```text
-첫 진입 화면 클릭
+첫 진입 닉네임 폼 제출
     ↓
 enterTitleFromEntry()
     ↓
@@ -486,7 +500,7 @@ stopTitleMusic(false)
 playTitleMusic()
 ```
 
-첫 진입 화면의 클릭이 사용자 활성화 권한을 제공하므로 타이틀 음악이 정상적으로 시작될 가능성이 높습니다. 기본 재생 시도를 끄려면 `prepareTitleMusic()` 마지막의 `playTitleMusic()` 호출을 제거하면 됩니다.
+첫 진입 화면의 버튼 클릭 또는 Enter 제출이 사용자 활성화 권한을 제공하므로 타이틀 음악이 정상적으로 시작될 가능성이 높습니다. 기본 재생 시도를 끄려면 `prepareTitleMusic()` 마지막의 `playTitleMusic()` 호출을 제거하면 됩니다.
 
 ### 게임 음악
 
@@ -529,7 +543,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 - 스토리 시계: `stopStoryClock`, `formatStoryTime`, `renderStoryClock`, `updateStoryClock`, `startStoryClock`
 - 일시정지: `syncEnginePause`
 - 이상 채팅 제한시간: `clearThreatCountdown`, `updateThreatCountdown`, `getStageGraceMs`, `startThreatCountdown`
-- 괴이: `getApparitionDelay`, `hideStreamApparition`, `clearStreamApparition`, `scheduleStreamApparition`, `spawnStreamApparition`, `expireStreamApparition`, `banishStreamApparition`, `settleActiveApparitionAsMissed`
+- 연결 괴이: `getApparitionDelay`, `resetConnectionWidget`, `clearStreamApparition`, `scheduleStreamApparition`, `spawnStreamApparition`, `expireStreamApparition`, `reconnectStreamConnection`, `settleActiveApparitionAsMissed`
 
 ### `app-results.js`
 
@@ -552,14 +566,15 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 함수 선언보다 DOM 이벤트 연결이 중심입니다.
 
 - 메시지 목록 클릭 → 시청자 패널
-- 첫 진입 화면 클릭 → 오디오 권한 획득 후 타이틀 전환
+- 첫 진입 닉네임 폼 제출 → 닉네임 확정 및 오디오 권한 획득 후 타이틀 전환
 - 채팅 form 제출 → 사용자 메시지 추가
 - 음악 버튼/음량 range → 오디오 함수
 - 타이틀 모드 버튼 → `enterGame`
+- 재연결 버튼 → 괴이 연결 복구 또는 정상 연결 오판 처리
 - 결과 버튼 → 다음 스테이지/하루 또는 타이틀
 - 이모지/보상/주소창/도움말 → 해당 UI 동작
 - `visibilitychange` → 엔진 일시정지 동기화
-- 마지막에 닉네임, 음량, 타이틀 초기화
+- 마지막에 저장된 닉네임과 음량을 복원하고 첫 진입 화면 표시
 
 ## 17. 저장값과 URL 테스트 옵션
 
@@ -607,7 +622,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 이상 채팅 제한시간 | `BASE_ANOMALY_GRACE_MS`, `MIN_ANOMALY_GRACE_MS`, `STAGE_GRACE_STEP_MS` |
 | 스토리 총 일수 | `STORY_TOTAL_DAYS`, `STORY_DAY_INTROS` |
 | 스토리 하루 실제 길이 | `DEFAULT_STORY_DAY_DURATION_MS` |
-| 괴이 생존 시간 | `APPARITION_LIFETIME_MS` |
+| 연결 복구 제한시간 | `APPARITION_LIFETIME_MS` |
 | 괴이 등장 간격 | `APPARITION_INITIAL_DELAY_RANGE_MS`, `APPARITION_DELAY_RANGE_MS` |
 | 배경음악 파일 | `TITLE_MUSIC_TRACKS`, `GAME_MUSIC_TRACKS` |
 | 기본 음량 | `AUDIO_SETTINGS` |
@@ -634,13 +649,15 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 ## 21. 빠른 실행 확인 순서
 
 1. `index.html`을 브라우저에서 엽니다.
-2. 흰 로고 화면을 클릭해 타이틀 BGM과 타이틀 전환을 확인합니다.
-3. 닉네임을 입력하고 무한 모드를 시작합니다.
+2. 빈 닉네임으로 제출해 오류가 표시되고 첫 화면에 머무는지 확인합니다.
+3. 닉네임을 입력해 타이틀 BGM과 타이틀 전환을 확인한 뒤 무한 모드를 시작합니다.
 4. 자동 시청자 채팅이 표시되는지 확인합니다.
 5. 사용자 채팅을 입력해 자신의 닉네임으로 표시되는지 확인합니다.
 6. 시청자 닉네임을 눌러 기록 모달과 강퇴 버튼을 확인합니다.
-7. 괴이가 나타났을 때 클릭해 점수가 증가하는지 확인합니다.
-8. 타이틀로 돌아가 스토리 모드를 시작합니다.
-9. 개발자 도구에서 `horrorChatGame.finishDay()`를 호출합니다.
-10. 검은 화면 연출 뒤 하루 결과가 표시되는지 확인합니다.
-11. 음악 버튼, 음량 저장, 화면 크기별 레이아웃을 확인합니다.
+7. 정상 상태에서 `재연결`을 눌러 체력이 1 감소하고 오판 상태가 잠시 표시되는지 확인합니다.
+8. `horrorChatGame.spawnApparition()`으로 괴이를 발생시켜 별도 메시지 없이 상단 와이파이 위젯만 `연결 약함`으로 바뀌는지 확인합니다.
+9. `재연결` 버튼을 눌러 위젯이 안정 상태로 복구되고 점수가 증가하는지 확인합니다.
+10. 타이틀로 돌아가 스토리 모드를 시작합니다.
+11. 개발자 도구에서 `horrorChatGame.finishDay()`를 호출합니다.
+12. 검은 화면 연출 뒤 하루 결과가 표시되는지 확인합니다.
+13. 음악 버튼, 음량 저장, 화면 크기별 레이아웃을 확인합니다.

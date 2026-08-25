@@ -16,15 +16,26 @@
 <body>
   <main class="chat-app" aria-label="라이브 채팅">
     <!--
-      브라우저의 오디오 자동 재생 제한을 해제하는 첫 진입 화면입니다.
-      화면 전체가 하나의 버튼이므로 마우스 클릭, 터치, Enter/Space 입력이 모두 사용자 제스처로 인정됩니다.
+      브라우저의 오디오 자동 재생 제한을 해제하면서 플레이어 닉네임도 확정하는 첫 진입 화면입니다.
+      버튼 클릭이나 입력창의 Enter 제출이 사용자 제스처가 되어 다음 타이틀 화면의 음악을 재생합니다.
     -->
-    <section class="entry-screen" id="entry-screen" aria-labelledby="entry-prompt">
-      <button class="entry-gate" id="entry-gate" type="button">
-        <img class="entry-logo" src="assets/splash-logo.png" alt="Buzzi 팔로우해줘 제발 로고">
-        <span class="entry-prompt" id="entry-prompt">CLICK TO ENTER</span>
-        <small class="entry-sound-hint">소리와 함께 시작합니다</small>
-      </button>
+    <section class="entry-screen" id="entry-screen" aria-labelledby="entry-title">
+      <img class="entry-logo" src="assets/splash-logo.png" alt="Buzzi 팔로우해줘 제발 로고">
+      <form class="entry-panel" id="entry-form" novalidate>
+        <p class="entry-alert"><span aria-hidden="true">●</span> UNKNOWN VIEWERS DETECTED</p>
+        <h1 class="entry-title" id="entry-title">방송에 접속할 이름을 입력하세요.</h1>
+        <p class="entry-copy">평범한 심야 방송에 정체불명의 시청자들이 접속했습니다. 입력한 닉네임은 채팅과 시청자 기록에 표시됩니다.</p>
+        <label class="player-nickname-field entry-nickname-field" for="player-nickname">
+          <span>PLAYER NAME</span>
+          <input id="player-nickname" type="text" maxlength="16" autocomplete="nickname" enterkeyhint="go" placeholder="닉네임을 입력하세요" aria-describedby="nickname-error" required>
+        </label>
+        <p class="nickname-error" id="nickname-error" role="status" aria-live="polite" hidden>타이틀로 이동하려면 닉네임을 입력하세요.</p>
+        <button class="entry-gate" id="entry-gate" type="submit">
+          <span>타이틀 화면으로</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+        </button>
+        <small class="entry-sound-hint">닉네임을 확정하면 소리와 함께 시작합니다.</small>
+      </form>
     </section>
 
     <!-- 게임 시작 전 표시되는 타이틀, 닉네임 입력, 모드 선택 영역입니다. -->
@@ -49,16 +60,11 @@
         </label>
       </div>
       <audio id="title-music" preload="metadata" loop></audio>
-      <!-- 닉네임 검증 후 스토리 또는 무한 모드 진입을 요청하는 핵심 메뉴입니다. -->
+      <!-- 첫 화면에서 확정한 닉네임으로 스토리 또는 무한 모드 진입을 요청하는 핵심 메뉴입니다. -->
       <div class="title-content">
         <p class="title-alert"><span aria-hidden="true">●</span> UNKNOWN VIEWERS DETECTED</p>
         <h1 class="sr-only" id="game-title">구독 방송</h1>
         <p class="title-copy">평범한 심야 방송에 정체불명의 시청자들이 접속했습니다. 플레이할 모드를 선택하세요.</p>
-        <label class="player-nickname-field" for="player-nickname">
-          <span>PLAYER NAME</span>
-          <input id="player-nickname" type="text" maxlength="16" autocomplete="nickname" enterkeyhint="done" placeholder="닉네임을 입력하세요" aria-describedby="nickname-error" required>
-        </label>
-        <p class="nickname-error" id="nickname-error" role="status" aria-live="polite" hidden>게임을 시작하려면 닉네임을 입력하세요.</p>
         <div class="title-mode-buttons" aria-label="게임 모드 선택">
           <button class="title-start-button story-start-button" id="story-start" type="button">
             <span><strong>스토리 모드</strong><small>7일 동안 생존</small></span>
@@ -96,7 +102,24 @@
       </button>
     </header>
 
-    <!-- 방송 영상, 배경음악, 연결 상태, 제한시간, 클릭형 괴이가 겹쳐지는 무대입니다. -->
+    <!--
+      화면 상단에 항상 보이는 작은 연결 컨트롤입니다.
+      괴이가 있을 때는 와이파이 막대가 약해지고, 없을 때 재연결을 누르면 오판으로 체력이 감소합니다.
+    -->
+    <aside class="connection-widget" id="connection-widget" aria-label="방송 연결 상태: 안정">
+      <span class="wifi-meter" aria-hidden="true">
+        <i class="wifi-wave wave-outer"></i>
+        <i class="wifi-wave wave-middle"></i>
+        <i class="wifi-dot"></i>
+      </span>
+      <span class="connection-widget-copy">
+        <small>LIVE CONNECTION</small>
+        <strong id="connection-status">연결 안정</strong>
+      </span>
+      <button class="reconnect-button" id="reconnect-button" type="button">재연결</button>
+    </aside>
+
+    <!-- 방송 영상, 배경음악, 연결 상태, 이상 채팅 제한시간이 겹쳐지는 무대입니다. -->
     <section class="stream-stage" aria-label="버찌의 실시간 방송 화면">
       <div class="stream-noise" aria-hidden="true"></div>
       <div class="stream-room" aria-hidden="true">
@@ -105,15 +128,6 @@
         <span class="room-light"></span>
       </div>
       <img class="stream-character" src="assets/beorjji-idle-preview.gif" alt="방송을 진행 중인 버찌">
-      <!-- JavaScript가 무작위 위치와 변형 값을 지정하며, 제한시간 안에 누르면 퇴치됩니다. -->
-      <button class="stream-apparition" id="stream-apparition" type="button" aria-label="방송 화면의 괴이 퇴치" hidden>
-        <span class="apparition-shape" aria-hidden="true">
-          <i class="apparition-eye eye-left"></i>
-          <i class="apparition-eye eye-right"></i>
-          <i class="apparition-mouth"></i>
-        </span>
-        <span class="apparition-action" aria-hidden="true">퇴치</span>
-      </button>
       <div class="stream-topline">
         <span class="live-badge"><i aria-hidden="true"></i> LIVE</span>
         <div class="stream-topline-actions">
@@ -285,7 +299,7 @@
           <div><dt>이상 차단</dt><dd id="story-caught">0</dd></div>
           <div><dt>놓침</dt><dd id="story-missed">0</dd></div>
           <div><dt>오판</dt><dd id="story-wrong">0</dd></div>
-          <div><dt>괴이 놓침</dt><dd id="story-apparition-missed">0</dd></div>
+          <div><dt>연결 실패</dt><dd id="story-apparition-missed">0</dd></div>
           <div><dt>남은 체력</dt><dd id="story-health">3</dd></div>
         </dl>
         <ul class="story-result-details" id="story-result-details" aria-label="오늘의 판정 상세"></ul>

@@ -74,43 +74,48 @@ button {
 }
 
 /*
- * 첫 진입 화면은 흰 종이 위의 검은 붓글씨만 보이도록 타이틀보다 높은 층에 배치합니다.
- * 화면 전체를 button으로 만들어 어느 위치를 눌러도 브라우저가 오디오 사용자 제스처로 인식합니다.
+ * 첫 진입 화면은 타이틀보다 높은 층에서 닉네임을 먼저 입력받습니다.
+ * 로고 아래의 어두운 접속 패널은 사용자가 제시한 레퍼런스처럼 경고문 → 설명 → 이름 → 진행 버튼 순서입니다.
  */
 .entry-screen {
   position: absolute;
   z-index: 200;
   inset: 0;
-  display: grid;
-  overflow: hidden;
-  background: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: max(24px, env(safe-area-inset-top)) 18px max(24px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 50% 12%, #173029 0, #09110f 30%, transparent 52%),
+    linear-gradient(160deg, #090d0c, #030505 68%);
 }
 
 .entry-screen[hidden] {
   display: none;
 }
 
-.entry-gate {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  border: 0;
-  padding: 24px;
-  color: #111;
-  background: #fff;
-  cursor: pointer;
-}
-
-.entry-gate:focus-visible {
-  outline: 3px solid #111;
-  outline-offset: -8px;
+.entry-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .13;
+  background-image:
+    linear-gradient(#66d5b20d 1px, transparent 1px),
+    linear-gradient(90deg, #66d5b20d 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(to bottom, #000, transparent 78%);
 }
 
 .entry-logo {
+  position: relative;
+  z-index: 1;
   display: block;
-  width: min(94%, 410px);
+  width: min(58vw, 235px);
   height: auto;
   object-fit: contain;
   user-select: none;
@@ -118,28 +123,105 @@ button {
   animation: entry-logo-arrive 900ms cubic-bezier(.2, .8, .2, 1) both;
 }
 
-.entry-prompt,
-.entry-sound-hint {
-  position: absolute;
-  left: 50%;
-  translate: -50% 0;
-  white-space: nowrap;
-  letter-spacing: .16em;
+.entry-panel {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 390px;
+  border: 1px solid #29463e;
+  border-radius: 16px;
+  padding: 18px 16px 16px;
+  color: #eef7f4;
+  background: linear-gradient(150deg, #0d1513f7, #070b0af5);
+  box-shadow: 0 22px 60px #000c, inset 0 1px #ffffff0d;
+  animation: entry-panel-arrive 520ms 120ms ease-out both;
 }
 
-.entry-prompt {
-  bottom: max(48px, calc(env(safe-area-inset-bottom) + 38px));
+.entry-alert {
+  margin: 0 0 10px;
+  color: #ff6571;
   font-family: ui-monospace, "Cascadia Mono", monospace;
-  font-size: 12px;
+  font-size: 9px;
   font-weight: 900;
-  animation: entry-prompt-blink 1.45s steps(2) infinite;
+  letter-spacing: .14em;
+}
+
+.entry-alert span {
+  display: inline-block;
+  margin-right: 6px;
+  text-shadow: 0 0 9px #ff3344;
+  animation: live-pulse 1.15s steps(2) infinite;
+}
+
+.entry-title {
+  margin: 0 0 7px;
+  color: #f3f7f6;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.45;
+  word-break: keep-all;
+}
+
+.entry-copy {
+  margin: 0 0 14px;
+  color: #b9c5c1;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.entry-nickname-field {
+  margin-bottom: 9px;
+}
+
+.entry-gate {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #57e3ba;
+  border-radius: 9px;
+  padding: 8px 12px;
+  color: #06120f;
+  background: linear-gradient(180deg, #55ebbe, #00c991);
+  box-shadow: 0 8px 25px #00d99b2b, inset 0 1px #d9fff4;
+  font-size: 13px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.entry-gate svg {
+  width: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+}
+
+.entry-gate:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.entry-gate:focus-visible {
+  outline: 2px solid #d9fff4;
+  outline-offset: 2px;
+}
+
+.entry-gate:disabled {
+  cursor: wait;
+  opacity: .72;
 }
 
 .entry-sound-hint {
-  bottom: max(27px, calc(env(safe-area-inset-bottom) + 17px));
-  color: #777;
+  display: block;
+  margin-top: 9px;
+  color: #71817c;
   font-size: 9px;
   font-weight: 700;
+  text-align: center;
   letter-spacing: .08em;
 }
 
@@ -150,12 +232,13 @@ button {
 }
 
 @keyframes entry-logo-arrive {
-  from { opacity: 0; transform: scale(.94); filter: blur(4px); }
-  to { opacity: 1; transform: scale(1); filter: blur(0); }
+  from { opacity: 0; transform: scale(.94); filter: invert(1) blur(4px); }
+  to { opacity: .92; transform: scale(1); filter: invert(1) blur(0); }
 }
 
-@keyframes entry-prompt-blink {
-  50% { opacity: .32; }
+@keyframes entry-panel-arrive {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes entry-screen-leave {
@@ -686,134 +769,146 @@ button {
   user-select: none;
 }
 
-/* 클릭형 괴이는 JavaScript가 --apparition-x/y/scale 값을 바꿔 매번 다른 위치에 나타냅니다. */
-.stream-apparition {
+/* 상단 와이파이 위젯은 항상 보이지만 작고 반투명하게 유지해 방송 화면을 가리지 않습니다. */
+.connection-widget {
   position: absolute;
-  z-index: 4;
-  left: var(--apparition-x, 24%);
-  top: var(--apparition-y, 52%);
-  width: 62px;
-  height: 72px;
+  z-index: 18;
+  top: 58px;
+  right: 8px;
+  width: 148px;
+  min-height: 38px;
   display: grid;
-  place-items: center;
-  border: 0;
-  padding: 0;
-  color: #a8ffeb;
-  background: transparent;
-  translate: -50% -50%;
-  cursor: crosshair;
-  filter: drop-shadow(5px 0 #ff335577) drop-shadow(-4px 0 #00f5d477);
-  animation: apparition-enter 260ms steps(3) both, apparition-hover 900ms 260ms ease-in-out infinite alternate;
+  grid-template-columns: 23px minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #315047;
+  border-radius: 8px;
+  padding: 4px;
+  color: #69d8b5;
+  background: #07100ee8;
+  box-shadow: 0 7px 18px #0009, inset 0 1px #d8fff20c;
+  opacity: .82;
+  backdrop-filter: blur(7px);
+  transition: border-color 160ms ease, color 160ms ease, opacity 160ms ease, background 160ms ease;
 }
 
-.stream-apparition[hidden] {
-  display: none;
+.game-screen:has(.browser-bar.collapsed) .connection-widget {
+  top: 18px;
 }
 
-.stream-apparition:hover,
-.stream-apparition:focus-visible {
-  outline: 1px dashed #e8fff8;
-  outline-offset: 2px;
-  filter: brightness(1.35) drop-shadow(6px 0 #ff3355aa) drop-shadow(-5px 0 #00f5d4aa);
-}
-
-.apparition-shape {
+.wifi-meter {
   position: relative;
-  width: 48px;
-  height: 57px;
+  width: 23px;
+  height: 23px;
   display: block;
-  border: 1px solid #8affdf;
-  border-radius: 50% 48% 35% 40%;
-  background:
-    repeating-linear-gradient(0deg, #d8fff31a 0 2px, transparent 2px 5px),
-    radial-gradient(circle at 50% 32%, #314d45, #050807 62%);
-  box-shadow: inset 0 0 13px #71f7d844, 0 0 14px #00e5a544;
-  clip-path: polygon(8% 0, 93% 4%, 100% 76%, 80% 100%, 61% 88%, 48% 100%, 30% 87%, 9% 100%, 0 70%);
+  color: currentColor;
 }
 
-.apparition-eye,
-.apparition-mouth {
+.wifi-wave {
   position: absolute;
-  display: block;
-  background: #fff;
-  box-shadow: 0 0 7px #ff2947;
-}
-
-.apparition-eye {
-  top: 19px;
-  width: 7px;
-  height: 4px;
+  border: 2px solid currentColor;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
   border-radius: 50%;
+  rotate: -45deg;
+  transition: opacity 160ms ease;
 }
 
-.apparition-eye::after {
-  content: "";
+.wifi-wave.wave-outer {
+  inset: 0;
+}
+
+.wifi-wave.wave-middle {
+  inset: 6px;
+}
+
+.wifi-dot {
   position: absolute;
-  top: 1px;
-  left: 2px;
-  width: 2px;
-  height: 2px;
+  left: 50%;
+  bottom: 3px;
+  width: 5px;
+  height: 5px;
+  translate: -50% 0;
   border-radius: 50%;
-  background: #d9002e;
+  background: currentColor;
+  box-shadow: 0 0 7px currentColor;
 }
 
-.apparition-eye.eye-left {
-  left: 10px;
-  rotate: 12deg;
+.connection-widget-copy {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
 }
 
-.apparition-eye.eye-right {
-  right: 9px;
-  rotate: -15deg;
-}
-
-.apparition-mouth {
-  left: 50%;
-  bottom: 15px;
-  width: 15px;
-  height: 9px;
-  translate: -50% 0;
-  border-radius: 3px 3px 50% 50%;
-  background: #020303;
-  box-shadow: inset 0 -2px #ff4760, 0 0 5px #ff294755;
-}
-
-.apparition-action {
-  position: absolute;
-  bottom: -1px;
-  left: 50%;
-  translate: -50% 0;
-  border: 1px solid #85f8d6;
-  border-radius: 3px;
-  padding: 1px 5px;
-  color: #caffef;
-  background: #06100ddd;
-  font-size: 7px;
-  font-weight: 950;
+.connection-widget-copy small {
+  overflow: hidden;
+  color: #668078;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 4.5px;
+  font-weight: 900;
+  letter-spacing: .09em;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.stream-apparition[data-variant="2"] .apparition-shape {
-  rotate: 8deg;
-  scale: .88 1.12;
+.connection-widget-copy strong {
+  overflow: hidden;
+  color: #d4e8e1;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.stream-apparition[data-variant="3"] .apparition-shape {
-  rotate: -9deg;
-  scale: 1.1 .86;
-  filter: hue-rotate(115deg);
+.reconnect-button {
+  width: 42px;
+  height: 25px;
+  border: 1px solid #3a5e53;
+  border-radius: 5px;
+  padding: 0;
+  color: #b9d9cf;
+  background: #0e1c18;
+  font-size: 7px;
+  font-weight: 900;
+  cursor: pointer;
 }
 
-/* 괴이의 등장과 부유 애니메이션은 짧고 불규칙하게 보여 클릭 목표임을 강조합니다. */
-@keyframes apparition-enter {
-  0% { opacity: 0; scale: .2 1.8; }
-  45% { opacity: 1; scale: 1.35 .6; }
-  100% { opacity: 1; scale: 1; }
+.reconnect-button:hover,
+.reconnect-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  filter: brightness(1.18);
 }
 
-@keyframes apparition-hover {
-  0% { translate: -50% calc(-50% - 3px); }
-  100% { translate: calc(-50% + 2px) calc(-50% + 4px); }
+.connection-widget.is-weak {
+  border-color: #ad7524;
+  color: #f3a93a;
+  background: #1b1108f2;
+  opacity: 1;
+  animation: connection-widget-weak 1.2s ease-in-out infinite alternate;
+}
+
+.connection-widget.is-weak .wifi-wave.wave-outer {
+  opacity: .08;
+}
+
+.connection-widget.is-weak .wifi-wave.wave-middle {
+  opacity: .24;
+}
+
+.connection-widget.is-failed,
+.connection-widget.is-false-reconnect {
+  border-color: #a6303c;
+  color: #ef4d5e;
+  background: #1d070aef;
+  opacity: 1;
+}
+
+.connection-widget.is-failed {
+  animation: connection-widget-failed 760ms steps(2) infinite;
+}
+
+.connection-widget.is-false-reconnect {
+  animation: connection-widget-wrong 320ms linear;
 }
 
 .stream-noise {
@@ -2103,6 +2198,22 @@ button {
 @keyframes music-wave {
   from { opacity: .45; }
   to { opacity: 1; }
+}
+
+@keyframes connection-widget-weak {
+  from { box-shadow: 0 7px 18px #0009, 0 0 3px #f3a93a2e; }
+  to { box-shadow: 0 7px 18px #0009, 0 0 13px #f3a93a59; }
+}
+
+@keyframes connection-widget-failed {
+  50% { opacity: .72; border-color: #5f171f; }
+}
+
+@keyframes connection-widget-wrong {
+  20% { translate: -4px 0; }
+  40% { translate: 4px 0; }
+  60% { translate: -2px 0; }
+  80% { translate: 2px 0; }
 }
 
 @keyframes threat-pulse {
