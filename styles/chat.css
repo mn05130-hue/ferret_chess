@@ -1,0 +1,517 @@
+/* 메시지 영역만 내부 스크롤하며, 새 메시지를 놓친 경우 하단 이동 버튼을 띄웁니다. */
+.message-region {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  border-bottom: 1px solid #24262a;
+}
+
+.message-list {
+  height: 100%;
+  margin: 0;
+  padding: 0 6px 7px 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: #444950 transparent;
+  scrollbar-width: thin;
+  list-style: none;
+}
+
+.message-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.message-list::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background: #444950;
+}
+
+/* 일반 메시지는 배지·닉네임·본문 순서이고, 긴 텍스트는 컨테이너 안에서 줄바꿈합니다. */
+.message {
+  min-height: 35px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 0;
+  font-size: 16px;
+  line-height: 1.48;
+  letter-spacing: -.015em;
+  animation: message-in 180ms ease-out both;
+}
+
+.badge {
+  width: 20px;
+  height: 22px;
+  flex: 0 0 20px;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
+  font-size: 18px;
+  line-height: 1;
+  filter: saturate(1.18);
+}
+
+.badge.coin {
+  position: relative;
+  font-size: 0;
+  filter: none;
+}
+
+.badge.coin::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 1px;
+  width: 17px;
+  height: 11px;
+  border: 1px solid #c95900;
+  border-radius: 50%;
+  background: linear-gradient(#ffd64a 0 34%, #ee8300 36% 56%, #ffc12d 58% 100%);
+  box-shadow: 0 3px 0 #d96500, 0 5px 0 #ffb51d, 0 7px 0 #ae4600;
+}
+
+.badge.dish {
+  font-size: 18px;
+}
+
+.badge.robot {
+  font-size: 17px;
+}
+
+.badge.heart,
+.badge.crown,
+.badge.party {
+  font-size: 18px;
+}
+
+.message-copy {
+  min-width: 0;
+  display: inline;
+  overflow-wrap: anywhere;
+}
+
+.username {
+  display: inline;
+  margin-right: 6px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.username:hover,
+.username:focus-visible {
+  outline: 1px dashed currentColor;
+  outline-offset: 2px;
+}
+
+.username[disabled] {
+  cursor: default;
+  opacity: .58;
+  text-decoration: line-through;
+}
+
+/* 강퇴된 시청자의 과거 메시지는 삭제 대신 비활성화해 판정 기록을 남깁니다. */
+.blinded-message .badge,
+.blinded-message .username {
+  filter: grayscale(1);
+  opacity: .45;
+}
+
+.blinded-message .message-text {
+  color: #747983;
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* 시스템 메시지는 플레이 규칙과 판정 정보를 일반 채팅과 다른 중앙 정렬로 표시합니다. */
+.system-message {
+  min-height: 31px;
+  justify-content: center;
+  padding-inline: 10px;
+  color: #b7bbc2;
+  background: linear-gradient(90deg, transparent, #54131d28, transparent);
+  font-size: 12px;
+  letter-spacing: .015em;
+  text-align: center;
+}
+
+.system-message.danger {
+  color: #ff7580;
+}
+
+.message-text {
+  color: #f5f5f5;
+}
+
+/* 이상 채팅은 어두운 배경, 다중 행, 색수차 잔상으로만 강조하고 밝은 노이즈 블록은 쓰지 않습니다. */
+.corrupted-message {
+  position: relative;
+  min-height: 72px;
+  align-items: flex-start;
+  margin-block: 3px;
+  padding: 7px 5px 7px 2px;
+  overflow: hidden;
+  border-left: 1px solid #89918e;
+  background: linear-gradient(90deg, #171a1ba8, transparent 82%);
+  animation: corrupted-message-in 420ms steps(4) both;
+}
+
+.corrupted-message .message-copy {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 100%;
+}
+
+.corrupted-message .message-text {
+  position: relative;
+  display: block;
+  margin-top: 3px;
+  color: #f5f5f5;
+  font-family: ui-monospace, "Cascadia Mono", "Malgun Gothic", monospace;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.38;
+  letter-spacing: .025em;
+  white-space: pre-wrap;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-shadow: 1px 0 #ff264436, -1px 0 #25e0cc36;
+  animation: corrupted-glyph-jitter 1.8s steps(3) infinite;
+}
+
+/* 연결 없음 상태는 실제 판정값을 바꾸지 않고 화면에 남은 일반 채팅 본문만 불안정하게 보이게 합니다. */
+.connection-lost .message:not(.system-message, .blinded-message) .message-text {
+  text-shadow: 1px 0 #ff264436, -1px 0 #25e0cc36;
+  animation: corrupted-glyph-jitter 1.8s steps(3) infinite;
+}
+
+.corrupted-message .message-text::before {
+  content: attr(data-echo);
+  position: absolute;
+  inset: 0;
+  color: #929996;
+  opacity: .22;
+  translate: 2px -1px;
+  clip-path: inset(42% 0 31% 0);
+  pointer-events: none;
+}
+
+.corrupted-chat-hit .message-region {
+  animation: corrupted-region-hit 480ms steps(4);
+}
+
+.new-message-button {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  translate: -50% 0;
+  height: 32px;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #3f454d;
+  border-radius: 20px;
+  padding: 0 13px;
+  color: #f7f8f9;
+  background: #25282de8;
+  box-shadow: 0 4px 14px #0008;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.new-message-button:not([hidden]) {
+  display: flex;
+}
+
+.new-message-button svg {
+  width: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+/* 채팅 조작부는 보상 배너, 입력기, 하단 내비게이션을 화면 아래에 연속 배치합니다. */
+.chat-controls {
+  position: relative;
+  z-index: 4;
+  background: var(--background);
+}
+
+.reward-banner {
+  width: calc(100% - 16px);
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 10px 8px 8px;
+  border: 1px solid #00d99c;
+  border-radius: 7px;
+  padding: 0 10px;
+  color: #edfdf8;
+  background: #111717;
+  box-shadow: inset 0 0 12px #00dc9b0b;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reward-banner:focus-visible,
+.reward-banner:hover {
+  background: #12201d;
+  outline: none;
+}
+
+.reward-banner.claimed {
+  border-color: #4b5654;
+  color: #9aa49f;
+  cursor: default;
+}
+
+.reward-copy {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reward-amount {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--green);
+  white-space: nowrap;
+}
+
+.reward-coin {
+  width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #09231c;
+  background: var(--green);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.composer-wrap {
+  position: relative;
+  padding: 0 8px 8px;
+}
+
+/* 입력기는 focus/text 유무에 따라 안내 커서, 이모지 버튼, 전송 버튼 상태를 전환합니다. */
+.composer {
+  position: relative;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid var(--input-border);
+  border-radius: 9px;
+  padding: 0 8px 0 5px;
+  background: #151619;
+  transition: border-color 120ms, box-shadow 120ms;
+}
+
+.composer:not(:focus-within):not(.has-text)::after {
+  content: "";
+  position: absolute;
+  left: 43px;
+  top: 16px;
+  width: 1px;
+  height: 20px;
+  background: #e1e4e8;
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+.composer:focus-within {
+  border-color: #b2b7c0;
+  box-shadow: 0 0 0 1px #555c67;
+}
+
+.my-avatar {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 1px #c9c9c9;
+  font-size: 21px;
+}
+
+.composer input {
+  min-width: 0;
+  height: 100%;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  color: #fff;
+  caret-color: #fff;
+  background: transparent;
+  font-size: 16px;
+}
+
+.emoji-button,
+.send-button {
+  width: 30px;
+  height: 36px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  color: #aeb5c1;
+  background: transparent;
+  cursor: pointer;
+}
+
+.emoji-button svg {
+  width: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.emoji-button .eye {
+  fill: currentColor;
+  stroke: none;
+}
+
+.send-button {
+  display: none;
+  color: var(--green);
+}
+
+.send-button svg {
+  width: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+
+.composer.has-text .send-button {
+  display: grid;
+}
+
+.composer.has-text .emoji-button {
+  display: none;
+}
+
+/* 이모지 패널은 hidden 속성과 짧은 등장 애니메이션으로 입력기 위에 펼쳐집니다. */
+.emoji-panel {
+  position: absolute;
+  z-index: 8;
+  right: 10px;
+  bottom: 67px;
+  max-width: calc(100% - 20px);
+  gap: 3px;
+  border: 1px solid #42464d;
+  border-radius: 10px;
+  padding: 6px;
+  background: #23262b;
+  box-shadow: 0 8px 20px #000a;
+}
+
+.emoji-panel:not([hidden]) {
+  display: flex;
+}
+
+.emoji-panel button {
+  min-width: 38px;
+  height: 36px;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 7px;
+  background: transparent;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.emoji-panel button:hover,
+.emoji-panel button:focus-visible {
+  outline: none;
+  background: #373b42;
+}
+
+/* 하단 메뉴는 후원·음성·현재 채팅 탭의 역할을 시각적으로 구분합니다. */
+.bottom-nav {
+  min-height: 47px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px max(4px, env(safe-area-inset-bottom));
+  border-top: 1px solid #25272b;
+}
+
+.support-button,
+.voice-button,
+.chat-tab {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.support-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #f7f7f7;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -.05em;
+}
+
+.ticket-icon {
+  width: 25px;
+  height: 21px;
+  fill: #f2e600;
+}
+
+.ticket-icon circle {
+  fill: #292a2c;
+}
+
+.voice-button {
+  width: 39px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  margin-left: 10px;
+  color: #b2b7c1;
+}
+
+.voice-button svg {
+  width: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
+
+.chat-tab {
+  min-width: 54px;
+  height: 38px;
+  margin-left: auto;
+  border-radius: 9px;
+  color: #848993;
+  background: #292c31;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.chat-tab.active {
+  color: #8e939c;
+  background: #303339;
+}

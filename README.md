@@ -1,0 +1,245 @@
+# Buzzi Live Chat
+
+라이브 방송 채팅창에 섞여 들어온 이상 시청자를 찾아내는 모바일 세로형 호러 웹 게임입니다. 플레이어는 자동으로 흘러가는 채팅과 각 시청자의 최근 기록을 비교해 이상 연결을 차단하고, 방송 연결 상태가 약해졌을 때 재연결해야 합니다.
+
+프레임워크나 빌드 도구 없이 HTML, CSS, JavaScript만으로 동작합니다. 화면은 최대 430px 너비의 모바일 세로 레이아웃에 맞춰져 있습니다.
+
+## 주요 기능
+
+- 닉네임 입력 후 타이틀 화면 진입
+- 스토리 모드와 무한 모드
+- 페르소나와 방송 상황에 따라 자동 생성되는 실시간 채팅
+- 예언, 관찰, 기억 오류, 모방, 시스템 침입 유형의 이상 시청자
+- 시청자별 최근 채팅 기록 확인 및 강제 퇴장
+- 이상 채팅의 깨진 문자·잔상·화면 간섭 효과
+- 방송 연결 괴이와 재연결 판정
+- 타이틀 및 게임 배경음악 랜덤 재생과 개별 음량 저장
+- 시드 기반 재현과 브라우저 콘솔용 디버그 API
+- 키보드 접근성, ARIA 상태, `prefers-reduced-motion` 지원
+
+## 게임 시작
+
+1. 첫 화면에서 사용할 닉네임을 입력합니다. 닉네임은 공백 정리 후 최대 16자로 저장됩니다.
+2. 타이틀 화면에서 스토리 모드 또는 무한 모드를 선택합니다.
+3. 채팅에 표시되는 닉네임을 눌러 최근 기록을 확인합니다.
+4. 이상 시청자라고 판단되면 `강제 퇴장`을 누릅니다.
+5. 상단 연결 상태가 `연결 약함`으로 변하면 제한시간 안에 `재연결`합니다.
+
+사용자가 직접 작성한 채팅은 화면에만 표시되며 자동 채팅 생성이나 점수 판정에는 영향을 주지 않습니다.
+
+## 게임 모드
+
+| 구분 | 스토리 모드 | 무한 모드 |
+|---|---|---|
+| 목표 | 체력을 유지하며 7일 생존 | 가능한 많은 스테이지 생존 |
+| 방송 시간 | 매일 오후 7시부터 오전 2시 | 제한 없음 |
+| 하루/스테이지 길이 | 기본 84초 | 이상 시청자 판정 시 종료 |
+| 강퇴 결과 | 오전 2시에 일괄 공개 | 즉시 공개 |
+| 이상 채팅 제한시간 | 별도 카운트다운 없음 | 기본 20초, 스테이지마다 0.9초 감소 |
+| 종료 | 7일 완주 또는 체력 0 | 체력 0 |
+
+무한 모드의 이상 채팅 제한시간은 최소 6초까지 감소합니다. 스테이지가 올라갈수록 채팅 엔진의 발화 속도와 이상 채팅 빈도도 증가합니다.
+
+스토리 모드에서는 하루가 끝날 때 다음 항목을 한꺼번에 판정합니다.
+
+- 올바르게 차단한 이상 시청자
+- 차단하지 못한 이상 시청자
+- 잘못 차단한 정상 시청자
+- 복구하지 못한 방송 연결 괴이
+
+오답이나 미처리 항목 하나마다 체력이 1 감소합니다. 7일차 결과까지 확인하고 체력이 남아 있으면 최종 생존 처리됩니다.
+
+## 연결 괴이
+
+게임 중 상단의 작은 와이파이 위젯만 조용히 `연결 약함`으로 바뀔 수 있습니다.
+
+- 4초 안에 재연결: `+100점`
+- 4초 동안 재연결하지 않음: `연결 없음`으로 전환
+- 연결 없음 상태: 실제로는 정상인 채팅까지 화면에서 이상 채팅처럼 표시
+- 정상 연결에서 불필요하게 재연결: 체력 1 감소
+
+연결 없음 상태는 재연결 버튼을 누를 때까지 유지됩니다. 이 상태에서 깨져 보이는 정상 시청자를 차단하면 정상 시청자 오판으로 판정되므로, 먼저 연결을 복구해야 합니다. 연결 없음 자체는 체력이나 점수를 감소시키지 않지만 스토리 모드의 오전 2시 결과 기록에는 남습니다.
+
+첫 괴이는 게임 시작 후 약 5~8초 사이에 나타나며, 이후에는 약 12~18초 간격으로 다시 예약됩니다.
+
+## 점수 규칙
+
+| 행동 | 점수 | 체력 |
+|---|---:|---:|
+| 이상 시청자 차단 | +150 | 변화 없음 |
+| 이상 시청자 놓침 | -100 | -1 |
+| 정상 시청자 오판 | -75 | -1 |
+| 연결 괴이 복구 | +100 | 변화 없음 |
+| 연결 없음 전환 | 변화 없음 | 변화 없음 |
+| 정상 연결에서 재연결 | 변화 없음 | -1 |
+
+점수는 0 아래로 내려가지 않습니다.
+
+모든 스테이지·일일·최종 결과는 판정이 시작된 뒤 4초 동안 `SIGNAL ANALYSIS` 연출을 거쳐 공개됩니다.
+
+## 실행 방법
+
+별도의 의존성 설치나 빌드 과정이 없습니다.
+
+### 파일로 바로 실행
+
+`index.html`을 브라우저에서 열면 됩니다. 일반 스크립트만 사용하므로 `file://` 환경에서도 실행되도록 구성되어 있습니다.
+
+### 로컬 서버로 실행
+
+프로젝트 폴더에서 다음 중 하나를 실행합니다.
+
+```powershell
+py -m http.server 8000
+```
+
+```powershell
+python -m http.server 8000
+```
+
+이후 `http://localhost:8000`에 접속합니다.
+
+VS Code에서는 `.vscode/launch.json`의 `Launch index.html` 또는 `Launch localhost` Firefox 구성을 사용할 수 있습니다.
+
+## 프로젝트 구조
+
+```text
+.
+├─ index.html                    화면 구조와 스크립트 로딩 순서
+├─ styles/
+│  ├─ base.css                 전역 토큰, 초기화, 앱 프레임
+│  ├─ entry.css                닉네임 진입 화면
+│  ├─ title.css                타이틀, 모드 선택, 타이틀 음량
+│  ├─ stream.css               주소창, 방송 무대, 연결 위젯, HUD
+│  ├─ chat.css                 메시지, 입력기, 하단 메뉴
+│  ├─ overlays.css             시청자 패널, 결과, 화면 간섭
+│  ├─ animations.css           공통 키프레임
+│  ├─ viewport.css             화면 너비별 보정
+│  ├─ story-results.css        스토리 야간 결과 연출
+│  └─ responsive.css           낮은 화면과 모션 감소 대응
+├─ app-config.js                게임 상수, DOM 참조, 공유 상태
+├─ app-chat.js                  닉네임, 메시지 렌더링, 이상 문자 변환
+├─ app-audio.js                 음악, 음량 저장, 공포 효과음
+├─ app-survival.js              스토리 시계, 제한시간, 연결 괴이
+├─ app-results.js               스테이지·일일·최종 결과 판정
+├─ app-game.js                  화면 전환, 강퇴, 게임/스테이지 수명 주기
+├─ app.js                       DOM 이벤트 연결과 최초 실행
+├─ chat-engine-config.js        채팅 속도, 상태, 페르소나 설정
+├─ chat-engine-dialogue.js      일반 대사, 짧은 반응, 방송 사건
+├─ chat-engine-anomalies.js     이상 대사와 말투 변형 데이터
+├─ chat-engine-utils.js         시드 난수와 한글 처리 유틸리티
+├─ chat-engine-core.js          채팅 디렉터와 발화 큐
+├─ chat-engine-generation.js    일반·이상 채팅 생성과 말투 변형
+├─ chat-engine-diagnostics.js   중복 필터, 기록, 진단 정보
+├─ chat-engine.js               채팅 엔진 공개 브라우저 API
+├─ CODE_GUIDE.md                상세 호출 순서와 함수별 동작 가이드
+└─ assets/                      캐릭터, 타이틀, 로고, BGM 리소스
+```
+
+## 스크립트 로딩 순서
+
+이 프로젝트는 ES module이 아닌 일반 `<script>`를 사용합니다. 각 파일이 같은 전역 lexical 환경을 공유하므로 `index.html` 하단의 순서를 유지해야 합니다.
+
+```text
+chat-engine-config.js
+→ chat-engine-dialogue.js
+→ chat-engine-anomalies.js
+→ chat-engine-utils.js
+→ chat-engine-core.js
+→ chat-engine-generation.js
+→ chat-engine-diagnostics.js
+→ chat-engine.js
+→ app-config.js
+→ app-chat.js
+→ app-audio.js
+→ app-survival.js
+→ app-results.js
+→ app-game.js
+→ app.js
+```
+
+`chat-engine.js`는 최종 클래스를 `window.HorrorChatEngine`으로 공개하고, `app-game.js`가 스테이지마다 새 엔진 인스턴스를 생성합니다.
+
+## HTML과 CSS 구성
+
+`index.html`은 외부 HTML 조각을 직접 포함할 수 없는 브라우저 표준과 `file://` 실행 호환성 때문에 단일 문서로 유지합니다. 대신 화면 영역을 주석과 시맨틱 요소로 구분하고, 스타일은 `styles/` 아래 기능별 파일로 분리해 `<link>` 순서로 조합합니다.
+
+CSS 파일 순서는 기존 cascade를 보존하므로 `index.html`의 `<link>` 순서를 임의로 바꾸지 않아야 합니다. 특히 `responsive.css`는 다른 스타일을 최종 보정하기 때문에 마지막에 로드합니다.
+
+## 채팅 엔진 개요
+
+채팅 엔진은 100ms 단위의 자체 가상 시간을 사용합니다.
+
+```text
+디렉터 상태 및 방송 사건 갱신
+→ 발화 요청 큐 생성
+→ 페르소나 기반 화자 선택
+→ 일반 대사 또는 이상 대사 선택
+→ 채팅 말투 변형
+→ 중복·유사도 검사
+→ 앱에 메시지와 메타데이터 전달
+→ DOM 렌더링 및 게임 판정
+```
+
+디렉터 상태는 `AMBIENT`, `TENSE`, `BURST`, `AFTERMATH`, `LULL`로 나뉩니다. 상태에 따라 채팅 간격과 대사 의도가 달라집니다.
+
+이상도 `anomalyLevel`은 이상 대사의 내용 강도가 아니라 발생 빈도만 조절합니다.
+
+| 이상도 | 이상 대사 교체 확률 |
+|---:|---:|
+| 1 | 10% |
+| 2 | 28% |
+| 3 | 55% |
+| 4 | 82% |
+
+실제 이상 대사가 선택되면 단계와 관계없이 해당 시청자의 전체 이상 대사 풀과 공용 글리치 풀을 사용합니다. 앱은 이상 대사 메타데이터를 받아 화면용 깨진 문자로 변환합니다.
+
+## 설정과 테스트 파라미터
+
+주요 게임 밸런스 값은 `app-config.js`, 채팅 생성 값은 `chat-engine-config.js`에서 조정합니다.
+
+| 파라미터 | 설명 | 예시 |
+|---|---|---|
+| `seed` | 같은 스테이지의 시청자와 채팅 흐름 재현 | `index.html?seed=2026` |
+| `storyDayMs` | 스토리 하루 길이 변경, 최소 1000ms | `index.html?seed=2026&storyDayMs=5000` |
+
+`storyDayMs`는 빠른 수동 테스트용입니다. 기본값은 84,000ms입니다.
+
+게임이 시작된 뒤 개발자 도구 콘솔에서 `window.horrorChatGame`을 사용할 수 있습니다.
+
+```js
+horrorChatGame.debug();
+horrorChatGame.emitEvent("BIG_LAUGH", { topic: "방금 그 말" }, 0.9);
+horrorChatGame.pause();
+horrorChatGame.resume();
+horrorChatGame.spawnApparition();
+horrorChatGame.missApparition();
+horrorChatGame.apparition();
+horrorChatGame.finishDay(); // 스토리 모드 전용
+horrorChatGame.restart();
+```
+
+사용 가능한 합성 방송 사건은 `STORY_STARTED`, `FOOD_ARRIVED`, `TECH_TROUBLE`, `DONATION_READ`, `SLIP_OF_TONGUE`, `DOORBELL`, `BIG_LAUGH`입니다.
+
+## 브라우저 저장값
+
+다음 값은 `localStorage`에 보관됩니다.
+
+| 키 | 내용 |
+|---|---|
+| `ferret-chess-player-nickname` | 마지막으로 확정한 플레이어 닉네임 |
+| `ferret-chess-title-volume` | 타이틀 BGM 음량 |
+| `ferret-chess-game-volume` | 게임 BGM 음량 |
+
+저장소 접근이 차단된 환경에서도 현재 세션은 계속 실행됩니다.
+
+## 개발 시 주의사항
+
+- HTML의 ID는 `app-config.js`의 DOM 참조와 직접 연결되어 있습니다. ID를 변경할 때 두 파일을 함께 수정해야 합니다.
+- 스크립트 파일 순서를 바꾸면 아직 선언되지 않은 전역 값을 참조해 실행이 중단될 수 있습니다.
+- 탭이 숨겨지면 채팅 엔진과 스토리 시계의 경과 계산이 일시정지됩니다.
+- 메시지는 최대 100개까지 유지되며 오래된 항목부터 제거됩니다.
+- CSS의 `.open`, `.is-weak`, `.corrupted-message`, `.interference-*` 등의 클래스는 JavaScript 상태와 연결되어 있습니다.
+- 오디오 자동 재생 권한은 첫 닉네임 제출 동작을 통해 확보합니다.
+
+더 상세한 화면 전환, 함수 호출 순서, 모드별 판정 흐름은 [CODE_GUIDE.md](./CODE_GUIDE.md)를 참고하세요.

@@ -2,6 +2,32 @@
 
 // Stage resolution, story-night verdicts, and transition effects.
 /**
+ * 일반 스테이지/최종 결과의 예약 공개를 취소하고 대기 클래스를 제거합니다.
+ */
+function clearStandardResultReveal() {
+  window.clearTimeout(resultRevealTimer);
+  resultRevealTimer = undefined;
+  stageOverlay.classList.remove("results-visible");
+  gameOverlay.classList.remove("results-visible");
+}
+
+/**
+ * 어두운 결과 배경을 먼저 연 뒤 4초가 지나면 카드와 조작 버튼을 공개합니다.
+ */
+function beginStandardResultReveal(overlay, card, controls, focusTarget) {
+  clearStandardResultReveal();
+  card.setAttribute("aria-hidden", "true");
+  controls.forEach(control => { control.disabled = true; });
+  resultRevealTimer = window.setTimeout(() => {
+    overlay.classList.add("results-visible");
+    card.setAttribute("aria-hidden", "false");
+    controls.forEach(control => { control.disabled = false; });
+    focusTarget.focus();
+    resultRevealTimer = undefined;
+  }, RESULT_REVEAL_DELAY_MS);
+}
+
+/**
  * 지정한 간섭 클래스를 재시작해 오답·침투 상황의 전 화면 효과를 재생합니다.
  */
 function triggerScreenInterference(type) {
@@ -41,7 +67,7 @@ function finishStage({ success, title, copy }) {
   stageContinue.textContent = gameEnded ? "최종 결과 보기" : "다음 스테이지";
   stageOverlay.classList.add("open");
   stageOverlay.setAttribute("aria-hidden", "false");
-  stageContinue.focus();
+  beginStandardResultReveal(stageOverlay, stageCard, [stageContinue], stageContinue);
 }
 
 /**
@@ -111,18 +137,14 @@ function beginStoryNightReveal(hasWrongAnswer) {
     storyContinue.focus();
   };
 
-  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-    revealResults();
-    return;
-  }
-
-  if (hasWrongAnswer) {
+  const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (hasWrongAnswer && !reducedMotion) {
     storyScareTimer = window.setTimeout(() => {
       storyNightOverlay.classList.add("scare-hit");
       playStaticScare();
     }, 1800);
   }
-  storyRevealTimer = window.setTimeout(revealResults, hasWrongAnswer ? 2750 : 2350);
+  storyRevealTimer = window.setTimeout(revealResults, RESULT_REVEAL_DELAY_MS);
 }
 
 /**
@@ -144,7 +166,7 @@ function finishStoryDay() {
   const caughtToday = kickedViewers.filter(viewer => viewer.anomalous);
   const wrongToday = kickedViewers.filter(viewer => !viewer.anomalous);
   const missedToday = viewers.filter(viewer => viewer.anomalous && !viewer.kickedByPlayer);
-  const damage = wrongToday.length + missedToday.length + dayMissedApparitions;
+  const damage = wrongToday.length + missedToday.length;
   const appliedDamage = Math.min(health, damage);
 
   caughtAnomalies += caughtToday.length;
@@ -154,24 +176,22 @@ function finishStoryDay() {
   health = Math.max(0, health - appliedDamage);
   score = Math.max(0, score + caughtToday.length * 150
     - missedToday.length * 100
-    - wrongToday.length * 75
-    - dayMissedApparitions * 75);
+    - wrongToday.length * 75);
   if (damage > 0) {
-    lastDamageReason = dayMissedApparitions > 0
-      ? "apparition"
-      : missedToday.length > 0 ? "missed" : "wrong-kick";
+    lastDamageReason = missedToday.length > 0 ? "missed" : "wrong-kick";
   }
   updateHud();
 
   storyResultKicker.textContent = `DAY ${String(currentStage).padStart(2, "0")} · BROADCAST CLOSED`;
   storyResultTitle.textContent = `${currentStage}일차 방송 결과`;
-  if (damage === 0) {
+  if (damage === 0 && dayMissedApparitions > 0) {
+    storyResultCopy.textContent = "연결이 끊겨 채팅이 오염됐지만 시청자 판정으로 체력을 잃지는 않았습니다.";
+  } else if (damage === 0) {
     storyResultCopy.textContent = "오늘의 판단은 정확했습니다. 체력을 잃지 않고 방송을 종료했습니다.";
   } else {
     const reasons = [];
     if (missedToday.length) reasons.push(`이상 시청자 ${missedToday.length}명 놓침`);
     if (wrongToday.length) reasons.push(`정상 시청자 ${wrongToday.length}명 오판`);
-    if (dayMissedApparitions) reasons.push(`연결 복구 ${dayMissedApparitions}회 실패`);
     storyResultCopy.textContent = `${reasons.join(", ")}으로 체력이 ${appliedDamage} 감소했습니다.`;
   }
 
@@ -185,7 +205,7 @@ function finishStoryDay() {
   missedToday.forEach(viewer => appendStoryResultDetail(`놓친 이상 시청자 · ${viewer.name}`, "danger"));
   wrongToday.forEach(viewer => appendStoryResultDetail(`정상 시청자 오판 · ${viewer.name}`, "danger"));
   if (dayBanishedApparitions) appendStoryResultDetail(`방송 연결 복구 성공 · ${dayBanishedApparitions}회`, "correct");
-  if (dayMissedApparitions) appendStoryResultDetail(`방송 연결 복구 실패 · ${dayMissedApparitions}회`, "danger");
+  if (dayMissedApparitions) appendStoryResultDetail(`연결 없음 발생 · 채팅 오염 ${dayMissedApparitions}회`, "danger");
   if (!storyResultDetails.childElementCount) appendStoryResultDetail("오늘 기록에는 판정할 연결이 없습니다.");
 
   if (health === 0) storyContinue.textContent = "최종 결과 보기";

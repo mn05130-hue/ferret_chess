@@ -11,7 +11,17 @@
   <meta name="theme-color" content="#111214">
   <meta name="description" content="라이브 방송용 모바일 채팅 인터페이스">
   <title>Buzzi Live Chat</title>
-  <link rel="stylesheet" href="styles.css">
+  <!-- 기능별 스타일 파일. 아래 순서는 기존 cascade와 반응형 덮어쓰기를 보존합니다. -->
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/entry.css">
+  <link rel="stylesheet" href="styles/title.css">
+  <link rel="stylesheet" href="styles/stream.css">
+  <link rel="stylesheet" href="styles/chat.css">
+  <link rel="stylesheet" href="styles/overlays.css">
+  <link rel="stylesheet" href="styles/animations.css">
+  <link rel="stylesheet" href="styles/viewport.css">
+  <link rel="stylesheet" href="styles/story-results.css">
+  <link rel="stylesheet" href="styles/responsive.css">
 </head>
 <body>
   <main class="chat-app" aria-label="라이브 채팅">
@@ -40,7 +50,7 @@
 
     <!-- 게임 시작 전 표시되는 타이틀, 닉네임 입력, 모드 선택 영역입니다. -->
     <section class="title-screen" id="title-screen" aria-labelledby="game-title" aria-hidden="true" hidden>
-      <div class="title-brand" aria-hidden="true">
+      <div class="title-brand" aria-hidden="false">
         <span class="title-brand-dot"></span>
         BUZZI · MIDNIGHT ROOM
       </div>

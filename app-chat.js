@@ -180,6 +180,24 @@ function triggerCorruptedChatPulse() {
 }
 
 /**
+ * 연결이 완전히 끊긴 순간 현재 화면에 보이는 일반 채팅도 판정값 변경 없이 깨진 문자로 바꿉니다.
+ */
+function corruptVisibleMessagesForConnectionLoss() {
+  messageList.querySelectorAll(".message:not(.system-message):not(.blinded-message)").forEach((item, index) => {
+    if (item.classList.contains("corrupted-message")) return;
+    const messageText = item.querySelector(".message-text");
+    if (!messageText) return;
+    const viewer = viewers.find(candidate => candidate.id === item.dataset.viewerId)
+      || { id: `connection-${index}`, history: [] };
+    const displayedText = createUnknownChatText(messageText.textContent, viewer);
+    messageText.textContent = displayedText;
+    messageText.dataset.echo = displayedText.replace(/\s+/g, " ");
+    item.classList.add("corrupted-message");
+  });
+  triggerCorruptedChatPulse();
+}
+
+/**
  * 시청자 배지·닉네임·본문과 판정 메타데이터를 포함하는 안전한 li DOM 요소를 생성합니다.
  */
 function createMessage(viewer, text, ownMessage = false, metadata = {}) {
@@ -265,7 +283,10 @@ function appendElement(element, behavior = "smooth") {
  */
 function handleEngineMessage(message) {
   const { viewer, text, historyOnly, behavior } = message;
-  const isCorruptedMessage = viewer.anomalous && Boolean(message.anomalyEvidence || message.anomalyMode);
+  const isActualAnomaly = viewer.anomalous && Boolean(message.anomalyEvidence || message.anomalyMode);
+  // 연결 없음 상태에서는 실제 판정값을 건드리지 않고 정상 채팅도 화면에서만 오염시킵니다.
+  const isConnectionCorruption = !historyOnly && apparitionActive && apparitionExpired;
+  const isCorruptedMessage = isActualAnomaly || isConnectionCorruption;
   const displayedText = isCorruptedMessage ? createUnknownChatText(text, viewer) : text;
   viewer.history.push(displayedText);
   if (viewer.history.length > 10) viewer.history.shift();
@@ -273,9 +294,7 @@ function handleEngineMessage(message) {
   appendElement(createMessage(viewer, displayedText, false, { ...message, corrupted: isCorruptedMessage }), behavior);
   if (isCorruptedMessage) triggerCorruptedChatPulse();
 
-  const isAnomalousLine = viewer.anomalous
-    && (message.anomalyEvidence || viewer.anomalyLevel >= 3);
-  if (isAnomalousLine && gameMode === GAME_MODES.ENDLESS) startThreatCountdown(viewer);
+  if (isActualAnomaly && gameMode === GAME_MODES.ENDLESS) startThreatCountdown(viewer);
 }
 
 /**

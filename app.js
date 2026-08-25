@@ -22,8 +22,10 @@ messageForm.addEventListener("submit", event => {
   event.preventDefault();
   const text = messageInput.value.trim();
   if (!text || gameOver || stageReviewOpen) return;
-  const myViewer = { name: myNickname, badge: "🐹", badgeClass: "robot", color: "#66d5b2" };
-  appendElement(createMessage(myViewer, text, true));
+  const myViewer = { id: "player", name: myNickname, badge: "🐹", badgeClass: "robot", color: "#66d5b2", history: [] };
+  const connectionCorrupted = apparitionActive && apparitionExpired;
+  const displayedText = connectionCorrupted ? createUnknownChatText(text, myViewer) : text;
+  appendElement(createMessage(myViewer, displayedText, true, { corrupted: connectionCorrupted }));
   messageInput.value = "";
   updateComposerState();
   closeEmojiPanel();

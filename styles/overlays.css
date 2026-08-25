@@ -1,0 +1,427 @@
+/* 토스트는 레이아웃을 밀지 않고 화면 하단 위에 잠시 나타나는 비차단 알림입니다. */
+.toast {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  bottom: 128px;
+  max-width: calc(100% - 32px);
+  translate: -50% 10px;
+  border: 1px solid #4b5058;
+  border-radius: 8px;
+  padding: 9px 13px;
+  color: #fff;
+  background: #292c31f2;
+  box-shadow: 0 6px 18px #000a;
+  font-size: 13px;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: 180ms ease;
+}
+
+.toast.show {
+  translate: -50% 0;
+  opacity: 1;
+  visibility: visible;
+}
+
+.viewer-backdrop,
+.stage-overlay,
+/* 공통 backdrop은 viewer/result 모달이 게임 화면 위에서 입력을 독점하도록 합니다. */
+.game-overlay {
+  position: absolute;
+  z-index: 30;
+  inset: 0;
+  background: #030405bd;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 180ms ease, visibility 180ms ease;
+}
+
+.viewer-backdrop.open,
+.stage-overlay.open,
+.game-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 시청자 패널은 최근 발화 기록을 보여 주고 강퇴 결정을 내리는 하단 시트입니다. */
+.viewer-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  min-height: 360px;
+  padding: 25px 20px max(22px, env(safe-area-inset-bottom));
+  border-top: 1px solid #6a2730;
+  border-radius: 18px 18px 0 0;
+  background:
+    linear-gradient(#63151c18 1px, transparent 1px) 0 0 / 100% 23px,
+    #17181b;
+  box-shadow: 0 -18px 45px #000d;
+  translate: 0 30px;
+  transition: translate 180ms ease;
+}
+
+.viewer-backdrop.open .viewer-panel {
+  translate: 0 0;
+}
+
+.panel-close {
+  position: absolute;
+  top: 13px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  color: #aeb2b9;
+  background: transparent;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.panel-kicker,
+.result-kicker {
+  margin: 0 0 5px;
+  color: #a33b46;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .18em;
+}
+
+.viewer-panel h2 {
+  margin: 0;
+  padding-right: 30px;
+  color: #f1f2f4;
+  font-size: 20px;
+}
+
+.panel-help {
+  margin: 6px 0 15px;
+  color: #8f949d;
+  font-size: 12px;
+}
+
+.viewer-history {
+  height: 166px;
+  margin: 0 0 16px;
+  padding: 10px 12px 10px 31px;
+  overflow-y: auto;
+  border: 1px solid #30333a;
+  border-radius: 8px;
+  color: #d8dadd;
+  background: #0e0f11;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.viewer-history li::marker {
+  color: #6b7078;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.kick-button,
+.restart-button {
+  width: 100%;
+  height: 45px;
+  border: 1px solid #b6323f;
+  border-radius: 8px;
+  color: #fff1f2;
+  background: linear-gradient(#8e2631, #681a23);
+  box-shadow: 0 5px 16px #0008;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.kick-button:hover,
+.kick-button:focus-visible,
+.restart-button:hover,
+.restart-button:focus-visible {
+  outline: 2px solid #f06a76;
+  outline-offset: 2px;
+  background: linear-gradient(#a52d3a, #791e29);
+}
+
+/* 무한 모드 스테이지 결과는 성공/실패 클래스에 따라 색상과 다음 행동을 바꿉니다. */
+.stage-overlay {
+  z-index: 38;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #050607e8;
+}
+
+.stage-overlay::after,
+.game-overlay::after {
+  content: "SIGNAL ANALYSIS\A···";
+  position: absolute;
+  z-index: 1;
+  white-space: pre;
+  color: #8fa09b;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 2;
+  letter-spacing: .18em;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stage-overlay.open:not(.results-visible)::after,
+.game-overlay.open:not(.results-visible)::after {
+  opacity: 1;
+  animation: result-wait-pulse 1.15s ease-in-out infinite alternate;
+}
+
+.stage-card {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 330px);
+  border: 1px solid #316f60;
+  border-radius: 14px;
+  padding: 24px 22px 21px;
+  background:
+    radial-gradient(circle at 50% 0, #41caa22b, transparent 50%),
+    #171a1a;
+  box-shadow: 0 20px 60px #000;
+  text-align: center;
+  scale: .95;
+  opacity: 0;
+}
+
+.stage-overlay.results-visible .stage-card {
+  scale: 1;
+  opacity: 1;
+}
+
+.stage-card.failed {
+  border-color: #80313a;
+  background:
+    radial-gradient(circle at 50% 0, #c52e3e27, transparent 50%),
+    #1a1718;
+}
+
+.stage-result-mark {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  margin: 12px auto 10px;
+  border: 1px solid #52d5ae;
+  border-radius: 50%;
+  color: #65e7bf;
+  background: #173e34;
+  box-shadow: 0 0 24px #27d5a044;
+  font-size: 27px;
+  font-weight: 900;
+}
+
+.stage-card.failed .stage-result-mark {
+  border-color: #e95865;
+  color: #ff7782;
+  background: #491a20;
+  box-shadow: 0 0 24px #e6324144;
+}
+
+.stage-card h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+
+.stage-card > p:not(.result-kicker) {
+  min-height: 44px;
+  margin: 0;
+  color: #aeb7b4;
+  font-size: 13px;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.stage-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 18px 0;
+  border-block: 1px solid #303634;
+}
+
+.stage-summary div {
+  display: grid;
+  gap: 4px;
+  padding: 10px 4px;
+}
+
+.stage-summary div + div {
+  border-left: 1px solid #303634;
+}
+
+.stage-summary dt {
+  color: #747d7a;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.stage-summary dd {
+  margin: 0;
+  color: #e9efed;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.stage-continue-button {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #47d8ac;
+  border-radius: 8px;
+  color: #071511;
+  background: linear-gradient(#5ce9bf, #18c795);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.stage-continue-button:hover,
+.stage-continue-button:focus-visible {
+  outline: 2px solid #caffef;
+  outline-offset: 2px;
+  filter: brightness(1.08);
+}
+
+.stage-card.failed .stage-continue-button {
+  border-color: #c94956;
+  color: #fff1f2;
+  background: linear-gradient(#9b2c38, #721e27);
+}
+
+/* 최종 게임 결과 카드는 점수·진행도와 재시도/타이틀 선택을 함께 제공합니다. */
+.game-overlay {
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #050506e8;
+}
+
+.result-card {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 330px);
+  border: 1px solid #5d2930;
+  border-radius: 13px;
+  padding: 27px 24px 23px;
+  background:
+    radial-gradient(circle at 50% 0, #771e2828, transparent 58%),
+    #17181b;
+  box-shadow: 0 18px 55px #000;
+  text-align: center;
+  scale: .95;
+  opacity: 0;
+}
+
+.game-overlay.results-visible .result-card {
+  scale: 1;
+  opacity: 1;
+}
+
+.result-card h2 {
+  margin: 5px 0 10px;
+  font-size: 27px;
+}
+
+.result-card > p:not(.result-kicker) {
+  margin: 0;
+  color: #aeb2b9;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.final-score {
+  display: block;
+  margin: 19px 0;
+  color: #62d7b0;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 28px;
+}
+
+.final-stage-line {
+  margin: -9px 0 17px !important;
+  color: #818a88 !important;
+  font-size: 11px !important;
+}
+
+.final-stage-line strong {
+  color: #d7dfdd;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 14px;
+}
+
+.result-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.retry-button {
+  height: 45px;
+  border: 1px solid #3fd2a6;
+  border-radius: 8px;
+  color: #071511;
+  background: linear-gradient(#5ce8bd, #16c391);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.retry-button:hover,
+.retry-button:focus-visible {
+  outline: 2px solid #caffef;
+  outline-offset: 2px;
+  filter: brightness(1.08);
+}
+
+/* 오답과 시간 초과 시 전체 화면 위에 모자이크·색 분리 간섭을 짧게 합성합니다. */
+.screen-interference {
+  position: absolute;
+  z-index: 60;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.chat-app.interference-mosaic .screen-interference {
+  opacity: 1;
+  background:
+    conic-gradient(from 90deg at 50% 50%, #ff4058, #050505, #4dffe0, #111, #ff4058) 0 0 / 22px 22px,
+    repeating-linear-gradient(0deg, #fff8 0 2px, #0008 2px 5px);
+  mix-blend-mode: difference;
+  backdrop-filter: blur(5px) contrast(1.8);
+  animation: mosaic-interference 1.15s steps(4) both;
+}
+
+.chat-app.interference-color .screen-interference {
+  opacity: 1;
+  background:
+    linear-gradient(90deg, #ff183c66, transparent 30% 65%, #00ffd566),
+    repeating-linear-gradient(0deg, transparent 0 3px, #fff2 3px 4px);
+  mix-blend-mode: screen;
+  backdrop-filter: hue-rotate(145deg) saturate(3.2) contrast(1.25);
+  animation: color-interference 1.45s steps(3) both;
+}
+
+.chat-app.wrong-kick {
+  animation: wrong-kick 260ms linear;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

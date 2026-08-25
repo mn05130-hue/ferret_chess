@@ -52,6 +52,7 @@ function showTitle(shouldFocus = true) {
   corruptedChatTimer = undefined;
   gameOver = true;
   stageReviewOpen = false;
+  clearStandardResultReveal();
   clearThreatCountdown();
   clearStreamApparition();
   stopStoryClock();
@@ -151,6 +152,7 @@ function markViewerAsKicked(viewer, replacementText = "블라인드 처리 된 �
 function endGame() {
   gameOver = true;
   stageReviewOpen = false;
+  clearStandardResultReveal();
   clearThreatCountdown(false);
   clearStreamApparition();
   stopStoryClock();
@@ -183,7 +185,7 @@ function endGame() {
   finalProgressLabel.textContent = storyMode ? "생존 일차" : "도달 스테이지";
   gameOverlay.classList.add("open");
   gameOverlay.setAttribute("aria-hidden", "false");
-  gameRestart.focus();
+  beginStandardResultReveal(gameOverlay, resultCard, [gameRetry, gameRestart], gameRestart);
 }
 
 /**
@@ -318,6 +320,7 @@ function startStage() {
   window.clearTimeout(corruptedChatTimer);
   corruptedChatTimer = undefined;
   chatApp.classList.remove("corrupted-chat-hit");
+  clearStandardResultReveal();
   clearThreatCountdown(false);
   clearStreamApparition();
   stopStoryClock();
@@ -386,6 +389,7 @@ function startGame() {
   interferenceTimer = undefined;
   gameOver = true;
   stageReviewOpen = false;
+  clearStandardResultReveal();
   clearThreatCountdown(false);
   clearStreamApparition();
   stopStoryClock();

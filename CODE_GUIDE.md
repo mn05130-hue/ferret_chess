@@ -7,7 +7,7 @@
 이 프로젝트는 별도의 빌드 도구나 프레임워크가 없는 정적 웹 게임입니다.
 
 - `index.html`: 화면에 필요한 모든 DOM 요소와 스크립트 로딩 순서를 정의합니다.
-- `styles.css`: 타이틀, 방송 화면, 채팅, 모달, 공포 효과, 반응형 레이아웃을 담당합니다.
+- `styles/*.css`: 공통 토큰, 진입·타이틀·방송·채팅·결과 화면, 애니메이션, 반응형 레이아웃을 기능별로 담당합니다.
 - `chat-engine-*.js`: 자동 시청자 채팅의 데이터와 생성 엔진입니다.
 - `app-*.js`: 게임 상태, 화면, 오디오, 판정, 이벤트를 담당합니다.
 - `assets/`: 캐릭터 이미지, 첫 진입 로고(`splash-logo.png`), 배경음악 파일을 보관합니다.
@@ -20,7 +20,7 @@ JavaScript 파일은 ES module이 아닌 일반 `<script>`입니다. 따라서 `
 브라우저는 HTML을 위에서 아래로 읽고, 문서 하단에서 다음 순서로 JavaScript를 실행합니다.
 
 ```text
-index.html + styles.css
+index.html + styles/*.css
         │
         ├─ 채팅 엔진 데이터
         │   1. chat-engine-config.js
@@ -72,15 +72,22 @@ index.html + styles.css
 
 ## 4. CSS가 작동하는 방식
 
-`styles.css`는 다음 순서로 구성됩니다.
+CSS는 `styles/` 아래에서 기능별 파일로 나뉘며, `index.html`의 `<link>` 순서대로 하나의 cascade를 이룹니다.
 
-1. `:root`에서 색상과 안전 영역 변수를 정의합니다.
-2. 기본 요소의 box sizing, 글꼴, 배경을 초기화합니다.
-3. `.chat-app`, `.title-screen`, `.game-screen`으로 화면 골격을 만듭니다.
-4. 방송 화면, HUD, 메시지, 입력기, 하단 메뉴를 배치합니다.
-5. JavaScript가 추가하는 상태 클래스에 맞춰 화면을 변화시킵니다.
-6. 키프레임 애니메이션과 반응형 규칙을 적용합니다.
-7. `prefers-reduced-motion` 환경에서는 모션을 사실상 즉시 완료합니다.
+| 파일 | 역할 |
+|---|---|
+| `base.css` | `:root` 색상·안전 영역 변수, 기본 요소 초기화, 앱 프레임 |
+| `entry.css` | 닉네임 입력과 첫 진입 화면 |
+| `title.css` | 타이틀, 모드 선택, 타이틀 음량 |
+| `stream.css` | 주소창, 방송 무대, 연결 위젯, HUD |
+| `chat.css` | 메시지, 입력기, 하단 메뉴 |
+| `overlays.css` | 시청자 기록, 결과 오버레이, 화면 간섭 |
+| `animations.css` | 여러 화면이 공유하는 키프레임 |
+| `viewport.css` | 화면 너비에 따른 1차 레이아웃 보정 |
+| `story-results.css` | 스토리 야간 결과와 공포 연출 |
+| `responsive.css` | 낮은 화면 보정과 `prefers-reduced-motion` 대응 |
+
+이 순서는 기존 선택자 우선순위와 반응형 덮어쓰기를 보존하므로 임의로 바꾸지 않습니다. JavaScript가 상태 클래스, `hidden`, `aria-hidden`, `inert`, `data-*` 값을 변경하면 각 CSS 파일이 해당 상태를 시각화합니다.
 
 ### 주요 상태 클래스와 속성
 
@@ -324,6 +331,8 @@ findRejection()
 
 이 과정에서는 이상 채팅 자체 외에 별도의 시스템 메시지나 토스트를 추가하지 않습니다. 플레이어는 깨진 채팅 모양과 무한 모드의 기존 제한시간 UI만 보고 판단합니다.
 
+연결 괴이를 4초 동안 복구하지 않아 `연결 없음`이 된 경우에는 실제 이상 여부와 관계없이 이후 자동 채팅이 같은 깨진 문자로 표시됩니다. 이때 `viewer.anomalous` 값은 바뀌지 않으므로 정상 시청자를 차단하면 오판으로 처리됩니다. 이상 메시지 스타일은 배지와 닉네임의 원래 색을 유지하고 채팅 본문에만 글리치 효과를 적용합니다.
+
 ### 메시지 목록 관리
 
 `appendElement()`는 메시지를 `#message-list`에 추가합니다.
@@ -342,7 +351,7 @@ findRejection()
 4. 메시지를 추가하고 입력창을 비웁니다.
 5. 전송 버튼 상태와 이모지 패널을 초기화합니다.
 
-사용자 메시지는 자동 채팅 엔진으로 다시 전달되지 않으며 점수와 판정에도 영향을 주지 않습니다.
+사용자 메시지는 자동 채팅 엔진으로 다시 전달되지 않으며 점수와 판정에도 영향을 주지 않습니다. 다만 연결 없음 상태에서는 다른 채팅과 마찬가지로 화면에서만 깨진 문자로 변환됩니다.
 
 ## 11. 시청자 기록과 강퇴
 
@@ -386,7 +395,7 @@ kickSelectedViewer()
 4. 제한시간 안에 해당 시청자를 강퇴하면 정답 처리됩니다.
 5. 시간이 0이 되면 `expireThreat()`가 실행됩니다.
 6. 체력이 남으면 계속 진행하고, 0이면 `endGame()`으로 이동합니다.
-7. 모든 이상 시청자를 처리하면 `finishStage()`가 결과 모달을 엽니다.
+7. 모든 이상 시청자를 처리하면 `finishStage()`가 결과 배경을 열고 4초 뒤 결과 카드를 공개합니다.
 8. 계속 버튼을 누르면 `continueFromStageResult()`가 다음 스테이지를 시작합니다.
 
 스테이지가 올라갈수록 제한시간은 `STAGE_GRACE_STEP_MS`만큼 줄어들지만 `MIN_ANOMALY_GRACE_MS`보다 짧아지지 않습니다.
@@ -418,8 +427,8 @@ beginStoryNightReveal()
 - 강퇴한 이상 시청자 수
 - 강퇴한 정상 시청자 수
 - 처리하지 못한 이상 시청자 수
-- 실패한 방송 연결 복구 수
-- 하루 동안 감소할 체력
+- 실패한 방송 연결 복구 수(기록 전용, 체력 피해 없음)
+- 이상 시청자 미처리와 정상 시청자 오판으로 감소할 체력
 
 결과 계속 버튼은 `continueFromStoryResult()`를 호출합니다.
 
@@ -439,7 +448,7 @@ beginStoryNightReveal()
 - 항상 상단에 있는 `#connection-widget`에 `.is-weak`을 추가합니다.
 - 와이파이 바깥 막대가 흐려지고 상태 문구가 `연결 약함`으로 바뀝니다.
 - 플레이어의 현재 초점을 강제로 이동하지 않습니다.
-- `APPARITION_LIFETIME_MS` 동안 제한시간 측정
+- `APPARITION_LIFETIME_MS`인 4초 동안 제한시간 측정
 
 ### 성공
 
@@ -462,12 +471,17 @@ beginStoryNightReveal()
 
 시간 안에 연결을 누르지 않으면 `expireStreamApparition()`이 실행됩니다.
 
-- 실패는 한 번만 기록되고 위젯에 `.is-failed`와 `연결 끊김`이 표시됩니다.
-- 스토리 모드: 하루 실패 수에 기록하고 오전 2시에 체력 반영
-- 무한 모드: 즉시 체력과 점수 감소
+- 실패는 한 번만 기록되고 위젯에 `.is-failed`와 `연결 없음`이 표시됩니다.
+- 체력과 점수는 감소하지 않습니다.
+- 이후 자동 채팅은 실제 판정값과 관계없이 화면에서 이상 채팅처럼 깨져 보입니다.
+- 정상 시청자의 실제 판정값은 유지되므로 이 상태에서 강퇴하면 오판입니다.
 - 실패 후에도 위젯은 자동 복구되지 않으며 반드시 `재연결` 버튼을 눌러야 안정 상태로 돌아갑니다.
 
-## 15. 오디오 흐름
+## 15. 결과 공개 지연
+
+무한 스테이지 결과와 최종 결과는 `beginStandardResultReveal()`이 배경과 `SIGNAL ANALYSIS` 문구를 먼저 표시하고 `RESULT_REVEAL_DELAY_MS`인 4초 뒤 카드를 공개합니다. 스토리 결과도 `beginStoryNightReveal()`의 공포 연출을 4초 동안 보여 준 뒤 일일 판정 카드를 공개합니다. 대기 중에는 결과 버튼을 비활성화하고 카드에 `aria-hidden="true"`를 적용합니다.
+
+## 16. 오디오 흐름
 
 ### 설정 위치
 
@@ -475,7 +489,7 @@ beginStoryNightReveal()
 
 ```js
 const AUDIO_SETTINGS = Object.freeze({
-  title: { storageKey: "ferret-chess-title-volume", defaultVolume: 45 },
+  title: { storageKey: "ferret-chess-title-volume", defaultVolume: 15 },
   game: { storageKey: "ferret-chess-game-volume", defaultVolume: 10 }
 });
 ```
@@ -514,7 +528,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 
 스토리 모드 진입 시 `primeScareAudio()`가 `AudioContext`를 준비합니다. 오답 결과에서는 `playStaticScare()`가 `emitStaticNoise()`를 호출해 별도 음원 파일 없이 정전기와 저주파 충격음을 합성합니다.
 
-## 16. 앱 파일별 함수 목록
+## 17. 앱 파일별 함수 목록
 
 ### `app-config.js`
 
@@ -547,6 +561,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 
 ### `app-results.js`
 
+- 결과 지연: `clearStandardResultReveal`, `beginStandardResultReveal`
 - 화면 간섭: `triggerScreenInterference`
 - 무한 모드: `finishStage`, `expireThreat`, `continueFromStageResult`
 - 스토리 모드: `appendStoryResultDetail`, `resetStoryNightReveal`, `beginStoryNightReveal`, `finishStoryDay`, `continueFromStoryResult`
@@ -576,7 +591,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 - `visibilitychange` → 엔진 일시정지 동기화
 - 마지막에 저장된 닉네임과 음량을 복원하고 첫 진입 화면 표시
 
-## 17. 저장값과 URL 테스트 옵션
+## 18. 저장값과 URL 테스트 옵션
 
 ### localStorage
 
@@ -595,7 +610,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 
 두 값을 같이 쓰려면 `index.html?seed=1234&storyDayMs=3000` 형식으로 지정합니다. `storyDayMs`의 최소값은 1000ms입니다.
 
-## 18. 개발용 디버그 API
+## 19. 개발용 디버그 API
 
 게임이 시작되면 `window.horrorChatGame`이 만들어집니다.
 
@@ -613,7 +628,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 
 브라우저 개발자 도구 Console에서 사용할 수 있습니다. 타이틀 화면에서는 아직 게임 엔진이 없으므로 `window.horrorChatGame`도 생성되지 않습니다.
 
-## 19. 자주 수정하는 위치
+## 20. 자주 수정하는 위치
 
 | 바꾸려는 항목 | 파일과 상수/함수 |
 |---|---|
@@ -623,6 +638,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 스토리 총 일수 | `STORY_TOTAL_DAYS`, `STORY_DAY_INTROS` |
 | 스토리 하루 실제 길이 | `DEFAULT_STORY_DAY_DURATION_MS` |
 | 연결 복구 제한시간 | `APPARITION_LIFETIME_MS` |
+| 결과 공개 지연 | `RESULT_REVEAL_DELAY_MS` |
 | 괴이 등장 간격 | `APPARITION_INITIAL_DELAY_RANGE_MS`, `APPARITION_DELAY_RANGE_MS` |
 | 배경음악 파일 | `TITLE_MUSIC_TRACKS`, `GAME_MUSIC_TRACKS` |
 | 기본 음량 | `AUDIO_SETTINGS` |
@@ -631,9 +647,9 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 이상 시청자 문장 | `chat-engine-anomalies.js` |
 | 깨진 문자 재료 | `app-config.js`의 `UNKNOWN_CHAT_TOKENS` |
 | 채팅 속도/중복 기준 | `chat-engine-config.js`의 `TUNING` |
-| 화면 색상과 크기 | `styles.css`의 `:root` 및 해당 컴포넌트 섹션 |
+| 화면 색상과 크기 | `styles/base.css`의 `:root` 및 `styles/`의 해당 기능 파일 |
 
-## 20. 수정할 때 지켜야 할 사항
+## 21. 수정할 때 지켜야 할 사항
 
 1. `index.html`의 JavaScript 로딩 순서를 바꾸지 않습니다.
 2. HTML의 `id`를 바꾸면 `app-config.js`의 `querySelector`도 함께 바꿉니다.
@@ -646,7 +662,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 9. 오디오 재생은 브라우저 정책상 실패할 수 있으므로 항상 `play()` Promise 실패를 처리합니다.
 10. 변경 후 무한 모드, 스토리 모드, 강퇴, 괴이, 타이틀 복귀를 각각 확인합니다.
 
-## 21. 빠른 실행 확인 순서
+## 22. 빠른 실행 확인 순서
 
 1. `index.html`을 브라우저에서 엽니다.
 2. 빈 닉네임으로 제출해 오류가 표시되고 첫 화면에 머무는지 확인합니다.

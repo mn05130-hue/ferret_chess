@@ -142,6 +142,7 @@ function resetConnectionWidget() {
   connectionFeedbackTimer = undefined;
   apparitionActive = false;
   apparitionExpired = false;
+  chatApp.classList.remove("connection-lost");
   connectionWidget.classList.remove("is-weak", "is-failed", "is-false-reconnect");
   connectionWidget.setAttribute("aria-label", "방송 연결 상태: 안정");
   connectionStatus.textContent = "연결 안정";
@@ -207,24 +208,13 @@ function expireStreamApparition() {
   window.clearTimeout(apparitionExpireTimer);
   apparitionExpireTimer = undefined;
   apparitionExpired = true;
+  chatApp.classList.add("connection-lost");
+  corruptVisibleMessagesForConnectionLoss();
   connectionWidget.classList.add("is-failed");
-  connectionWidget.setAttribute("aria-label", "방송 연결 상태: 끊김");
-  connectionStatus.textContent = "연결 끊김";
+  connectionWidget.setAttribute("aria-label", "방송 연결 상태: 연결 없음");
+  connectionStatus.textContent = "연결 없음";
   missedApparitions += 1;
   dayMissedApparitions += 1;
-  if (gameMode === GAME_MODES.STORY) return;
-
-  health = Math.max(0, health - 1);
-  score = Math.max(0, score - 75);
-  lastDamageReason = "apparition";
-  updateHud();
-  if (health === 0) {
-    finishStage({
-      success: false,
-      title: "연결 복구 실패",
-      copy: "약해진 방송 연결에 제때 다시 접속하지 못해 체력을 모두 잃었습니다."
-    });
-  }
 }
 
 /**
