@@ -1,0 +1,646 @@
+# Buzzi Live Chat 코드 동작 가이드
+
+이 문서는 프로젝트가 브라우저에 로드된 뒤 어떤 파일과 함수가 어떤 순서로 실행되는지 설명합니다. 코드 수정 시에는 먼저 이 문서의 **스크립트 로딩 순서**, **게임 시작 순서**, **모드별 판정 흐름**을 확인하는 것이 좋습니다.
+
+## 1. 프로젝트의 기본 구조
+
+이 프로젝트는 별도의 빌드 도구나 프레임워크가 없는 정적 웹 게임입니다.
+
+- `index.html`: 화면에 필요한 모든 DOM 요소와 스크립트 로딩 순서를 정의합니다.
+- `styles.css`: 타이틀, 방송 화면, 채팅, 모달, 공포 효과, 반응형 레이아웃을 담당합니다.
+- `chat-engine-*.js`: 자동 시청자 채팅의 데이터와 생성 엔진입니다.
+- `app-*.js`: 게임 상태, 화면, 오디오, 판정, 이벤트를 담당합니다.
+- `assets/`: 캐릭터 이미지, 첫 진입 로고(`splash-logo.png`), 배경음악 파일을 보관합니다.
+- `.vscode/launch.json`: Firefox에서 파일 또는 localhost 방식으로 실행하는 디버그 설정입니다.
+
+JavaScript 파일은 ES module이 아닌 일반 `<script>`입니다. 따라서 `file://`로 `index.html`을 직접 열어도 동작하지만, 각 파일의 최상위 `const`, `let`, `class`, `function`이 같은 전역 lexical 환경을 공유합니다. **`index.html`의 스크립트 순서를 바꾸면 아직 선언되지 않은 값을 참조해 실행이 중단될 수 있습니다.**
+
+## 2. 전체 로딩 순서
+
+브라우저는 HTML을 위에서 아래로 읽고, 문서 하단에서 다음 순서로 JavaScript를 실행합니다.
+
+```text
+index.html + styles.css
+        │
+        ├─ 채팅 엔진 데이터
+        │   1. chat-engine-config.js
+        │   2. chat-engine-dialogue.js
+        │   3. chat-engine-anomalies.js
+        │   4. chat-engine-utils.js
+        │
+        ├─ 채팅 엔진 클래스 계층
+        │   5. chat-engine-core.js
+        │   6. chat-engine-generation.js
+        │   7. chat-engine-diagnostics.js
+        │   8. chat-engine.js
+        │
+        └─ 게임 앱
+            9.  app-config.js
+            10. app-chat.js
+            11. app-audio.js
+            12. app-survival.js
+            13. app-results.js
+            14. app-game.js
+            15. app.js
+```
+
+`chat-engine.js`는 완성된 `HorrorChatEngine` 클래스를 `window.HorrorChatEngine`으로 공개합니다. `app-game.js`의 `startStage()`는 이 공개 클래스로 실제 채팅 엔진 인스턴스를 만듭니다.
+
+## 3. HTML 화면 구조
+
+`index.html`의 주요 화면은 다음 순서로 배치됩니다.
+
+| 영역 | 주요 ID/클래스 | 역할 |
+|---|---|---|
+| 전체 앱 | `.chat-app` | 화면 크기와 디렉터 상태의 기준 요소 |
+| 첫 진입 화면 | `#entry-screen`, `#entry-gate` | 사용자 클릭으로 오디오 권한을 얻고 로고 화면에서 타이틀로 전환 |
+| 타이틀 | `#title-screen` | 닉네임, 모드 선택, 타이틀 음악 설정 |
+| 실제 게임 | `#game-screen` | 방송, HUD, 채팅, 조작부를 포함 |
+| 가상 주소창 | `.browser-bar` | 접기 가능한 방송 페이지 상단 바 |
+| 방송 화면 | `.stream-stage` | 캐릭터, 괴이, 음악, 제한시간 표시 |
+| 상태 HUD | `.game-hud` | 스테이지/일차, 체력, 시각, 이상 시청자, 점수 |
+| 메시지 목록 | `#message-list` | 엔진 채팅, 시스템 메시지, 사용자 채팅 |
+| 채팅 입력 | `#message-form` | 사용자 메시지와 이모지 입력 |
+| 시청자 기록 | `#viewer-backdrop` | 닉네임 클릭 후 기록 확인 및 강퇴 |
+| 무한 모드 결과 | `#stage-overlay` | 스테이지 성공/실패 결과 |
+| 스토리 결과 | `#story-night-overlay` | 오전 2시 공포 전환과 하루 판정 |
+| 최종 결과 | `#game-overlay` | 게임오버 또는 7일 완주 결과 |
+| 보조 효과 | `#toast`, `#screen-interference` | 안내 메시지와 화면 간섭 |
+
+타이틀을 표시할 때 `#game-screen`에는 `inert`가 적용됩니다. 이 속성은 화면을 숨기는 것뿐 아니라 내부 버튼과 입력창에 키보드 초점이 들어가는 것도 막습니다. 게임 진입 시 `inert`가 해제됩니다.
+
+## 4. CSS가 작동하는 방식
+
+`styles.css`는 다음 순서로 구성됩니다.
+
+1. `:root`에서 색상과 안전 영역 변수를 정의합니다.
+2. 기본 요소의 box sizing, 글꼴, 배경을 초기화합니다.
+3. `.chat-app`, `.title-screen`, `.game-screen`으로 화면 골격을 만듭니다.
+4. 방송 화면, HUD, 메시지, 입력기, 하단 메뉴를 배치합니다.
+5. JavaScript가 추가하는 상태 클래스에 맞춰 화면을 변화시킵니다.
+6. 키프레임 애니메이션과 반응형 규칙을 적용합니다.
+7. `prefers-reduced-motion` 환경에서는 모션을 사실상 즉시 완료합니다.
+
+### 주요 상태 클래스와 속성
+
+| 상태 | 추가 위치 | 결과 |
+|---|---|---|
+| `.open` | 모달/오버레이 | 숨겨진 모달을 표시 |
+| `.is-leaving` | 첫 진입 화면 | 클릭 뒤 흰 로고 화면을 페이드아웃 |
+| `.is-playing` | 음악 버튼 | 재생 중 색상과 파형 표시 |
+| `.has-text` | `.composer` | 전송 버튼 활성 모양 표시 |
+| `.claimed` | 보상 버튼 | 수령 완료 상태 표시 |
+| `.blinded-message` | 강퇴된 메시지 | 닉네임과 본문을 비활성화 |
+| `.corrupted-message` | 이상 채팅 | 여러 줄 깨진 문자, 잔상, 흔들림 표시 |
+| `.corrupted-chat-hit` | `.chat-app` | 이상 채팅 도착 순간 메시지 영역 흔들림 |
+| `.interference-mosaic` | `.chat-app` | 모자이크 간섭 효과 |
+| `.interference-color` | `.chat-app` | 색 분리 간섭 효과 |
+| `.wrong-kick` | `.chat-app` | 오답 화면 흔들림 |
+| `.is-wrong` | 스토리 결과 | 오답 전용 공포 연출 |
+| `.scare-hit` | 스토리 결과 | 형상 접근과 정전기 폭발 |
+| `.results-visible` | 스토리 결과 | 공포 전환 뒤 결과 카드 공개 |
+| `data-director-state` | `.chat-app` | 채팅 분위기에 맞춰 방송 노이즈 변경 |
+| `data-game-mode` | `.chat-app` | 무한/스토리 모드별 화면 구분 |
+| `data-variant` | 괴이 | 괴이 외형 변형 선택 |
+
+CSS는 게임 규칙을 직접 계산하지 않습니다. JavaScript가 상태 클래스, `hidden`, `aria-hidden`, `inert`, `data-*` 값을 변경하면 CSS가 그 상태를 시각화합니다.
+
+## 5. 앱 초기 실행 순서
+
+마지막에 로드되는 `app.js`가 모든 DOM 이벤트를 연결한 뒤 다음 세 함수를 순서대로 호출합니다.
+
+```text
+initializePlayerNickname()
+        ↓
+initializeAudioVolumes()
+        ↓
+showEntryScreen()
+```
+
+### `initializePlayerNickname()`
+
+1. `localStorage`의 `ferret-chess-player-nickname`을 읽습니다.
+2. 값이 있으면 공백과 길이를 정규화합니다.
+3. 닉네임 입력창에 복원합니다.
+4. 저장소 접근이 차단되어도 빈 입력창으로 계속 실행합니다.
+
+### `initializeAudioVolumes()`
+
+1. `AUDIO_SETTINGS.title`과 `AUDIO_SETTINGS.game`을 읽습니다.
+2. 각 저장 키에서 이전 음량을 복원합니다.
+3. 값이 없거나 잘못되면 `defaultVolume`을 사용합니다.
+4. `<audio>`, `<input type="range">`, `<output>`을 같은 값으로 맞춥니다.
+
+### `showEntryScreen()`
+
+1. 타이틀과 게임 화면을 비활성화합니다.
+2. 흰 배경의 `assets/splash-logo.png` 로고 화면만 표시합니다.
+3. 화면 전체 버튼인 `#entry-gate`에 키보드 초점을 둡니다.
+4. 타이틀과 게임 음악은 아직 재생하지 않습니다.
+
+사용자가 첫 화면을 클릭하거나 Enter/Space를 누르면 `enterTitleFromEntry()`가 실행됩니다. 이 사용자 제스처 안에서 `showTitle(false)`와 `prepareTitleMusic()`을 호출하므로 브라우저가 타이틀 BGM 재생을 허용할 수 있습니다. 흰 화면은 720ms 동안 페이드아웃되고 그 아래에 준비된 타이틀 화면이 자동으로 나타납니다.
+
+자동 타이머만으로 화면을 넘기면 사용자 제스처가 없어 자동 재생 제한을 해결할 수 없습니다. 따라서 **첫 화면은 반드시 한 번 클릭해야 하고, 클릭한 뒤의 타이틀 전환은 자동**입니다.
+
+## 6. 타이틀에서 게임으로 들어가는 순서
+
+첫 진입 화면을 통과한 뒤 스토리 버튼과 무한 버튼은 각각 다음 함수를 호출합니다.
+
+```text
+#story-start 클릭  ──→ enterGame(GAME_MODES.STORY)
+#game-start 클릭   ──→ enterGame(GAME_MODES.ENDLESS)
+```
+
+`enterGame(mode)`의 처리 순서는 다음과 같습니다.
+
+1. `commitPlayerNickname()`으로 닉네임을 검증하고 저장합니다.
+2. `gameMode`와 `.chat-app.dataset.gameMode`를 갱신합니다.
+3. 스토리 모드이면 공포 효과음용 `AudioContext`를 준비합니다.
+4. 타이틀 음악을 중지합니다.
+5. 타이틀을 숨기고 게임 화면의 `inert`를 해제합니다.
+6. 게임 음악을 준비합니다.
+7. `startGame()`을 호출합니다.
+
+## 7. 새 게임과 스테이지 시작
+
+### `startGame()`
+
+새 게임 전체에서 한 번 초기화해야 하는 값을 재설정합니다.
+
+- 체력: `MAX_HEALTH`
+- 점수와 현재 스테이지/일차
+- 정답, 놓침, 오답 누계
+- 괴이 퇴치/실패 누계
+- 스토리 승리 상태
+- 보상 버튼
+- 최종 결과 모달과 공포 결과 연출
+
+초기화가 끝나면 `startStage()`를 호출합니다.
+
+### `startStage()`
+
+각 무한 모드 스테이지 또는 스토리 하루가 시작될 때 실행됩니다.
+
+```text
+기존 타이머/엔진 정리
+        ↓
+createStageSeed()
+        ↓
+createViewers(currentSeed)
+        ↓
+HUD·메시지·모달 초기화
+        ↓
+new window.HorrorChatEngine(...)
+        ↓
+chatEngine.start()
+        ↓
+모드별 안내 및 시계/제한시간 준비
+        ↓
+scheduleStreamApparition(true)
+```
+
+고정 `seed`가 없으면 새 난수를 만듭니다. 고정 시드가 있으면 현재 스테이지 번호를 혼합해 같은 URL에서 스테이지별 결과도 재현할 수 있습니다.
+
+`createViewers()`는 다음 작업을 합니다.
+
+1. `VIEWER_STYLES` 수만큼 시청자를 만듭니다.
+2. 중복되지 않는 랜덤 닉네임을 부여합니다.
+3. `ANOMALIES_PER_STAGE`만큼 이상 시청자를 무작위 지정합니다.
+4. 기록, 활성 상태, 강퇴 여부를 초기화합니다.
+
+## 8. 채팅 엔진 파일별 역할
+
+### `chat-engine-config.js`
+
+- `TUNING`: tick 간격, 상태 임계값, 중복 검사 기준, 채팅 간격을 정의합니다.
+- `PERSONAS`: 시청자별 발화 욕구, 의도 적합도, 쿨다운, 축약/오타/이모티콘 확률을 정의합니다.
+
+### `chat-engine-dialogue.js`
+
+- `TEMPLATES`: 의도별 일반 대사 템플릿입니다.
+- `SHORT_LINES`: 채팅 폭주 때 사용하는 짧은 반응입니다.
+- `SLOT_POOLS`: `{topic}`, `{food}`, `{thing}` 등에 들어갈 기본값입니다.
+- `SYNTHETIC_EVENTS`: 실제 스트리머 행동 없이도 채팅 반응을 일으키는 가상 사건입니다.
+
+### `chat-engine-anomalies.js`
+
+- `ANOMALY_LINES`: 이상 시청자만 사용할 수 있는 공포 대사입니다.
+- `ANOMALY_PERMISSIONS`: `PROPHECY`, `OBSERVER`, `MEMORY`, `MIMIC`, `INTRUDER` 유형입니다.
+- `CHAT_ENDINGS`, `ABBREVIATIONS`, `TYPO_PAIRS`: 일반 문장을 실제 인터넷 채팅 말투로 변형하는 재료입니다.
+- `CHOSEONG`, `JUNGSEONG`: 첫 음절을 자모로 흘리는 오타를 만들 때 사용합니다.
+
+### `chat-engine-utils.js`
+
+- `spillFirstSyllable()`: 첫 한글 음절을 자모 형태로 바꿉니다.
+- `SeededRandom`: 같은 시드에서 같은 발화 순서가 나오도록 하는 난수 클래스입니다.
+- `next()`, `range()`, `pick()`, `shuffle()`, `weighted()`가 모든 확률 선택을 담당합니다.
+
+### `chat-engine-core.js`
+
+기본 `HorrorChatEngine` 클래스를 선언합니다.
+
+- `constructor()`: 큐, 시간, 긴장도, 최근 기록, 디버그 통계를 만듭니다.
+- `assignViewerModels()`: 시청자에게 페르소나와 이상 권한을 배정합니다.
+- `start()` / `stop()` / `setPaused()`: 엔진 수명 주기를 관리합니다.
+- `tick()`: 100ms 단위로 가상 시간을 전진시킵니다.
+- `updateDirectorState()`: `AMBIENT`, `TENSE`, `BURST`, `AFTERMATH`, `LULL`을 결정합니다.
+- `enqueue()` / `enqueueAmbient()`: 발화 요청을 시간순 큐에 넣습니다.
+- `chooseIntent()`: 현재 상태와 쿨다운으로 다음 발화 의도를 정합니다.
+- `emitEvent()` / `planFutureEvent()`: 방송 사건과 여러 반응을 예약합니다.
+- `chooseSpeaker()`: 페르소나 적합도와 침묵 시간을 바탕으로 화자를 고릅니다.
+
+### `chat-engine-generation.js`
+
+기본 엔진을 상속해 문장 생성 기능을 추가합니다.
+
+- `processRequest()`: 큐 요청 하나를 실제 채팅으로 처리합니다.
+- `generateCandidate()`: 일반 템플릿 또는 이상 대사 후보를 만듭니다.
+- `generateShortCandidate()`: 짧은 반응 후보를 만듭니다.
+- `createAnomalyOverride()`: 이상 시청자일 때 공포 대사로 교체할지 결정합니다.
+- `resolveSlot()`: 템플릿 슬롯 값을 선택합니다.
+- `attachParticle()`: 받침에 맞는 한국어 조사를 붙입니다.
+- `transformStyle()`: 축약, 어미, 이모티콘, 오타를 적용합니다.
+
+### `chat-engine-diagnostics.js`
+
+생성 엔진을 다시 상속해 품질 검사와 기록 기능을 추가합니다.
+
+- `findRejection()`: 동일 문장, 템플릿, 시그니처, 유사도를 검사합니다.
+- `normalizeForSimilarity()` / `jaccardBigrams()`: 문장 유사도를 계산합니다.
+- `signature()`: 템플릿과 슬롯의 의미 조합 키를 만듭니다.
+- `recordUtterance()`: 승인된 발화를 기록하고 앱의 `onMessage`를 호출합니다.
+- `bootstrapMessages()`: 시작 직후 초기 채팅을 예약합니다.
+- `observeViewer()`: 플레이어가 시청자 기록을 열었다는 정보를 남깁니다.
+- `getDebugSnapshot()`: 엔진 내부 상태를 진단용 사본으로 반환합니다.
+
+### `chat-engine.js`
+
+최종 상속 클래스와 주요 데이터 일부를 `window`에 공개합니다.
+
+```js
+window.HorrorChatEngine
+window.HORROR_CHAT_TUNING
+window.HORROR_CHAT_PERSONAS
+window.HORROR_CHAT_EVENTS
+window.HORROR_CHAT_ANOMALY_LINES
+```
+
+## 9. 채팅 한 줄이 만들어지는 순서
+
+```text
+HorrorChatEngine.tick()
+        ↓
+큐에서 실행 시간이 된 요청 선택
+        ↓
+processRequest(request)
+        ↓
+chooseSpeaker(intent)
+        ↓
+createAnomalyOverride() 또는 generateCandidate()
+        ↓
+transformStyle()
+        ↓
+findRejection()
+        ├─ 중복이면 재생성
+        └─ 통과하면 recordUtterance()
+                         ↓
+                 app의 handleEngineMessage()
+                         ↓
+            createMessage() → appendElement()
+```
+
+### 이상 채팅일 때 추가되는 과정
+
+1. 엔진이 `anomalyEvidence` 또는 `anomalyMode` 메타데이터를 전달합니다.
+2. `handleEngineMessage()`가 해당 발화를 이상 채팅으로 판별합니다.
+3. `createUnknownChatText()`가 여러 줄의 알 수 없는 문자로 변환합니다.
+4. 메시지에 `.corrupted-message` 클래스가 추가됩니다.
+5. `triggerCorruptedChatPulse()`가 채팅 영역을 짧게 흔듭니다.
+6. 무한 모드이면 `startThreatCountdown(viewer)`가 즉시 시작됩니다.
+7. 스토리 모드이면 즉시 제한시간을 만들지 않고 오전 2시에 판정합니다.
+
+### 메시지 목록 관리
+
+`appendElement()`는 메시지를 `#message-list`에 추가합니다.
+
+- 사용자가 최신 메시지 근처에 있으면 자동으로 아래로 이동합니다.
+- 위쪽 기록을 읽고 있으면 위치를 유지하고 `새 메시지 보기` 버튼을 표시합니다.
+- `MAX_MESSAGES`를 초과하면 가장 오래된 메시지부터 제거합니다.
+
+## 10. 사용자 채팅 순서
+
+`#message-form` 제출 이벤트는 다음 순서로 처리됩니다.
+
+1. 빈 문자열, 게임 종료, 결과 모달 상태를 검사합니다.
+2. 입력한 닉네임으로 사용자 전용 viewer 객체를 만듭니다.
+3. `createMessage(..., true)`로 `data-own-message="true"` 메시지를 만듭니다.
+4. 메시지를 추가하고 입력창을 비웁니다.
+5. 전송 버튼 상태와 이모지 패널을 초기화합니다.
+
+사용자 메시지는 자동 채팅 엔진으로 다시 전달되지 않으며 점수와 판정에도 영향을 주지 않습니다.
+
+## 11. 시청자 기록과 강퇴
+
+채팅 닉네임 버튼을 누르면 다음 순서가 실행됩니다.
+
+```text
+messageList click
+        ↓
+openViewerPanel(viewerId)
+        ↓
+최근 viewer.history 렌더링
+        ↓
+chatEngine.observeViewer(viewerId)
+        ↓
+강제 퇴장 버튼
+        ↓
+kickSelectedViewer()
+```
+
+`markViewerAsKicked()`는 과거 메시지를 삭제하지 않습니다. 대신 `.blinded-message`를 추가하고 본문을 블라인드 문구로 바꿔 플레이어가 이미 처리한 대상을 다시 선택하지 못하게 합니다.
+
+### 무한 모드 강퇴
+
+- 이상 시청자이면 점수와 정답 수를 올리고 스테이지 성공 여부를 검사합니다.
+- 정상 시청자이면 체력과 점수를 깎고 오답 간섭 효과를 재생합니다.
+- 판정 결과가 즉시 공개됩니다.
+
+### 스토리 모드 강퇴
+
+- 시청자는 즉시 비활성화되지만 정답 여부는 알려 주지 않습니다.
+- 강퇴 결과는 `kickedByPlayer`에만 기록합니다.
+- 오전 2시에 `finishStoryDay()`가 모든 강퇴를 한꺼번에 판정합니다.
+
+## 12. 무한 모드 흐름
+
+이상 채팅이 나타나면 `startThreatCountdown()`이 호출됩니다.
+
+1. `getStageGraceMs()`가 현재 스테이지 제한시간을 계산합니다.
+2. `#threat-timer`가 표시됩니다.
+3. `updateThreatCountdown()`이 실제 경과 시간을 차감합니다.
+4. 제한시간 안에 해당 시청자를 강퇴하면 정답 처리됩니다.
+5. 시간이 0이 되면 `expireThreat()`가 실행됩니다.
+6. 체력이 남으면 계속 진행하고, 0이면 `endGame()`으로 이동합니다.
+7. 모든 이상 시청자를 처리하면 `finishStage()`가 결과 모달을 엽니다.
+8. 계속 버튼을 누르면 `continueFromStageResult()`가 다음 스테이지를 시작합니다.
+
+스테이지가 올라갈수록 제한시간은 `STAGE_GRACE_STEP_MS`만큼 줄어들지만 `MIN_ANOMALY_GRACE_MS`보다 짧아지지 않습니다.
+
+## 13. 스토리 모드 흐름
+
+한 날은 실제 기본값 `DEFAULT_STORY_DAY_DURATION_MS` 동안 진행되며 게임 내 시간은 오후 7시부터 오전 2시까지 흐릅니다.
+
+```text
+startStoryClock()
+        ↓
+updateStoryClock()
+        ↓
+formatStoryTime()
+        ↓
+오전 2시 도달
+        ↓
+finishStoryDay()
+        ↓
+beginStoryNightReveal()
+        ↓
+검은 화면/형상/오답 효과
+        ↓
+하루 결과 카드 공개
+```
+
+`finishStoryDay()`는 다음 항목을 계산합니다.
+
+- 강퇴한 이상 시청자 수
+- 강퇴한 정상 시청자 수
+- 처리하지 못한 이상 시청자 수
+- 놓친 방송 화면 괴이 수
+- 하루 동안 감소할 체력
+
+결과 계속 버튼은 `continueFromStoryResult()`를 호출합니다.
+
+- 체력이 0이면 최종 게임오버
+- 7일차를 완료하면 `storyVictory = true`로 최종 승리
+- 그 외에는 `currentStage`를 하루 증가시키고 `startStage()` 실행
+
+## 14. 방송 화면 괴이
+
+`scheduleStreamApparition()`은 현재 게임과 모달 상태를 확인한 뒤 다음 출현을 예약합니다.
+
+### 출현
+
+`spawnStreamApparition()`은 다음 CSS 변수를 설정합니다.
+
+- `--apparition-x`: 가로 위치
+- `--apparition-y`: 세로 위치
+- `--apparition-scale`: 크기
+- `data-variant`: 외형 변형
+
+그 후 `APPARITION_LIFETIME_MS` 동안 버튼을 표시합니다.
+
+### 성공
+
+괴이를 누르면 `banishStreamApparition()`이 실행됩니다.
+
+- 활성 괴이를 숨김
+- 퇴치 수 증가
+- 점수 증가
+- 다음 출현 예약
+
+### 실패
+
+시간 안에 누르지 않으면 `expireStreamApparition()`이 실행됩니다.
+
+- 스토리 모드: 하루 실패 수에 기록하고 오전 2시에 체력 반영
+- 무한 모드: 즉시 체력과 점수 감소
+
+## 15. 오디오 흐름
+
+### 설정 위치
+
+`app-config.js`의 `AUDIO_SETTINGS`가 저장 키와 기본 음량을 정의합니다.
+
+```js
+const AUDIO_SETTINGS = Object.freeze({
+  title: { storageKey: "ferret-chess-title-volume", defaultVolume: 45 },
+  game: { storageKey: "ferret-chess-game-volume", defaultVolume: 10 }
+});
+```
+
+트랙 목록은 `TITLE_MUSIC_TRACKS`와 `GAME_MUSIC_TRACKS`에 있습니다.
+
+### 타이틀 음악
+
+```text
+첫 진입 화면 클릭
+    ↓
+enterTitleFromEntry()
+    ↓
+showTitle(false)
+    ↓
+prepareTitleMusic()
+    ↓
+stopTitleMusic(false)
+    ↓
+트랙 선택 및 load()
+    ↓
+playTitleMusic()
+```
+
+첫 진입 화면의 클릭이 사용자 활성화 권한을 제공하므로 타이틀 음악이 정상적으로 시작될 가능성이 높습니다. 기본 재생 시도를 끄려면 `prepareTitleMusic()` 마지막의 `playTitleMusic()` 호출을 제거하면 됩니다.
+
+### 게임 음악
+
+`enterGame()`이 `prepareGameMusic()`을 호출하고 게임 화면 진입 후 재생합니다. 타이틀로 돌아갈 때 `showTitle()`이 `stopGameMusic()`을 호출합니다.
+
+### 음량 저장
+
+range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `localStorage` 저장 순서입니다.
+
+### 공포 효과음
+
+스토리 모드 진입 시 `primeScareAudio()`가 `AudioContext`를 준비합니다. 오답 결과에서는 `playStaticScare()`가 `emitStaticNoise()`를 호출해 별도 음원 파일 없이 정전기와 저주파 충격음을 합성합니다.
+
+## 16. 앱 파일별 함수 목록
+
+### `app-config.js`
+
+함수는 없으며 모든 앱 모듈이 사용하는 상수, DOM 참조, 런타임 상태를 선언합니다.
+
+### `app-chat.js`
+
+- 난수/시청자: `createRoundRandom`, `shuffle`, `createNickname`, `createSeed`, `createViewers`
+- 닉네임: `normalizePlayerNickname`, `setNicknameError`, `commitPlayerNickname`, `initializePlayerNickname`
+- 이상 문장: `hashText`, `createUnknownChatText`, `triggerCorruptedChatPulse`
+- 메시지 DOM: `createMessage`, `createSystemMessage`, `appendElement`
+- 스크롤: `isNearLatest`, `scrollToLatest`
+- 엔진 연결: `handleEngineMessage`, `appendSystemMessage`
+- 화면 정보: `updateHud`, `showToast`, `updateStreamState`
+
+### `app-audio.js`
+
+- UI 상태: `setTitleMusicUi`, `setGameMusicUi`
+- 공통 설정: `chooseMusicTrack`, `readStoredVolume`, `applyVolume`, `initializeAudioVolumes`
+- 타이틀 음악: `playTitleMusic`, `stopTitleMusic`, `prepareTitleMusic`
+- 게임 음악: `playGameMusic`, `stopGameMusic`, `prepareGameMusic`
+- 공포 소리: `primeScareAudio`, `emitStaticNoise`, `playStaticScare`
+
+### `app-survival.js`
+
+- 스토리 시계: `stopStoryClock`, `formatStoryTime`, `renderStoryClock`, `updateStoryClock`, `startStoryClock`
+- 일시정지: `syncEnginePause`
+- 이상 채팅 제한시간: `clearThreatCountdown`, `updateThreatCountdown`, `getStageGraceMs`, `startThreatCountdown`
+- 괴이: `getApparitionDelay`, `hideStreamApparition`, `clearStreamApparition`, `scheduleStreamApparition`, `spawnStreamApparition`, `expireStreamApparition`, `banishStreamApparition`, `settleActiveApparitionAsMissed`
+
+### `app-results.js`
+
+- 화면 간섭: `triggerScreenInterference`
+- 무한 모드: `finishStage`, `expireThreat`, `continueFromStageResult`
+- 스토리 모드: `appendStoryResultDetail`, `resetStoryNightReveal`, `beginStoryNightReveal`, `finishStoryDay`, `continueFromStoryResult`
+
+### `app-game.js`
+
+- 첫 진입: `showEntryScreen`, `enterTitleFromEntry`
+- 화면 전환: `showTitle`, `enterGame`
+- 시청자 판정: `openViewerPanel`, `closeViewerPanel`, `markViewerAsKicked`, `kickSelectedViewer`
+- 게임 종료: `endGame`
+- 입력 보조: `updateComposerState`, `insertAtCursor`, `closeEmojiPanel`
+- 개발 API: `exposeDebugApi`
+- 게임 시작: `createStageSeed`, `startStage`, `startGame`
+
+### `app.js`
+
+함수 선언보다 DOM 이벤트 연결이 중심입니다.
+
+- 메시지 목록 클릭 → 시청자 패널
+- 첫 진입 화면 클릭 → 오디오 권한 획득 후 타이틀 전환
+- 채팅 form 제출 → 사용자 메시지 추가
+- 음악 버튼/음량 range → 오디오 함수
+- 타이틀 모드 버튼 → `enterGame`
+- 결과 버튼 → 다음 스테이지/하루 또는 타이틀
+- 이모지/보상/주소창/도움말 → 해당 UI 동작
+- `visibilitychange` → 엔진 일시정지 동기화
+- 마지막에 닉네임, 음량, 타이틀 초기화
+
+## 17. 저장값과 URL 테스트 옵션
+
+### localStorage
+
+| 키 | 내용 |
+|---|---|
+| `ferret-chess-player-nickname` | 플레이어 닉네임 |
+| `ferret-chess-title-volume` | 타이틀 음악 음량 0~100 |
+| `ferret-chess-game-volume` | 게임 음악 음량 0~100 |
+
+### URL 파라미터
+
+| 파라미터 | 예시 | 용도 |
+|---|---|---|
+| `seed` | `index.html?seed=1234` | 같은 시청자와 채팅 흐름 재현 |
+| `storyDayMs` | `index.html?storyDayMs=3000` | 스토리 하루를 테스트용 3초로 단축 |
+
+두 값을 같이 쓰려면 `index.html?seed=1234&storyDayMs=3000` 형식으로 지정합니다. `storyDayMs`의 최소값은 1000ms입니다.
+
+## 18. 개발용 디버그 API
+
+게임이 시작되면 `window.horrorChatGame`이 만들어집니다.
+
+| 호출 | 역할 |
+|---|---|
+| `horrorChatGame.debug()` | 엔진 상태와 시청자 정보를 조회 |
+| `horrorChatGame.emitEvent(type, slots, intensity)` | 방송 사건을 강제로 발생 |
+| `horrorChatGame.pause()` | 채팅 엔진 일시정지 |
+| `horrorChatGame.resume()` | 채팅 엔진 재개 |
+| `horrorChatGame.finishDay()` | 스토리 하루를 즉시 종료 |
+| `horrorChatGame.spawnApparition()` | 괴이를 즉시 출현 |
+| `horrorChatGame.missApparition()` | 현재 괴이를 놓친 것으로 처리 |
+| `horrorChatGame.apparition()` | 괴이 성공/실패 통계 조회 |
+| `horrorChatGame.restart()` | 현재 모드 새 게임 시작 |
+
+브라우저 개발자 도구 Console에서 사용할 수 있습니다. 타이틀 화면에서는 아직 게임 엔진이 없으므로 `window.horrorChatGame`도 생성되지 않습니다.
+
+## 19. 자주 수정하는 위치
+
+| 바꾸려는 항목 | 파일과 상수/함수 |
+|---|---|
+| 기본 체력 | `app-config.js`의 `MAX_HEALTH` |
+| 스테이지 이상 시청자 수 | `ANOMALIES_PER_STAGE` |
+| 이상 채팅 제한시간 | `BASE_ANOMALY_GRACE_MS`, `MIN_ANOMALY_GRACE_MS`, `STAGE_GRACE_STEP_MS` |
+| 스토리 총 일수 | `STORY_TOTAL_DAYS`, `STORY_DAY_INTROS` |
+| 스토리 하루 실제 길이 | `DEFAULT_STORY_DAY_DURATION_MS` |
+| 괴이 생존 시간 | `APPARITION_LIFETIME_MS` |
+| 괴이 등장 간격 | `APPARITION_INITIAL_DELAY_RANGE_MS`, `APPARITION_DELAY_RANGE_MS` |
+| 배경음악 파일 | `TITLE_MUSIC_TRACKS`, `GAME_MUSIC_TRACKS` |
+| 기본 음량 | `AUDIO_SETTINGS` |
+| 타이틀 자동 재생 | `app-audio.js`의 `prepareTitleMusic()` |
+| 일반 채팅 문장 | `chat-engine-dialogue.js` |
+| 이상 시청자 문장 | `chat-engine-anomalies.js` |
+| 깨진 문자 재료 | `app-config.js`의 `UNKNOWN_CHAT_TOKENS` |
+| 채팅 속도/중복 기준 | `chat-engine-config.js`의 `TUNING` |
+| 화면 색상과 크기 | `styles.css`의 `:root` 및 해당 컴포넌트 섹션 |
+
+## 20. 수정할 때 지켜야 할 사항
+
+1. `index.html`의 JavaScript 로딩 순서를 바꾸지 않습니다.
+2. HTML의 `id`를 바꾸면 `app-config.js`의 `querySelector`도 함께 바꿉니다.
+3. 모달을 열고 닫을 때 `.open`뿐 아니라 `aria-hidden`도 같이 갱신합니다.
+4. 타이틀과 게임 전환 시 `hidden`, `inert`, `aria-hidden`을 함께 관리합니다.
+5. 새 타이머를 추가하면 `showTitle()`, `startGame()`, `startStage()` 중 알맞은 정리 위치에도 해제 코드를 추가합니다.
+6. 새 채팅 템플릿 ID는 기존 ID와 겹치지 않게 합니다.
+7. 이상 대사는 정상 대사 파일이 아니라 `chat-engine-anomalies.js`에 추가합니다.
+8. 새 상태 클래스를 추가하면 JavaScript의 추가/제거 위치와 CSS 효과를 함께 문서화합니다.
+9. 오디오 재생은 브라우저 정책상 실패할 수 있으므로 항상 `play()` Promise 실패를 처리합니다.
+10. 변경 후 무한 모드, 스토리 모드, 강퇴, 괴이, 타이틀 복귀를 각각 확인합니다.
+
+## 21. 빠른 실행 확인 순서
+
+1. `index.html`을 브라우저에서 엽니다.
+2. 흰 로고 화면을 클릭해 타이틀 BGM과 타이틀 전환을 확인합니다.
+3. 닉네임을 입력하고 무한 모드를 시작합니다.
+4. 자동 시청자 채팅이 표시되는지 확인합니다.
+5. 사용자 채팅을 입력해 자신의 닉네임으로 표시되는지 확인합니다.
+6. 시청자 닉네임을 눌러 기록 모달과 강퇴 버튼을 확인합니다.
+7. 괴이가 나타났을 때 클릭해 점수가 증가하는지 확인합니다.
+8. 타이틀로 돌아가 스토리 모드를 시작합니다.
+9. 개발자 도구에서 `horrorChatGame.finishDay()`를 호출합니다.
+10. 검은 화면 연출 뒤 하루 결과가 표시되는지 확인합니다.
+11. 음악 버튼, 음량 저장, 화면 크기별 레이아웃을 확인합니다.

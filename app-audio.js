@@ -72,7 +72,7 @@ function applyVolume(audio, input, output, settings, value, persist = true) {
  * 타이틀과 게임의 저장된 음량을 읽어 최초 UI와 audio 요소를 일치시킵니다.
  */
 function initializeAudioVolumes() {
-  applyVolume(titleMusic, titleVolume, titleVolumeValue, AUDIO_SETTINGS.title, readStoredVolume(AUDIO_SETTINGS.title), false);
+  applyVolume(titleMusic, titleVolume, titleVolumeValue, AUDIO_SETTINGS.title, readStoredVolume(AUDIO_SETTINGS.title) , false);
   applyVolume(gameMusic, gameVolume, gameVolumeValue, AUDIO_SETTINGS.game, readStoredVolume(AUDIO_SETTINGS.game), false);
 }
 
@@ -105,7 +105,7 @@ function stopTitleMusic(reset = true) {
  * 타이틀 진입 시 트랙을 미리 선택하고 현재 재생 상태를 UI에 표시합니다.
  */
 function prepareTitleMusic() {
-  stopTitleMusic();
+  stopTitleMusic(false);
   titleMusic.src = chooseMusicTrack(TITLE_MUSIC_TRACKS);
   titleMusic.load();
   playTitleMusic();

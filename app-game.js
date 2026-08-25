@@ -2,6 +2,47 @@
 
 // Screens, viewer actions, stage lifecycle, and game startup.
 /**
+ * 최초 로드에서는 타이틀과 게임을 모두 비활성화하고 오디오 권한을 받을 흰 진입 화면만 표시합니다.
+ */
+function showEntryScreen() {
+  window.clearTimeout(entryTransitionTimer);
+  entryTransitionTimer = undefined;
+  gameOver = true;
+  entryScreen.hidden = false;
+  entryScreen.setAttribute("aria-hidden", "false");
+  entryScreen.classList.remove("is-leaving");
+  entryGate.disabled = false;
+  titleScreen.hidden = true;
+  titleScreen.setAttribute("aria-hidden", "true");
+  gameScreen.inert = true;
+  gameScreen.setAttribute("aria-hidden", "true");
+  stopTitleMusic();
+  stopGameMusic();
+  requestAnimationFrame(() => entryGate.focus());
+}
+
+/**
+ * 첫 화면의 사용자 클릭 안에서 타이틀을 열고 음악 재생을 요청한 뒤 진입 화면을 자동으로 제거합니다.
+ */
+function enterTitleFromEntry() {
+  if (entryGate.disabled) return;
+  entryGate.disabled = true;
+  entryScreen.setAttribute("aria-hidden", "true");
+  entryScreen.classList.add("is-leaving");
+
+  // showTitle() 내부의 play()가 이 클릭 이벤트의 사용자 활성화 권한을 그대로 사용합니다.
+  showTitle(false);
+
+  entryTransitionTimer = window.setTimeout(() => {
+    entryScreen.hidden = true;
+    entryScreen.classList.remove("is-leaving");
+    entryGate.disabled = false;
+    entryTransitionTimer = undefined;
+    storyStart.focus();
+  }, 720);
+}
+
+/**
  * 진행 중인 타이머·엔진·오버레이·음악을 정리하고 안전하게 타이틀 화면으로 돌아갑니다.
  */
 function showTitle(shouldFocus = true) {

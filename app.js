@@ -2,8 +2,11 @@
 
 /*
  * 모든 기능 모듈이 로드된 뒤 실행되는 최종 진입점입니다.
- * DOM 이벤트를 기능 함수에 연결하고 저장된 설정을 복원한 다음 타이틀을 표시합니다.
+ * DOM 이벤트를 기능 함수에 연결하고 저장된 설정을 복원한 다음 최초 진입 화면을 표시합니다.
  */
+
+// 첫 화면의 단 한 번의 클릭으로 오디오 권한을 얻고 타이틀 전환을 시작합니다.
+entryGate.addEventListener("click", enterTitleFromEntry);
 
 // 채팅 닉네임을 클릭하면 해당 시청자의 최근 발화 기록을 엽니다.
 messageList.addEventListener("click", event => {
@@ -118,7 +121,7 @@ document.addEventListener("keydown", event => {
 // 백그라운드 탭에서는 채팅 생성과 게임 타이머가 서로 어긋나지 않도록 일시정지합니다.
 document.addEventListener("visibilitychange", syncEnginePause);
 
-// 저장값 복원 → 음량 적용 → 타이틀 초기화 순서를 지켜 첫 화면 깜빡임을 줄입니다.
+// 저장값 복원 → 음량 적용 → 클릭형 진입 화면 순서로 초기화해 자동 재생 정책을 안전하게 통과합니다.
 initializePlayerNickname();
 initializeAudioVolumes();
-showTitle(false);
+showEntryScreen();

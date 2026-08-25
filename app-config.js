@@ -62,6 +62,8 @@ const UNKNOWN_CHAT_TOKENS = Object.freeze([
 
 // HTML의 주요 조작 지점을 한 번만 조회해 모든 기능 모듈이 같은 요소를 공유합니다.
 const chatApp = document.querySelector(".chat-app");
+const entryScreen = document.querySelector("#entry-screen");
+const entryGate = document.querySelector("#entry-gate");
 const titleScreen = document.querySelector("#title-screen");
 const gameScreen = document.querySelector("#game-screen");
 const gameStart = document.querySelector("#game-start");
@@ -213,6 +215,7 @@ let missedApparitions = 0;
 let dayBanishedApparitions = 0;
 let dayMissedApparitions = 0;
 // 하루 결과 공포 연출, 오답 효과음, 이상 채팅 흔들림에 사용하는 일회성 자원입니다.
+let entryTransitionTimer;
 let storyRevealTimer;
 let storyScareTimer;
 let scareAudioContext;
