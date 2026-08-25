@@ -15,22 +15,35 @@
         <span class="title-brand-dot"></span>
         SONG STUDIO · MIDNIGHT ROOM
       </div>
-      <button class="title-music-button" id="title-music-button" type="button" aria-pressed="false" aria-label="타이틀 배경음악 재생">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M5 10v4h3l4 3V7L8 10H5Z"/>
-          <path class="music-wave" d="M15 9.2c.8.7 1.2 1.6 1.2 2.8s-.4 2.1-1.2 2.8M17.6 7c1.4 1.3 2.2 3 2.2 5s-.8 3.7-2.2 5"/>
-        </svg>
-        <span id="title-music-label">BGM 켜기</span>
-      </button>
+      <div class="title-audio-controls" aria-label="타이틀 배경음악 설정">
+        <button class="title-music-button" id="title-music-button" type="button" aria-pressed="false" aria-label="타이틀 배경음악 재생">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 10v4h3l4 3V7L8 10H5Z"/>
+            <path class="music-wave" d="M15 9.2c.8.7 1.2 1.6 1.2 2.8s-.4 2.1-1.2 2.8M17.6 7c1.4 1.3 2.2 3 2.2 5s-.8 3.7-2.2 5"/>
+          </svg>
+          <span id="title-music-label">BGM 켜기</span>
+        </button>
+        <label class="volume-control title-volume-control">
+          <span class="sr-only">타이틀 배경음악 음량</span>
+          <input id="title-volume" type="range" min="0" max="100" step="1" value="45" aria-label="타이틀 배경음악 음량">
+          <output id="title-volume-value" for="title-volume">45%</output>
+        </label>
+      </div>
       <audio id="title-music" preload="metadata" loop></audio>
       <div class="title-content">
         <p class="title-alert"><span aria-hidden="true">●</span> UNKNOWN VIEWERS DETECTED</p>
         <h1 class="sr-only" id="game-title">구독 방송</h1>
-        <p class="title-copy">평범한 심야 방송에 정체불명의 시청자들이 접속했습니다.</p>
-        <button class="title-start-button" id="game-start" type="button">
-          <span>방송 입장</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
-        </button>
+        <p class="title-copy">평범한 심야 방송에 정체불명의 시청자들이 접속했습니다. 플레이할 모드를 선택하세요.</p>
+        <div class="title-mode-buttons" aria-label="게임 모드 선택">
+          <button class="title-start-button story-start-button" id="story-start" type="button">
+            <span><strong>스토리 모드</strong><small>7일 동안 생존</small></span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+          </button>
+          <button class="title-start-button endless-start-button" id="game-start" type="button">
+            <span><strong>무한 모드</strong><small>기존 스테이지 도전</small></span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+          </button>
+        </div>
         <div class="title-rules" aria-label="게임 목표">
           <span>기록 확인</span>
           <i aria-hidden="true"></i>
@@ -66,10 +79,25 @@
       <img class="stream-character" src="assets/beorjji-idle-preview.gif" alt="방송을 진행 중인 버찌">
       <div class="stream-topline">
         <span class="live-badge"><i aria-hidden="true"></i> LIVE</span>
-        <span class="viewer-count" aria-label="현재 시청자 수">
-          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 10s2.7-4.5 7.5-4.5 7.5 4.5 7.5 4.5-2.7 4.5-7.5 4.5S2.5 10 2.5 10Z"/><circle cx="10" cy="10" r="2.1"/></svg>
-          <span id="stream-viewer-count">1,284</span>
-        </span>
+        <div class="stream-topline-actions">
+          <div class="game-audio-controls" aria-label="게임 배경음악 설정">
+            <button class="game-music-button" id="game-music-button" type="button" aria-pressed="false" aria-label="게임 배경음악 정지">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 10v4h3l4 3V7L8 10H5Z"/>
+                <path class="music-wave" d="M15 9.2c.8.7 1.2 1.6 1.2 2.8s-.4 2.1-1.2 2.8"/>
+              </svg>
+            </button>
+            <label class="volume-control game-volume-control">
+              <span class="sr-only">게임 배경음악 음량</span>
+              <input id="game-volume" type="range" min="0" max="100" step="1" value="35" aria-label="게임 배경음악 음량">
+              <output id="game-volume-value" for="game-volume">35%</output>
+            </label>
+          </div>
+          <span class="viewer-count" aria-label="현재 시청자 수">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 10s2.7-4.5 7.5-4.5 7.5 4.5 7.5 4.5-2.7 4.5-7.5 4.5S2.5 10 2.5 10Z"/><circle cx="10" cy="10" r="2.1"/></svg>
+            <span id="stream-viewer-count">1,284</span>
+          </span>
+        </div>
       </div>
       <div class="stream-lower-third">
         <div>
@@ -82,23 +110,24 @@
         <span>SIGNAL CONTAMINATION</span>
         <strong><span id="threat-seconds">20.0</span>s</strong>
       </div>
+      <audio id="game-music" preload="metadata" loop></audio>
     </section>
 
     <section class="game-hud" aria-label="게임 상태">
       <div class="hud-stat stage-stat">
-        <span>스테이지</span>
+        <span id="progress-label">스테이지</span>
         <strong id="stage-display">1</strong>
       </div>
       <div class="hud-stat health-stat">
         <span>체력</span>
         <strong id="health-display" aria-label="체력 3">3</strong>
       </div>
-      <div class="hud-stat trust-stat">
-        <span>신뢰도</span>
-        <strong id="trust-display" aria-label="신뢰도 3">♥♥♥</strong>
+      <div class="hud-stat time-stat">
+        <span id="time-stat-label">모드</span>
+        <strong id="story-clock">∞</strong>
       </div>
       <div class="hud-stat anomaly-stat">
-        <span>남은 이상 시청자</span>
+        <span id="anomaly-label">남은 이상 시청자</span>
         <strong id="anomaly-display">1</strong>
       </div>
       <div class="hud-stat score-stat">
@@ -188,10 +217,27 @@
         <dl class="stage-summary">
           <div><dt>차단</dt><dd id="stage-caught">0</dd></div>
           <div><dt>놓침</dt><dd id="stage-missed">0</dd></div>
+          <div><dt>오판</dt><dd id="stage-wrong">0</dd></div>
           <div><dt>체력</dt><dd id="stage-health">3</dd></div>
-          <div><dt>신뢰도</dt><dd id="stage-trust">3</dd></div>
         </dl>
         <button class="stage-continue-button" id="stage-continue" type="button">다음 스테이지</button>
+      </section>
+    </div>
+
+    <div class="story-night-overlay" id="story-night-overlay" aria-hidden="true">
+      <section class="story-night-card" role="dialog" aria-modal="true" aria-labelledby="story-result-title">
+        <p class="story-night-kicker" id="story-result-kicker">DAY 01 · BROADCAST CLOSED</p>
+        <time class="story-night-time" datetime="02:00">02:00 AM</time>
+        <h2 id="story-result-title">1일차 방송 결과</h2>
+        <p id="story-result-copy"></p>
+        <dl class="story-night-summary">
+          <div><dt>이상 차단</dt><dd id="story-caught">0</dd></div>
+          <div><dt>놓침</dt><dd id="story-missed">0</dd></div>
+          <div><dt>오판</dt><dd id="story-wrong">0</dd></div>
+          <div><dt>남은 체력</dt><dd id="story-health">3</dd></div>
+        </dl>
+        <ul class="story-result-details" id="story-result-details" aria-label="오늘의 판정 상세"></ul>
+        <button class="story-continue-button" id="story-continue" type="button">2일차 시작</button>
       </section>
     </div>
 
@@ -201,7 +247,7 @@
         <h2 id="result-title">방송 종료</h2>
         <p id="result-copy"></p>
         <strong class="final-score" id="final-score">0000점</strong>
-        <p class="final-stage-line">도달 스테이지 <strong id="final-stage">1</strong></p>
+        <p class="final-stage-line"><span id="final-progress-label">도달 스테이지</span> <strong id="final-stage">1</strong></p>
         <div class="result-actions">
           <button class="retry-button" id="game-retry" type="button">다시 하기</button>
           <button class="restart-button" id="game-restart" type="button">타이틀로</button>
