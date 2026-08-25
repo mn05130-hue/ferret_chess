@@ -148,71 +148,12 @@
   color: #f5f5f5;
 }
 
-/* 모든 이상 채팅은 원래 닉네임 색을 유지하고 유형별 테두리와 배경으로 구분합니다. */
-.corrupted-message {
-  position: relative;
-  align-items: flex-start;
-  margin-block: 3px;
-  padding: 7px 5px 7px 2px;
-  overflow: hidden;
-  border-left: 1px solid #89918e;
-  background: linear-gradient(90deg, #171a1ba8, transparent 82%);
-  animation: corrupted-message-in 420ms steps(4) both;
-}
-
-.corrupted-message .message-copy {
-  position: relative;
-  z-index: 2;
-  display: block;
-  width: 100%;
-}
-
-.corrupted-message .message-text {
-  position: relative;
-  margin-top: 3px;
-  color: #f5f5f5;
-  font-size: 13px;
-  font-weight: 650;
-  line-height: 1.38;
-  letter-spacing: .025em;
-  overflow-wrap: anywhere;
-  text-shadow: 1px 0 #ff264436, -1px 0 #25e0cc36;
-}
-
-.anomaly-prophecy { border-left-color: #b892ff; background: linear-gradient(90deg, #231b35b8, transparent 82%); }
-.anomaly-observer { border-left-color: #62b9ff; background: linear-gradient(90deg, #142536b8, transparent 82%); }
-.anomaly-memory { border-left-color: #d6b46b; background: linear-gradient(90deg, #302817b8, transparent 82%); }
-.anomaly-mimic { border-left-color: #ec7aab; background: linear-gradient(90deg, #341829b8, transparent 82%); }
-.anomaly-intruder { border-left-color: #ff6670; background: linear-gradient(90deg, #351518c2, transparent 82%); }
-
-/* 붕괴형과 연결 없음 오염만 여러 줄 난독화 문자와 강한 잔상을 사용합니다. */
-.ciphered-message {
-  min-height: 72px;
-}
-
-.ciphered-message .message-text {
-  display: block;
-  font-family: ui-monospace, "Cascadia Mono", "Malgun Gothic", monospace;
-  white-space: pre-wrap;
-  word-break: keep-all;
-  animation: corrupted-glyph-jitter 1.8s steps(3) infinite;
-}
+/* 이상 채팅은 내용만 다르며 글꼴·굵기·배치·등장 효과는 일반 채팅과 같습니다. */
 
 /* 연결 없음 상태는 실제 판정값을 바꾸지 않고 화면에 남은 일반 채팅 본문만 불안정하게 보이게 합니다. */
 .connection-lost .message:not(.system-message, .blinded-message) .message-text {
   text-shadow: 1px 0 #ff264436, -1px 0 #25e0cc36;
   animation: corrupted-glyph-jitter 1.8s steps(3) infinite;
-}
-
-.ciphered-message .message-text::before {
-  content: attr(data-echo);
-  position: absolute;
-  inset: 0;
-  color: #929996;
-  opacity: .22;
-  translate: 2px -1px;
-  clip-path: inset(42% 0 31% 0);
-  pointer-events: none;
 }
 
 .corrupted-chat-hit .message-region {

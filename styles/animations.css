@@ -4,13 +4,6 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes corrupted-message-in {
-  0% { opacity: 0; transform: translate(-3px, 2px); filter: blur(1.5px); }
-  28% { opacity: .82; transform: translate(2px, -1px); filter: blur(0); }
-  54% { opacity: .42; transform: translate(-1px, 1px); }
-  100% { opacity: 1; transform: translate(0); }
-}
-
 @keyframes corrupted-glyph-jitter {
   0%, 88%, 100% { transform: translate(0); }
   91% { transform: translate(1px, 0); }

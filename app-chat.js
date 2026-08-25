@@ -199,7 +199,7 @@ function getAnomalyPresentation(message) {
 }
 
 /**
- * 이상 채팅 도착 순간 메시지 영역의 짧은 흔들림 애니메이션을 다시 시작합니다.
+ * 연결 없음으로 채팅 화면이 오염되는 순간에만 짧은 흔들림 애니메이션을 다시 시작합니다.
  */
 function triggerCorruptedChatPulse() {
   window.clearTimeout(corruptedChatTimer);
@@ -221,7 +221,6 @@ function corruptVisibleMessagesForConnectionLoss() {
       || { id: `connection-${index}`, history: [] };
     const displayedText = createUnknownChatText(messageText.textContent, viewer);
     messageText.textContent = displayedText;
-    messageText.dataset.echo = displayedText.replace(/\s+/g, " ");
     item.classList.add("corrupted-message", "ciphered-message");
   });
   triggerCorruptedChatPulse();
@@ -264,8 +263,6 @@ function createMessage(viewer, text, ownMessage = false, metadata = {}) {
   const messageText = document.createElement("span");
   messageText.className = "message-text";
   messageText.textContent = text;
-  if (metadata.ciphered) messageText.dataset.echo = text.replace(/\s+/g, " ");
-
   copy.append(username, messageText);
   item.append(badge, copy);
   return item;
@@ -335,7 +332,7 @@ function handleEngineMessage(message) {
     ciphered: usesCipherText,
     anomalyType: anomalyPresentation.type
   }), behavior);
-  if (isCorruptedMessage) triggerCorruptedChatPulse();
+  if (isConnectionCorruption) triggerCorruptedChatPulse();
 
   if (isActualAnomaly && gameMode === GAME_MODES.ENDLESS) startThreatCountdown(viewer);
 }

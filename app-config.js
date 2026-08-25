@@ -30,8 +30,8 @@ const VIEWER_STYLES = [
 ];
 
 // 난이도, 스토리 시간, 괴이 출현 주기를 조절하는 게임플레이 상수입니다.
-const BASE_ANOMALIES_PER_STAGE = 2;
-const MAX_ANOMALIES_PER_STAGE = 5;
+const BASE_ANOMALIES_PER_STAGE = 5;
+const MAX_ANOMALIES_PER_STAGE = 10;
 const STAGES_PER_ADDITIONAL_ANOMALY = 2;
 const BASE_ANOMALY_GRACE_MS = 20000;
 const MIN_ANOMALY_GRACE_MS = 6000;

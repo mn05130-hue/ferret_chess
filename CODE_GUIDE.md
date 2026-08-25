@@ -99,10 +99,10 @@ CSS는 `styles/` 아래에서 기능별 파일로 나뉘며, `index.html`의 `<l
 | `.has-text` | `.composer` | 전송 버튼 활성 모양 표시 |
 | `.claimed` | 보상 버튼 | 수령 완료 상태 표시 |
 | `.blinded-message` | 강퇴된 메시지 | 닉네임과 본문을 비활성화 |
-| `.corrupted-message` | 모든 이상 채팅 | 유형별 테두리·배경과 짧은 진입 흔들림 표시 |
-| `.ciphered-message` | 붕괴형/연결 없음 채팅 | 여러 줄 깨진 문자와 강한 잔상 표시 |
-| `.anomaly-prophecy` 등 | 이상 채팅 | 예언·관찰·기억·모방·침입 유형별 색상 표시 |
-| `.corrupted-chat-hit` | `.chat-app` | 이상 채팅 도착 순간 메시지 영역 흔들림 |
+| `.corrupted-message` | 모든 이상 채팅 | 일반 채팅과 같은 모양을 유지하는 판별용 클래스 |
+| `.ciphered-message` | 붕괴형/연결 없음 채팅 | 별도 글꼴·굵기 효과가 없는 판별용 클래스 |
+| `.anomaly-prophecy` 등 | 이상 채팅 | 시각 강조 없이 이상 유형을 구분하는 메타데이터 클래스 |
+| `.corrupted-chat-hit` | `.chat-app` | 연결 없음으로 채팅이 오염되는 순간 메시지 영역 흔들림 |
 | `.is-weak` | 연결 위젯 | 괴이 발생 중 와이파이 막대와 상태를 약한 연결로 표시 |
 | `.is-failed` | 연결 위젯 | 제한시간 초과 뒤 끊긴 연결 상태 표시 |
 | `.is-false-reconnect` | 연결 위젯 | 정상 연결을 잘못 재연결했을 때 짧은 오판 흔들림 표시 |
@@ -336,7 +336,7 @@ findRejection()
 7. 엔진이 `anomalyEvidence`, `anomalyMode`, `anomalyLineId` 메타데이터를 전달합니다.
 8. `getAnomalyPresentation()`이 `gli-*` 붕괴형과 나머지 전용 유형을 구분합니다.
 9. 예언·관찰·기억·모방·침입형은 원문을 유지하고, 붕괴형만 `createUnknownChatText()`로 난독화합니다.
-10. `handleEngineMessage()`가 유형별 클래스와 시각 효과를 적용합니다.
+10. `handleEngineMessage()`가 유형별 판별 클래스를 적용하며, 이상 채팅의 시각 효과는 일반 채팅과 동일하게 유지합니다.
 11. 무한 모드이면 `startThreatCountdown(viewer)`가 즉시 시작됩니다.
 12. 스토리 모드이면 즉시 제한시간을 만들지 않고 오전 2시에 판정합니다.
 
@@ -658,7 +658,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 이상 시청자 문장 | `chat-engine-anomalies.js` |
 | 새 이상 시청자 등장 주기 | `chat-engine-config.js`의 `anomalyArrivalIntervalMs` |
 | 등장 후 이상 채팅 주기 | `chat-engine-config.js`의 `anomalyIntervalMs`, `anomalyLevelFrequencyStep`, `minimumAnomalyIntervalMs` |
-| 이상 채팅 표시 유형 | `app-chat.js`의 `getAnomalyPresentation()`과 `styles/chat.css`의 `.anomaly-*`, `.ciphered-message` |
+| 이상 채팅 표시 유형 | `app-chat.js`의 `getAnomalyPresentation()` 및 `createMessage()`의 판별용 `.anomaly-*`, `.ciphered-message` 클래스 |
 | 깨진 문자 재료 | `app-config.js`의 `UNKNOWN_CHAT_TOKENS` |
 | 채팅 속도/중복 기준 | `chat-engine-config.js`의 `TUNING` |
 | 화면 색상과 크기 | `styles/base.css`의 `:root` 및 `styles/`의 해당 기능 파일 |
