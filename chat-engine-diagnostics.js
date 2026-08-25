@@ -75,13 +75,6 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
       if (utterance.anomaly) this.debug.anomalyCount += 1;
     }
 
-    // 발화가 누적될수록 anomalyLevel이 올라가고, 다음 이상 채팅의 출현 빈도만 증가합니다.
-    const anomalySpeechStep = Math.max(1, Math.round(TUNING.anomalySpeechStep / this.difficulty));
-    if (viewer.anomalous && !options.historyOnly && this.state !== "BURST"
-        && viewer.engineSpeechCount % anomalySpeechStep === 0) {
-      viewer.anomalyLevel = Math.min(TUNING.maxAnomalyLevel, viewer.anomalyLevel + 1);
-    }
-
     this.onMessage({
       viewer,
       text: utterance.text,
@@ -105,7 +98,7 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
     this.viewers.forEach(viewer => {
       if (viewer.anomalous) {
         for (let index = 0; index < 3; index += 1) {
-          const anomalyHistory = this.createAnomalyOverride(viewer, true);
+          const anomalyHistory = this.createAnomalyOverride(viewer);
           if (!anomalyHistory) continue;
           this.recordUtterance(
             viewer,
@@ -121,15 +114,10 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
         { historyOnly: true, skipFilters: true, behavior: "auto" }
       );
     });
-    this.random.shuffle(this.viewers).forEach(viewer => {
+    // 이상 시청자는 초기 일반 채팅에 노출하지 않고 전용 예약 발화로 처음 등장시킵니다.
+    this.random.shuffle(this.viewers.filter(viewer => !viewer.anomalous)).forEach(viewer => {
       this.processRequest(
         { intent: this.chooseIntent("AMBIENT"), scheduledAt: this.simTime, forcedSpeakerId: viewer.id, slotHints: {}, source: "bootstrap" },
-        { behavior: "auto" }
-      );
-    });
-    this.random.shuffle(this.viewers.filter(viewer => viewer.anomalous)).slice(0, 2).forEach(viewer => {
-      this.processRequest(
-        { intent: "CHAT", scheduledAt: this.simTime, forcedSpeakerId: viewer.id, slotHints: {}, source: "bootstrap" },
         { behavior: "auto" }
       );
     });
@@ -160,6 +148,12 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
       tension: Number(this.tension.toFixed(4)),
       state: this.state,
       queueLength: this.queue.length,
+      anomalySchedule: {
+        arrivalIntervalMs: [...TUNING.anomalyArrivalIntervalMs],
+        nextArrivalAt: this.nextAnomalyArrivalAt,
+        baseIntervalMs: [...TUNING.anomalyIntervalMs],
+        nextAt: this.nextAnomalyAt
+      },
       style: {
         averageWords: Number((this.debug.totalWords / outputs).toFixed(2)),
         shortRatio: Number((this.debug.shortCount / outputs).toFixed(2)),
@@ -182,6 +176,7 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
         label: PERSONAS[viewer.personaKey].label,
         active: viewer.active,
         anomalous: viewer.anomalous,
+        pendingArrival: Boolean(viewer.pendingArrival),
         anomalyPermission: viewer.anomalyPermission,
         anomalyLevel: viewer.anomalyLevel,
         speechCount: viewer.engineSpeechCount

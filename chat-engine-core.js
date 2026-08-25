@@ -26,6 +26,10 @@ class HorrorChatEngine {
     this.aftermathUntil = 0;
     this.queue = [];
     this.ambientQueued = false;
+    this.anomalyArrivalQueued = false;
+    this.nextAnomalyArrivalAt = null;
+    this.anomalyQueued = false;
+    this.nextAnomalyAt = null;
     this.futureEvent = null;
     this.timer = null;
     this.paused = false;
@@ -83,6 +87,8 @@ class HorrorChatEngine {
     this.planFutureEvent();
     this.bootstrapMessages();
     this.enqueueAmbient(900);
+    this.enqueueAnomalyArrival();
+    this.enqueueAnomaly();
     this.timer = window.setInterval(() => this.tick(), TUNING.tickMs);
   }
 
@@ -126,10 +132,27 @@ class HorrorChatEngine {
     due.sort((left, right) => right.priority - left.priority || left.scheduledAt - right.scheduledAt);
     due.forEach(request => {
       if (request.source === "ambient") this.ambientQueued = false;
+      if (request.source === "anomaly-arrival") {
+        this.anomalyArrivalQueued = false;
+        this.nextAnomalyArrivalAt = null;
+        const pendingViewers = this.viewers.filter(viewer => viewer.anomalous && viewer.pendingArrival);
+        const viewer = pendingViewers.length ? this.random.pick(pendingViewers) : null;
+        if (!viewer) return;
+        viewer.pendingArrival = false;
+        viewer.active = true;
+        request.forcedSpeakerId = viewer.id;
+        request.forceAnomaly = true;
+      }
+      if (request.source === "anomaly") {
+        this.anomalyQueued = false;
+        this.nextAnomalyAt = null;
+      }
       this.processRequest(request);
     });
 
     if (!this.ambientQueued) this.enqueueAmbient();
+    if (!this.anomalyArrivalQueued) this.enqueueAnomalyArrival();
+    if (!this.anomalyQueued) this.enqueueAnomaly();
   }
 
   /**
@@ -175,6 +198,64 @@ class HorrorChatEngine {
       slotHints: {}
     });
     this.ambientQueued = true;
+  }
+
+  /**
+   * 아직 채팅창에 나타나지 않은 이상 시청자 한 명의 첫 발화를 5~8초 뒤에 예약합니다.
+   */
+  enqueueAnomalyArrival(delay) {
+    if (this.anomalyArrivalQueued) return;
+    const hasPendingViewer = this.viewers.some(viewer => viewer.anomalous && viewer.pendingArrival);
+    if (!hasPendingViewer) {
+      this.nextAnomalyArrivalAt = null;
+      return;
+    }
+
+    const wait = delay ?? this.random.range(...TUNING.anomalyArrivalIntervalMs);
+    this.nextAnomalyArrivalAt = this.simTime + wait;
+    this.enqueue({
+      intent: "CHAT",
+      scheduledAt: this.nextAnomalyArrivalAt,
+      source: "anomaly-arrival",
+      priority: 2,
+      slotHints: {}
+    });
+    this.anomalyArrivalQueued = true;
+  }
+
+  /**
+   * 활성 이상 시청자의 전용 발화를 예약합니다. 1일차는 3~7초 범위이며
+   * 진행 난이도와 anomalyLevel이 오를수록 간격만 짧아집니다.
+   */
+  enqueueAnomaly(delay) {
+    if (this.anomalyQueued) return;
+    if (this.viewers.some(viewer => viewer.anomalous && viewer.pendingArrival)) return;
+    const candidates = this.viewers.filter(viewer => viewer.active && viewer.anomalous);
+    if (!candidates.length) {
+      this.nextAnomalyAt = null;
+      return;
+    }
+
+    const viewer = this.random.pick(candidates);
+    const anomalyLevel = Math.max(1, Math.min(TUNING.maxAnomalyLevel, viewer.anomalyLevel || 1));
+    const levelFrequency = 1 + (anomalyLevel - 1) * TUNING.anomalyLevelFrequencyStep;
+    const baseWait = delay ?? this.random.range(...TUNING.anomalyIntervalMs);
+    const wait = Math.max(
+      TUNING.minimumAnomalyIntervalMs,
+      baseWait / (this.difficulty * levelFrequency)
+    );
+
+    this.nextAnomalyAt = this.simTime + wait;
+    this.enqueue({
+      intent: "CHAT",
+      scheduledAt: this.nextAnomalyAt,
+      forcedSpeakerId: viewer.id,
+      forceAnomaly: true,
+      source: "anomaly",
+      priority: 2,
+      slotHints: {}
+    });
+    this.anomalyQueued = true;
   }
 
   /**
@@ -251,7 +332,8 @@ class HorrorChatEngine {
    */
   chooseSpeaker(intent, forcedSpeakerId) {
     if (forcedSpeakerId) return this.viewers.find(viewer => viewer.id === forcedSpeakerId && viewer.active);
-    const active = this.viewers.filter(viewer => viewer.active);
+    // 이상 시청자는 전용 3~7초 예약에서만 등장해야 첫 발화가 확실한 이상 채팅이 됩니다.
+    const active = this.viewers.filter(viewer => viewer.active && !viewer.anomalous);
     if (!active.length) return null;
     const alternatives = active.filter(viewer => viewer.id !== this.lastSpeakerId);
     const candidates = alternatives.length ? alternatives : active;

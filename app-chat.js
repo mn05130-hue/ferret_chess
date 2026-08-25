@@ -56,18 +56,29 @@ function createSeed() {
 }
 
 /**
- * 시드에 맞춰 시청자 외형과 채팅 엔진 모델을 만들고 그중 정해진 수를 이상 시청자로 지정합니다.
+ * 현재 진행도에 맞춰 이번 스테이지에 등장할 이상 시청자 수를 계산합니다.
  */
-function createViewers(seed) {
+function getAnomalyCountForStage(stage) {
+  return Math.min(
+    MAX_ANOMALIES_PER_STAGE,
+    BASE_ANOMALIES_PER_STAGE + Math.floor((stage - 1) / STAGES_PER_ADDITIONAL_ANOMALY)
+  );
+}
+
+/**
+ * 시드에 맞춰 시청자 외형과 채팅 엔진 모델을 만들고 이상 시청자는 등장 대기 상태로 둡니다.
+ */
+function createViewers(seed, anomalyCount) {
   const random = createRoundRandom(seed);
   const usedNicknames = new Set(myNickname ? [myNickname] : []);
-  const anomalySlots = new Set(shuffle(VIEWER_STYLES.map((_, index) => index), random).slice(0, ANOMALIES_PER_STAGE));
+  const anomalySlots = new Set(shuffle(VIEWER_STYLES.map((_, index) => index), random).slice(0, anomalyCount));
   const createdViewers = VIEWER_STYLES.map((style, index) => ({
     id: `viewer-${index}`,
     name: createNickname(usedNicknames, random),
     anomalous: anomalySlots.has(index),
     history: [],
-    active: true,
+    active: !anomalySlots.has(index),
+    pendingArrival: anomalySlots.has(index),
     kickedByPlayer: false,
     ...style
   }));

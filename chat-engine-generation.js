@@ -32,6 +32,10 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
       this.debug.filterRejects[rejection] += 1;
     }
 
+    if (!utterance && request.forceAnomaly) {
+      utterance = this.createAnomalyOverride(viewer);
+    }
+
     if (!utterance) {
       this.debug.fallbackCount += 1;
       utterance = this.generateShortCandidate(viewer, request.intent, request.slotHints, true);
@@ -46,7 +50,9 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
    * 일반 템플릿 또는 강제 이상 대사 중 하나를 선택해 메타데이터가 포함된 문장 후보를 만듭니다.
    */
   generateCandidate(viewer, request) {
-    const anomalyOverride = this.createAnomalyOverride(viewer);
+    const anomalyOverride = request.forceAnomaly
+      ? this.createAnomalyOverride(viewer)
+      : null;
     if (anomalyOverride) return anomalyOverride;
 
     const persona = PERSONAS[viewer.personaKey];
@@ -114,12 +120,8 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
   /**
    * 이상 권한과 현재 장면 컨텍스트로 공포 대사를 선택해 일반 후보를 교체합니다.
    */
-  createAnomalyOverride(viewer, force = false) {
+  createAnomalyOverride(viewer) {
     if (!viewer.anomalous) return null;
-    const anomalyLevel = Math.max(1, Math.min(4, viewer.anomalyLevel));
-    // 이상도는 오직 이상 채팅으로 교체될 빈도만 결정합니다.
-    const chance = { 1: .1, 2: .28, 3: .55, 4: .82 }[anomalyLevel];
-    if (!force && this.random.next() >= chance) return null;
 
     // --- 컨텍스트 수집 ---
     const others = this.viewers.filter(other => other.active && other.id !== viewer.id);

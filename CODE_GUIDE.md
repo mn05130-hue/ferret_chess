@@ -196,7 +196,9 @@ showEntryScreen()
         ↓
 createStageSeed()
         ↓
-createViewers(currentSeed)
+getAnomalyCountForStage(currentStage)
+        ↓
+createViewers(currentSeed, remainingAnomalies)
         ↓
 HUD·메시지·모달 초기화
         ↓
@@ -215,14 +217,15 @@ scheduleStreamApparition(true)
 
 1. `VIEWER_STYLES` 수만큼 시청자를 만듭니다.
 2. 중복되지 않는 랜덤 닉네임을 부여합니다.
-3. `ANOMALIES_PER_STAGE`만큼 이상 시청자를 무작위 지정합니다.
-4. 기록, 활성 상태, 강퇴 여부를 초기화합니다.
+3. `getAnomalyCountForStage()`가 계산한 수만큼 이상 시청자를 무작위 지정합니다.
+4. 이상 시청자는 `active = false`, `pendingArrival = true`인 등장 대기 상태로 둡니다.
+5. 기록과 강퇴 여부를 초기화합니다.
 
 ## 8. 채팅 엔진 파일별 역할
 
 ### `chat-engine-config.js`
 
-- `TUNING`: tick 간격, 상태 임계값, 중복 검사 기준, 채팅 간격을 정의합니다.
+- `TUNING`: tick 간격, 상태 임계값, 중복 검사 기준, 일반·이상 채팅 간격을 정의합니다.
 - `PERSONAS`: 시청자별 발화 욕구, 의도 적합도, 쿨다운, 축약/오타/이모티콘 확률을 정의합니다.
 
 ### `chat-engine-dialogue.js`
@@ -254,19 +257,19 @@ scheduleStreamApparition(true)
 - `start()` / `stop()` / `setPaused()`: 엔진 수명 주기를 관리합니다.
 - `tick()`: 100ms 단위로 가상 시간을 전진시킵니다.
 - `updateDirectorState()`: `AMBIENT`, `TENSE`, `BURST`, `AFTERMATH`, `LULL`을 결정합니다.
-- `enqueue()` / `enqueueAmbient()`: 발화 요청을 시간순 큐에 넣습니다.
+- `enqueue()` / `enqueueAmbient()` / `enqueueAnomalyArrival()` / `enqueueAnomaly()`: 일반 채팅, 새 이상 시청자 등장, 추가 이상 채팅 요청을 시간순 큐에 넣습니다.
 - `chooseIntent()`: 현재 상태와 쿨다운으로 다음 발화 의도를 정합니다.
 - `emitEvent()` / `planFutureEvent()`: 방송 사건과 여러 반응을 예약합니다.
-- `chooseSpeaker()`: 페르소나 적합도와 침묵 시간을 바탕으로 화자를 고릅니다.
+- `chooseSpeaker()`: 일반 요청에서는 정상 시청자만, 이상 예약에서는 지정된 이상 시청자를 화자로 고릅니다.
 
 ### `chat-engine-generation.js`
 
 기본 엔진을 상속해 문장 생성 기능을 추가합니다.
 
 - `processRequest()`: 큐 요청 하나를 실제 채팅으로 처리합니다.
-- `generateCandidate()`: 일반 템플릿 또는 이상 대사 후보를 만듭니다.
+- `generateCandidate()`: 일반 템플릿 또는 전용 예약된 이상 대사 후보를 만듭니다.
 - `generateShortCandidate()`: 짧은 반응 후보를 만듭니다.
-- `createAnomalyOverride()`: 이상 시청자일 때 공포 대사로 교체할지 결정합니다.
+- `createAnomalyOverride()`: 이상 채팅 예약이나 기록 생성 요청에 맞춰 공포 대사를 만듭니다.
 - `resolveSlot()`: 템플릿 슬롯 값을 선택합니다.
 - `attachParticle()`: 받침에 맞는 한국어 조사를 붙입니다.
 - `transformStyle()`: 축약, 어미, 이모티콘, 오타를 적용합니다.
@@ -279,7 +282,7 @@ scheduleStreamApparition(true)
 - `normalizeForSimilarity()` / `jaccardBigrams()`: 문장 유사도를 계산합니다.
 - `signature()`: 템플릿과 슬롯의 의미 조합 키를 만듭니다.
 - `recordUtterance()`: 승인된 발화를 기록하고 앱의 `onMessage`를 호출합니다.
-- `bootstrapMessages()`: 시작 직후 초기 채팅을 예약합니다.
+- `bootstrapMessages()`: 시작 직후 정상 시청자의 초기 채팅과 이상 시청자의 비공개 기록만 준비합니다.
 - `observeViewer()`: 플레이어가 시청자 기록을 열었다는 정보를 남깁니다.
 - `getDebugSnapshot()`: 엔진 내부 상태를 진단용 사본으로 반환합니다.
 
@@ -306,7 +309,8 @@ processRequest(request)
         ↓
 chooseSpeaker(intent)
         ↓
-createAnomalyOverride() 또는 generateCandidate()
+일반 요청: generateCandidate()
+이상 예약: createAnomalyOverride()
         ↓
 transformStyle()
         ↓
@@ -321,13 +325,16 @@ findRejection()
 
 ### 이상 채팅일 때 추가되는 과정
 
-1. 엔진이 `anomalyEvidence` 또는 `anomalyMode` 메타데이터를 전달합니다.
-2. `handleEngineMessage()`가 해당 발화를 이상 채팅으로 판별합니다.
-3. `createUnknownChatText()`가 여러 줄의 알 수 없는 문자로 변환합니다.
-4. 메시지에 `.corrupted-message` 클래스가 추가됩니다.
-5. `triggerCorruptedChatPulse()`가 채팅 영역을 짧게 흔듭니다.
-6. 무한 모드이면 `startThreatCountdown(viewer)`가 즉시 시작됩니다.
-7. 스토리 모드이면 즉시 제한시간을 만들지 않고 오전 2시에 판정합니다.
+1. `enqueueAnomalyArrival()`가 대기 중인 이상 시청자 한 명의 첫 등장을 5~8초 뒤로 예약합니다.
+2. 예약 시점이 되면 해당 시청자를 활성화하고 첫 이상 채팅을 생성합니다.
+3. 다음 대기 시청자도 다시 5~8초 뒤에 예약하므로 서로 다른 이상 시청자가 차례로 나타납니다.
+4. 모든 예정 시청자가 등장하면 `enqueueAnomaly()`가 활성 이상 시청자의 추가 발화를 예약합니다.
+5. 추가 발화는 1일차 3~7초 범위이며, 일차 난이도와 `anomalyLevel`이 올라갈수록 간격이 줄어듭니다.
+6. 이상 시청자는 일반 발화 큐에서 제외되므로 예약된 이상 채팅이 채팅창의 첫 등장입니다.
+7. 엔진이 `anomalyEvidence` 또는 `anomalyMode` 메타데이터를 전달합니다.
+8. `handleEngineMessage()`가 해당 발화를 이상 채팅으로 판별하고 깨진 문자와 시각 효과를 적용합니다.
+9. 무한 모드이면 `startThreatCountdown(viewer)`가 즉시 시작됩니다.
+10. 스토리 모드이면 즉시 제한시간을 만들지 않고 오전 2시에 판정합니다.
 
 이 과정에서는 이상 채팅 자체 외에 별도의 시스템 메시지나 토스트를 추가하지 않습니다. 플레이어는 깨진 채팅 모양과 무한 모드의 기존 제한시간 UI만 보고 판단합니다.
 
@@ -633,7 +640,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 바꾸려는 항목 | 파일과 상수/함수 |
 |---|---|
 | 기본 체력 | `app-config.js`의 `MAX_HEALTH` |
-| 스테이지 이상 시청자 수 | `ANOMALIES_PER_STAGE` |
+| 스테이지 이상 시청자 수 | `BASE_ANOMALIES_PER_STAGE`, `MAX_ANOMALIES_PER_STAGE`, `STAGES_PER_ADDITIONAL_ANOMALY` |
 | 이상 채팅 제한시간 | `BASE_ANOMALY_GRACE_MS`, `MIN_ANOMALY_GRACE_MS`, `STAGE_GRACE_STEP_MS` |
 | 스토리 총 일수 | `STORY_TOTAL_DAYS`, `STORY_DAY_INTROS` |
 | 스토리 하루 실제 길이 | `DEFAULT_STORY_DAY_DURATION_MS` |
@@ -645,6 +652,8 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 타이틀 자동 재생 | `app-audio.js`의 `prepareTitleMusic()` |
 | 일반 채팅 문장 | `chat-engine-dialogue.js` |
 | 이상 시청자 문장 | `chat-engine-anomalies.js` |
+| 새 이상 시청자 등장 주기 | `chat-engine-config.js`의 `anomalyArrivalIntervalMs` |
+| 등장 후 이상 채팅 주기 | `chat-engine-config.js`의 `anomalyIntervalMs`, `anomalyLevelFrequencyStep`, `minimumAnomalyIntervalMs` |
 | 깨진 문자 재료 | `app-config.js`의 `UNKNOWN_CHAT_TOKENS` |
 | 채팅 속도/중복 기준 | `chat-engine-config.js`의 `TUNING` |
 | 화면 색상과 크기 | `styles/base.css`의 `:root` 및 `styles/`의 해당 기능 파일 |

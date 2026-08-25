@@ -326,8 +326,8 @@ function startStage() {
   stopStoryClock();
   chatEngine?.stop();
   currentSeed = createStageSeed();
-  viewers = createViewers(currentSeed);
-  remainingAnomalies = ANOMALIES_PER_STAGE;
+  remainingAnomalies = getAnomalyCountForStage(currentStage);
+  viewers = createViewers(currentSeed, remainingAnomalies);
   dayBanishedApparitions = 0;
   dayMissedApparitions = 0;
   selectedViewerId = null;
@@ -364,7 +364,7 @@ function startStage() {
     }
   });
   viewers.filter(viewer => viewer.anomalous).forEach(viewer => {
-    viewer.anomalyLevel = Math.min(4, 2 + Math.floor((currentStage - 1) / 4));
+    viewer.anomalyLevel = Math.min(TUNING.maxAnomalyLevel, 1 + Math.floor((currentStage - 1) / 2));
   });
   chatEngine.start();
 
