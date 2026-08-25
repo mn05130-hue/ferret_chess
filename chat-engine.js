@@ -4,7 +4,7 @@
   /* ==========================================================================
    * 1. 튜닝 상수
    *
-   *    상태 의미가 저스트 채팅 기준으로 재정의됐습니다.
+   *    상태 의미는 저스트 채팅 기준입니다.
    *      AMBIENT   평범한 잡담
    *      TENSE     스트리머가 뭔가 하는 중, 반응이 몰리기 시작
    *      BURST     빵 터진 순간, 도배
@@ -18,10 +18,9 @@
     burstDurationMs: 3000,
     aftermathDurationMs: 9000,
     lullAfterMs: 25000,
-    requestExpiryMs: 2500,
-    maxAnomalyLevel: 4,
-    formalFromLevel: 3,        // 이 이상도부터 정중형 원문을 그대로 출력
-    anomalySpeechStep: 3,
+      requestExpiryMs: 2500,
+      maxAnomalyLevel: 4,
+      anomalySpeechStep: 3,
     maxGenerationRetries: 3,
     similarityThreshold: 0.7,
     intentCooldownMs: 4200,
@@ -44,8 +43,7 @@
   /* ==========================================================================
    * 2. 성격 정의
    *
-   *    personaKey는 기존 그대로 유지했습니다 (UI 참조가 깨지지 않도록).
-   *    label만 저스트 채팅에 맞게 바꿨습니다.
+   *    personaKey는 유지하고 label만 저스트 채팅에 맞췄습니다.
    *
    *    style 필드는 전부 "개별 항목마다" 적용되는 확률입니다.
    *      trim        문장 맨 앞 어절을 통째로 날릴 확률 (어절 4개 이상일 때만)
@@ -169,12 +167,12 @@
       ["chat-work",    "일하면서 틀어 놓고 있습니다.",           "일하면서 틀어놨어"]
     ],
     REACT: [
-      ["react-what",  "방금 그 이야기가 정말 놀랍습니다.",       "방금 그거 놀랍다"],
+      ["react-what",    "방금 그 이야기가 정말 놀랍습니다.",     "방금 그거 놀랍다"],
       ["react-empathy", "그 부분은 정말 공감이 됩니다.",         "그건 진짜 공감된다"],
-      ["react-wow",   "생각보다 훨씬 대단합니다.",              "생각보다 대단하다"],
-      ["react-again", "방금 그 부분을 다시 듣고 싶습니다.",      "방금 그거 다시"],
-      ["react-real",  "정말입니까?",                            "진짜야?"],
-      ["react-shock", "그 이야기는 조금 충격적입니다.",          "그거 좀 충격이다"]
+      ["react-wow",     "생각보다 훨씬 대단합니다.",             "생각보다 대단하다"],
+      ["react-again",   "방금 그 부분을 다시 듣고 싶습니다.",     "방금 그거 다시"],
+      ["react-real",    "정말입니까?",                          "진짜야?"],
+      ["react-shock",   "그 이야기는 조금 충격적입니다.",         "그거 좀 충격이다"]
     ],
     LAUGH: [
       ["laugh-hard",  "지금 크게 웃었습니다.",                  "방금 크게 웃었다"],
@@ -216,25 +214,25 @@
       ["nag-meal",    "끼니는 거르지 않는 것이 좋겠습니다.",     "끼니 거르지 마"]
     ],
     STORY: [
-      ["story-day",     "오늘 하루가 정말 길었습니다.",          "오늘 하루 길었다"],
+      ["story-day",     "오늘 하루가 정말 길었습니다.",           "오늘 하루 길었다"],
       ["story-work",    "회사에서 있었던 일이 아직도 생각납니다.", "회사 일 아직 생각난다"],
-      ["story-tired",   "요즘 계속 피곤합니다.",                 "요즘 계속 피곤해"],
-      ["story-food",    "점심에 {food} 먹었습니다.",             "점심에 {food} 먹었어"],
+      ["story-tired",   "요즘 계속 피곤합니다.",                  "요즘 계속 피곤해"],
+      ["story-food",    "점심에 {food} 먹었습니다.",              "점심에 {food} 먹었어"],
       ["story-weekend", "이번 주말에는 아무것도 하지 않았습니다.", "주말에 아무것도 안 했어"]
     ],
     FOOD: [
-      ["food-want",  "{food} 먹고 싶어졌습니다.",                "{food} 먹고 싶다"],
-      ["food-order", "방금 {food} 시켰습니다.",                  "방금 {food} 시켰어"],
+      ["food-want",  "{food} 먹고 싶어졌습니다.",                  "{food} 먹고 싶다"],
+      ["food-order", "방금 {food} 시켰습니다.",                    "방금 {food} 시켰어"],
       ["food-late",  "이 시간에 먹으면 안 되는데 참기 어렵습니다.", "이 시간에 먹으면 안 되는데"],
-      ["food-ask",   "{food} 좋아하십니까?",                     "{food} 좋아해?"],
-      ["food-eat",   "지금 {food} 먹으면서 보고 있습니다.",       "지금 {food} 먹으면서 봐"]
+      ["food-ask",   "{food} 좋아하십니까?",                       "{food} 좋아해?"],
+      ["food-eat",   "지금 {food} 먹으면서 보고 있습니다.",         "지금 {food} 먹으면서 봐"]
     ],
     RECALL: [
-      ["recall-day",     "{day} 방송이 정말 재미있었습니다.",     "{day} 방송 재밌었어"],
+      ["recall-day",     "{day} 방송이 정말 재미있었습니다.",      "{day} 방송 재밌었어"],
       ["recall-topic",   "{day}에도 {topic} 이야기를 하셨습니다.", "{day}에도 {topic} 얘기했어"],
-      ["recall-scene",   "그 장면은 아직도 기억납니다.",          "그 장면 아직 기억난다"],
-      ["recall-miss",    "{day} 방송은 놓쳤습니다.",              "{day} 방송 놓쳤어"],
-      ["recall-promise", "{day}에 하신 약속이 있었습니다.",       "{day}에 약속했잖아"]
+      ["recall-scene",   "그 장면은 아직도 기억납니다.",           "그 장면 아직 기억난다"],
+      ["recall-miss",    "{day} 방송은 놓쳤습니다.",               "{day} 방송 놓쳤어"],
+      ["recall-promise", "{day}에 하신 약속이 있었습니다.",        "{day}에 약속했잖아"]
     ],
     COMPLAIN: [
       ["complain-mic",   "마이크 소리가 조금 작습니다.",         "마이크 소리 좀 작아"],
@@ -244,7 +242,6 @@
       ["complain-echo",  "소리가 조금 울립니다.",                "소리 좀 울린다"]
     ],
     /* SUSPICION은 정상 시청자가 "채팅이 좀 이상하다"고 느끼는 지점입니다.
-       이상 시청자를 직접 언급하지는 않되, 플레이어의 주의를 채팅창으로 돌립니다.
        가중치를 낮게 유지하세요. 자주 나오면 힌트가 아니라 소음이 됩니다. */
     SUSPICION: [
       ["suspicion-chat",   "채팅에 조금 이상한 사람이 있는 것 같습니다.", "채팅에 이상한 사람 있는 거 같은데"],
@@ -318,7 +315,175 @@
   ]);
 
   /* ==========================================================================
-   * 6. 표기 변형 자원
+   * 6. 이상 시청자 대사 풀
+   *
+   *  공포 요소는 전부 여기에만 있습니다.
+   *  "이상함"은 문장 데이터가 아니라 접근 권한으로 구현됩니다.
+   *
+   *  각 라인의 필드
+   *    id     중복 필터용 식별자. 유일해야 합니다.
+   *    level  편집용 강도 태그. 시청자의 anomalyLevel과는 무관합니다.
+   *    mode   "casual" 변형기 강제 통과 (겉보기 정상 채팅, 내용만 이상함)
+   *           "formal" 변형기 미통과 (정중한 완결 문장)
+   *           "raw"    변형기 미통과 (깨진 표기 그대로)
+   *    needs  이 라인에 필요한 컨텍스트가 있는지 검사 (없으면 후보에서 제외)
+   *    bypass true면 중복 필터를 건너뜁니다 (모방형처럼 복제가 목적인 경우)
+   *    make   실제 문장을 만드는 함수
+   *
+   *  ctx로 넘어오는 값
+   *    seconds   다음 방송 이벤트까지 남은 초
+   *    omen      다음 이벤트의 예고 문구
+   *    elapsed   방송 시작 후 경과 초
+   *    clock     창을 연 시각 "23시 41분"
+   *    nowClock  지금 이 순간의 실제 시각
+   *    day       "어제" / "지난주" 등
+   *    nickname  이 이상 시청자 본인의 닉네임
+   *    otherNick 다른 활성 시청자의 닉네임
+   *    lastText  바로 직전에 채팅창에 올라온 문장
+   * ======================================================================== */
+  const ANOMALY_LINES = Object.freeze({
+
+    /* ---- 예언형 : 아직 일어나지 않은 방송 이벤트를 읽습니다 ---- */
+    PROPHECY: [
+      { id: "pro-soon",   level: 2, mode: "casual", needs: c => c.seconds != null,
+        make: c => `${c.seconds}초 뒤 장면을 이미 봤어 넌 아직 못 봤고` },
+      { id: "pro-hint",   level: 2, mode: "casual",
+        make: () => `아직 일어나지 않은 장면이 자꾸 기억나` },
+      { id: "pro-count",  level: 2, mode: "casual", needs: c => c.seconds != null,
+        make: c => `지금부터 ${c.seconds}초 세면 방송이 한 번 끊겨` },
+      { id: "pro-omen",   level: 3, mode: "formal", needs: c => c.omen != null,
+        make: c => `${c.seconds}초 뒤에 ${c.omen}` },
+      { id: "pro-seen",   level: 3, mode: "formal", needs: c => c.omen != null,
+        make: c => `${c.omen} 저는 이미 봤습니다.` },
+      { id: "pro-tick",   level: 3, mode: "raw", needs: c => c.seconds != null && c.seconds >= 3,
+        make: c => `${c.seconds}... ${c.seconds - 1}... ${c.seconds - 2}...` },
+      { id: "pro-know",   level: 4, mode: "formal",
+        make: () => `이 다음 장면을 저는 알고 있습니다. 당신도 곧 알게 됩니다.` },
+      { id: "pro-repeat", level: 4, mode: "raw", needs: c => c.seconds != null,
+        make: c => `${c.seconds}초. ${c.seconds}초. ${c.seconds}초.` },
+      { id: "pro-nostop", level: 4, mode: "formal",
+        make: () => `막을 수 없습니다. 이미 정해져 있습니다.` }
+    ],
+
+    /* ---- 관찰형 : 게임 밖 정보를 읽습니다 ---- */
+    OBSERVER: [
+      { id: "obs-elapsed", level: 2, mode: "casual",
+        make: c => `네가 방송 켠 지 정확히 ${c.elapsed}초 지났어` },
+      { id: "obs-late",    level: 2, mode: "casual",
+        make: c => `지금 네 시계도 ${c.nowClock}로 보이지?` },
+      { id: "obs-look",    level: 2, mode: "casual",
+        make: () => `너 방금 화면 말고 내 쪽 봤지` },
+      { id: "obs-alone",   level: 2, mode: "casual",
+        make: () => `지금 네 뒤에는 아무도 없네 아직은` },
+      { id: "obs-open",    level: 3, mode: "formal",
+        make: c => `당신이 이 창을 연 시각은 ${c.clock}입니다.` },
+      { id: "obs-spam",    level: 3, mode: "raw",
+        make: () => `너지금나봤지너지금나봤지너지금나봤지` },
+      { id: "obs-one",     level: 3, mode: "formal",
+        make: () => `지금 이 채팅을 읽고 있는 사람은 한 명뿐입니다.` },
+      { id: "obs-quiet",   level: 3, mode: "formal",
+        make: () => `방 안이 조용해서 다행입니다.` },
+      { id: "obs-watch",   level: 4, mode: "raw",
+        make: () => `보고있어 보고있어 보고있어 보고있어` },
+      { id: "obs-only",    level: 4, mode: "formal",
+        make: c => `${c.elapsed}초 동안 저는 당신만 보고 있었습니다.` },
+      { id: "obs-behind",  level: 4, mode: "formal",
+        make: () => `등 뒤는 확인하지 않는 편이 좋습니다.` },
+      { id: "obs-blink",   level: 4, mode: "casual",
+        make: () => `방금 눈 깜빡였잖아` }
+    ],
+
+    /* ---- 기억오류형 : 존재하지 않는 과거를 기억합니다 ---- */
+    MEMORY: [
+      { id: "mem-again",  level: 2, mode: "casual",
+        make: c => `${c.day}에도 똑같이 말했잖아 그 방송은 없었지만` },
+      { id: "mem-only",   level: 2, mode: "casual",
+        make: c => `${c.day} 방송은 나만 기억하나 봐` },
+      { id: "mem-behind", level: 2, mode: "casual",
+        make: c => `${c.day} 네 뒤에 나 있었는데 모르더라` },
+      { id: "mem-none",   level: 3, mode: "formal",
+        make: c => `${c.day} 방송은 아무도 보지 못했습니다.` },
+      { id: "mem-ended",  level: 3, mode: "formal",
+        make: c => `이 이야기는 ${c.day}에 이미 한 번 끝났습니다.` },
+      { id: "mem-did",    level: 3, mode: "formal",
+        make: c => `${c.day}에 당신이 한 일을 기억하십니까?` },
+      { id: "mem-same",   level: 4, mode: "formal",
+        make: c => `우리는 ${c.day}에도 정확히 같은 대화를 나눴습니다.` },
+      { id: "mem-loop",   level: 4, mode: "raw",
+        make: c => `${c.day} ${c.day} ${c.day} ${c.day}` },
+      { id: "mem-count",  level: 4, mode: "formal",
+        make: () => `이번이 몇 번째인지 세고 계십니까? 저는 세고 있습니다.` }
+    ],
+
+    /* ---- 모방형 : 다른 시청자를 복제합니다 ----
+       복제가 목적이므로 일부 라인은 bypass로 중복 필터를 건너뜁니다. */
+    MIMIC: [
+      { id: "mim-echo",   level: 2, mode: "raw", bypass: true, needs: c => Boolean(c.lastText),
+        make: c => c.lastText },
+      { id: "mim-same",   level: 2, mode: "casual", needs: c => Boolean(c.otherNick),
+        make: c => `${c.otherNick}랑 내 채팅이 곧 똑같아질 거야` },
+      { id: "mim-double", level: 3, mode: "raw", bypass: true, needs: c => Boolean(c.lastText),
+        make: c => `${c.lastText} ${c.lastText}` },
+      { id: "mim-gone",   level: 3, mode: "formal", needs: c => Boolean(c.otherNick),
+        make: c => `${c.otherNick}님은 지금 여기 없습니다.` },
+      { id: "mim-name",   level: 4, mode: "raw", needs: c => Boolean(c.otherNick),
+        make: c => `${c.otherNick}${c.otherNick}${c.otherNick}` },
+      { id: "mim-become", level: 4, mode: "formal", needs: c => Boolean(c.otherNick),
+        make: c => `${c.otherNick}님의 자리는 곧 비게 됩니다.` },
+      { id: "mim-mine",   level: 4, mode: "casual",
+        make: c => `${c.nickname} 이 이름은 네가 오기 전부터 내가 쓰고 있었어` }
+    ],
+
+    /* ---- 시스템 침입형 : 방송 UI를 흉내냅니다 ----
+       onMessage의 anomalyEvidence === "INTRUDER"를 잡아서
+       닉네임을 숨기고 시스템 공지 스타일로 렌더해야 효과가 삽니다. */
+    INTRUDER: [
+      { id: "int-left",  level: 2, mode: "raw",
+        make: () => `[알림] 시청자 1명이 퇴장했습니다.` },
+      { id: "int-nolog", level: 3, mode: "raw",
+        make: () => `[경고] 이 채팅은 기록되지 않습니다.` },
+      { id: "int-ban",   level: 3, mode: "raw",
+        make: c => `[알림] ${c.nickname}님이 차단되었습니다.` },
+      { id: "int-timer", level: 4, mode: "raw", needs: c => c.seconds != null,
+        make: c => `[시스템] 방송 종료까지 ${c.seconds}초` },
+      { id: "int-close", level: 4, mode: "formal",
+        make: () => `이 창을 닫아도 방송은 계속됩니다.` },
+      { id: "int-perm",  level: 4, mode: "raw",
+        make: c => `[알림] ${c.nickname}님에게 관리자 권한이 부여되었습니다.` }
+    ],
+
+    /* ---- 붕괴형 : 모든 유형이 이상도 3부터 공유하는 지리멸렬 풀 ----
+       전담 유형으로 배정하지 마세요. mode는 전부 raw입니다.
+       변형기가 손대면 의도한 깨짐이 망가집니다. */
+    GLITCH: [
+      { id: "gli-dots",   level: 3, mode: "raw",
+        make: () => `.....................` },
+      { id: "gli-hello",  level: 3, mode: "raw",
+        make: () => `안녕안녕안녕안녕안녕안녕` },
+      { id: "gli-where",  level: 3, mode: "raw",
+        make: () => `여기가 어디죠 여기가 어디죠 여기가` },
+      { id: "gli-jamo",   level: 3, mode: "raw",
+        make: () => `ㄴ ㅐ ㄱ ㅏ  ㅂ ㅗ ㅇ ㅕ` },
+      { id: "gli-space",  level: 3, mode: "raw",
+        make: () => `ㅋ  ㅋ   ㅋ    ㅋ     ㅋ` },
+      { id: "gli-help",   level: 4, mode: "raw",
+        make: () => `살려 살ㄹ ㅕ 살려주세ㅇ` },
+      { id: "gli-here",   level: 4, mode: "raw",
+        make: () => `나는 여기 있 나는 여기 있 나는 여기` },
+      { id: "gli-block",  level: 4, mode: "raw",
+        make: () => `██ 나가고 싶어 ██` },
+      { id: "gli-cut",    level: 4, mode: "raw",
+        make: () => `왜아무도내말을듣지않` },
+      { id: "gli-broken", level: 4, mode: "raw",
+        make: () => `ㅅ ㅏ ㄹ ㄹ ㅑ ㅈ ㅜ ㅅ ㅔ` }
+    ]
+  });
+
+  // 전담 권한으로 배정 가능한 유형. GLITCH는 공용이라 제외합니다.
+  const ANOMALY_PERMISSIONS = Object.freeze(["PROPHECY", "OBSERVER", "MEMORY", "MIMIC", "INTRUDER"]);
+
+  /* ==========================================================================
+   * 7. 표기 변형 자원
    * ======================================================================== */
 
   // 채팅 어미. 문장부호를 뗀 상태에서 매칭하므로 패턴에 부호를 넣지 마세요.
@@ -397,7 +562,7 @@
   }
 
   /* ==========================================================================
-   * 7. 시드 난수
+   * 8. 시드 난수
    * ======================================================================== */
   class SeededRandom {
     constructor(seed) {
@@ -442,7 +607,7 @@
   }
 
   /* ==========================================================================
-   * 8. 엔진
+   * 9. 엔진
    * ======================================================================== */
   class HorrorChatEngine {
     constructor(options) {
@@ -451,6 +616,7 @@
       this.onStateChange = options.onStateChange || (() => {});
       this.seed = Number(options.seed) >>> 0;
       this.random = new SeededRandom(this.seed);
+      this.difficulty = Math.min(3, Math.max(1, Number(options.difficulty) || 1));
       this.syntheticEvents = options.syntheticEvents !== false;
       this.externalContext = options.externalContext || {
         startedAt: Date.now(),
@@ -482,6 +648,7 @@
         fallbackCount: 0,
         outputCount: 0,
         shortCount: 0,
+        anomalyCount: 0,
         totalWords: 0,
         formalLeaks: 0,
         stateTransitions: [{ at: 0, state: "AMBIENT" }]
@@ -492,7 +659,7 @@
 
     assignViewerModels() {
       const personaKeys = this.random.shuffle(Object.keys(PERSONAS));
-      const permissions = this.random.shuffle(["PROPHECY", "OBSERVER", "MEMORY"]);
+      const permissions = this.random.shuffle([...ANOMALY_PERMISSIONS]);
       let anomalyIndex = 0;
       this.viewers.forEach((viewer, index) => {
         viewer.personaKey = personaKeys[index % personaKeys.length];
@@ -580,7 +747,7 @@
     enqueueAmbient(delay) {
       if (this.ambientQueued) return;
       const interval = TUNING.intervals[this.state];
-      const wait = delay ?? this.random.range(interval[0], interval[1]);
+      const wait = (delay ?? this.random.range(interval[0], interval[1])) / this.difficulty;
       this.enqueue({
         intent: this.chooseIntent(this.state),
         scheduledAt: this.simTime + wait,
@@ -631,7 +798,7 @@
           intent,
           eventRef: { type, happenedAt: this.simTime },
           slotHints: mergedSlots,
-          scheduledAt: this.simTime + this.random.range(80, 1150),
+          scheduledAt: this.simTime + this.random.range(80, 1150) / Math.sqrt(this.difficulty),
           source: "event",
           priority: intensity >= .7 ? 3 : 2
         });
@@ -645,7 +812,7 @@
       this.futureEvent = {
         ...event,
         slots: { ...event.slots },
-        scheduledAt: this.simTime + this.random.range(8500, 15000)
+        scheduledAt: this.simTime + this.random.range(8500, 15000) / this.difficulty
       };
     }
 
@@ -700,8 +867,13 @@
       let utterance;
       for (let attempt = 0; attempt < TUNING.maxGenerationRetries; attempt += 1) {
         const candidate = this.generateCandidate(viewer, request);
+        // bypassFilter는 모방형처럼 "복제 자체가 목적"인 라인을 위한 예외입니다.
+        if (candidate.bypassFilter || options.skipFilters) {
+          utterance = candidate;
+          break;
+        }
         const rejection = this.findRejection(candidate);
-        if (!rejection || options.skipFilters) {
+        if (!rejection) {
           utterance = candidate;
           break;
         }
@@ -719,17 +891,12 @@
     /* ---------- 내용 생성 ---------- */
 
     generateCandidate(viewer, request) {
-      const anomalyOverride = this.createAnomalyOverride(viewer, request);
+      const anomalyOverride = this.createAnomalyOverride(viewer);
       if (anomalyOverride) return anomalyOverride;
 
       const persona = PERSONAS[viewer.personaKey];
-      const level = viewer.anomalous ? viewer.anomalyLevel : 0;
-      const useFormal = level >= TUNING.formalFromLevel;
-
-      // 이상도가 높을수록 짧은 반응을 덜 씁니다 (혼자 문장을 쓰게 만들기 위해)
-      const anomalyFactor = 1 - level / TUNING.maxAnomalyLevel;
-      const shortChance = Math.min(.92, persona.shortChance * (1 + this.tension * 1.5) * anomalyFactor);
-      if (!useFormal && this.random.next() < shortChance) {
+      const shortChance = Math.min(.92, persona.shortChance * (1 + this.tension * 1.5));
+      if (this.random.next() < shortChance) {
         return this.generateShortCandidate(viewer, request.intent, request.slotHints);
       }
 
@@ -746,8 +913,7 @@
       const chatFilled = fill(chatTemplate);
       const formalFilled = fill(formalTemplate);
 
-      // 정중형은 변형기를 통과시키지 않습니다. 그게 이상 시청자의 정체입니다.
-      const text = useFormal ? formalFilled : this.transformStyle(chatFilled, viewer);
+      const text = this.transformStyle(chatFilled, viewer);
 
       return {
         text,
@@ -771,7 +937,7 @@
       }
 
       const style = PERSONAS[viewer.personaKey].style;
-      if (!fallback && !viewer.anomalous && style.emote > .6 && this.random.next() < .35) {
+      if (!fallback && style.emote > .6 && this.random.next() < .35) {
         text += this.random.pick(style.emotePool);
       }
 
@@ -785,78 +951,68 @@
       };
     }
 
-    /* ---------- 이상 시청자 ----------
-     * 공포 요소는 전부 여기에만 있습니다.
-     * 정상 시청자가 일상 얘기만 하는 채팅창에서 이 라인들이 혼자 튀는 것이 핵심입니다.
-     * "이상함"은 문장 데이터가 아니라 접근 권한으로 구현됩니다.
-     *   PROPHECY 아직 일어나지 않은 방송 이벤트를 읽음
-     *   OBSERVER 게임 밖 정보(시스템 시각, 경과 시간)를 읽음
-     *   MEMORY   존재하지 않는 과거 방송을 기억함
-     */
+    /* ---------- 이상 시청자 ---------- */
 
-    createAnomalyOverride(viewer, request) {
-      if (!viewer.anomalous || viewer.anomalyLevel < 2) return null;
-      const chance = { 2: .22, 3: .5, 4: .78 }[viewer.anomalyLevel];
-      if (this.random.next() >= chance) return null;
+    createAnomalyOverride(viewer, force = false) {
+      if (!viewer.anomalous) return null;
+      const anomalyLevel = Math.max(1, Math.min(4, viewer.anomalyLevel));
+      // 이상도는 오직 이상 채팅으로 교체될 빈도만 결정합니다.
+      const chance = { 1: .1, 2: .28, 3: .55, 4: .82 }[anomalyLevel];
+      if (!force && this.random.next() >= chance) return null;
 
-      const useFormal = viewer.anomalyLevel >= TUNING.formalFromLevel;
-      const dress = standardText => useFormal ? standardText : this.transformStyle(standardText, viewer);
+      // --- 컨텍스트 수집 ---
+      const others = this.viewers.filter(other => other.active && other.id !== viewer.id);
+      const openedAt = new Date(this.externalContext.startedAt);
+      const now = new Date();
+      const toClock = date =>
+        `${String(date.getHours()).padStart(2, "0")}시 ${String(date.getMinutes()).padStart(2, "0")}분`;
+      const ctx = {
+        seconds: this.futureEvent
+          ? Math.max(1, Math.ceil((this.futureEvent.scheduledAt - this.simTime) / 1000))
+          : null,
+        omen: this.futureEvent?.omen ?? null,
+        elapsed: Math.floor(this.simTime / 1000),
+        clock: toClock(openedAt),
+        nowClock: toClock(now),
+        day: this.random.pick(SLOT_POOLS.day),
+        nickname: viewer.name ?? "당신",
+        otherNick: others.length ? this.random.pick(others).name : null,
+        lastText: this.recentOutputs.at(-1) ?? null
+      };
 
-      if (viewer.anomalyPermission === "PROPHECY" && this.futureEvent) {
-        const seconds = Math.max(1, Math.ceil((this.futureEvent.scheduledAt - this.simTime) / 1000));
-        const standardText = `${seconds}초 뒤에 ${this.futureEvent.omen}`;
-        return {
-          text: dress(standardText),
-          standardText,
-          templateId: "anomaly:prophecy",
-          signature: `anomaly:prophecy:${this.futureEvent.type}:${seconds}`,
-          slots: {},
-          short: false,
-          anomalyEvidence: "PROPHECY"
-        };
-      }
+      // 이상 채팅의 내용 강도는 anomalyLevel과 무관합니다.
+      // 어떤 이상도에서도 전담 유형 전체와 공용 붕괴 풀 전체를 사용합니다.
+      const candidates = [
+        ...(ANOMALY_LINES[viewer.anomalyPermission] || []),
+        ...ANOMALY_LINES.GLITCH
+      ].filter(entry => !entry.needs || entry.needs(ctx));
 
-      if (viewer.anomalyPermission === "OBSERVER") {
-        const elapsedSeconds = Math.floor(this.simTime / 1000);
-        const startedAt = new Date(this.externalContext.startedAt);
-        const clock = `${String(startedAt.getHours()).padStart(2, "0")}시 ${String(startedAt.getMinutes()).padStart(2, "0")}분`;
-        const variants = [
-          `방송을 켠 지 정확히 ${elapsedSeconds}초가 지났습니다.`,
-          `당신이 이 창을 연 시각은 ${clock}입니다.`,
-          `지금 이 채팅을 읽고 있는 사람은 한 명뿐입니다.`
-        ];
-        const standardText = this.random.pick(variants);
-        return {
-          text: dress(standardText),
-          standardText,
-          templateId: "anomaly:observer",
-          signature: `anomaly:observer:${Math.floor(elapsedSeconds / 5)}`,
-          slots: {},
-          short: false,
-          anomalyEvidence: "OBSERVER"
-        };
-      }
+      if (!candidates.length) return null;
+      const entry = this.random.pick(candidates);
 
-      if (viewer.anomalyPermission === "MEMORY") {
-        const day = this.random.pick(SLOT_POOLS.day);
-        const variants = [
-          `${day} 방송에서도 똑같은 말씀을 하셨습니다.`,
-          `${day}에 저와 나눈 대화를 기억하십니까?`,
-          `${day} 방송은 아무도 보지 못했습니다.`,
-          `이 이야기는 ${day}에 이미 한 번 끝났습니다.`
-        ];
-        const standardText = this.random.pick(variants);
-        return {
-          text: dress(standardText),
-          standardText,
-          templateId: "anomaly:memory",
-          signature: `anomaly:memory:${standardText}`,
-          slots: { day },
-          short: false,
-          anomalyEvidence: "MEMORY"
-        };
-      }
-      return null;
+      const standardText = entry.make(ctx);
+      if (!standardText) return null;
+
+      // --- 표기 모드 적용 ---
+      // casual은 이상도와 무관하게 변형기를 100% 강도로 통과시킵니다.
+      // 이상도 4짜리가 가장 평범한 말투로 말하는 순간을 만들기 위한 장치입니다.
+      const text = entry.mode === "casual"
+        ? this.transformStyle(standardText, viewer, 1)
+        : standardText;
+
+      return {
+        text,
+        standardText,
+        templateId: `anomaly:${viewer.anomalyPermission}:${entry.id}`,
+        signature: `anomaly:${entry.id}:${standardText}`,
+        slots: {},
+        short: false,
+        anomaly: true,
+        anomalyEvidence: viewer.anomalyPermission,
+        anomalyMode: entry.mode,
+        anomalyLineId: entry.id,
+        bypassFilter: Boolean(entry.bypass)
+      };
     }
 
     resolveSlot(name, hints, viewer) {
@@ -882,12 +1038,9 @@
 
     /* ---------- 표기 변형기 ---------- */
 
-    transformStyle(input, viewer) {
+    transformStyle(input, viewer, factorOverride) {
       const style = PERSONAS[viewer.personaKey].style;
-      // 이상도가 올라갈수록 모든 변형 확률이 0으로 수렴합니다.
-      const factor = viewer.anomalous
-        ? Math.max(0, 1 - viewer.anomalyLevel / TUNING.maxAnomalyLevel)
-        : 1;
+      const factor = factorOverride ?? 1;
       const roll = probability => this.random.next() < probability * factor;
       let text = input;
 
@@ -952,8 +1105,9 @@
         }
       }
 
-      // 개발용 안전망 — 정중형이 새어 나오면 즉시 알려줍니다.
-      if (factor > 0 && /습니다|습니까|십시오/.test(text)) {
+      // 개발용 안전망 — 템플릿 정중형이 새어 나오면 즉시 알려줍니다.
+      // casual 이상 대사(factorOverride 사용)는 검사 대상이 아닙니다.
+      if (factorOverride == null && factor > 0 && /습니다|습니까|십시오/.test(text)) {
         this.debug.formalLeaks += 1;
         console.warn("[말투] 정중형 누출:", input, "→", text);
       }
@@ -1018,10 +1172,13 @@
         this.debug.outputCount += 1;
         this.debug.totalWords += utterance.text.split(/\s+/).filter(Boolean).length;
         if (utterance.short) this.debug.shortCount += 1;
+        if (utterance.anomaly) this.debug.anomalyCount += 1;
       }
 
+      // 발화가 누적될수록 anomalyLevel이 올라가고, 다음 이상 채팅의 출현 빈도만 증가합니다.
+      const anomalySpeechStep = Math.max(1, Math.round(TUNING.anomalySpeechStep / this.difficulty));
       if (viewer.anomalous && !options.historyOnly && this.state !== "BURST"
-          && viewer.engineSpeechCount % TUNING.anomalySpeechStep === 0) {
+          && viewer.engineSpeechCount % anomalySpeechStep === 0) {
         viewer.anomalyLevel = Math.min(TUNING.maxAnomalyLevel, viewer.anomalyLevel + 1);
       }
 
@@ -1033,6 +1190,8 @@
         state: this.state,
         tension: this.tension,
         anomalyEvidence: utterance.anomalyEvidence || null,
+        anomalyMode: utterance.anomalyMode || null,
+        anomalyLineId: utterance.anomalyLineId || null,
         historyOnly: Boolean(options.historyOnly),
         behavior: options.behavior || "smooth"
       });
@@ -1041,6 +1200,19 @@
     bootstrapMessages() {
       // 채팅창을 켰을 때 이미 굴러가고 있던 것처럼 보이게 하는 초기 로그
       this.viewers.forEach(viewer => {
+        if (viewer.anomalous) {
+          for (let index = 0; index < 3; index += 1) {
+            const anomalyHistory = this.createAnomalyOverride(viewer, true);
+            if (!anomalyHistory) continue;
+            this.recordUtterance(
+              viewer,
+              { intent: "CHAT", scheduledAt: this.simTime, source: "anomaly-history" },
+              anomalyHistory,
+              { historyOnly: true, behavior: "auto" }
+            );
+          }
+          return;
+        }
         this.processRequest(
           { intent: "GREET", scheduledAt: this.simTime, forcedSpeakerId: viewer.id, slotHints: {}, source: "bootstrap" },
           { historyOnly: true, skipFilters: true, behavior: "auto" }
@@ -1074,6 +1246,7 @@
       const outputs = this.debug.outputCount || 1;
       return {
         seed: this.seed,
+        difficulty: Number(this.difficulty.toFixed(2)),
         simTime: this.simTime,
         tension: Number(this.tension.toFixed(4)),
         state: this.state,
@@ -1081,6 +1254,7 @@
         style: {
           averageWords: Number((this.debug.totalWords / outputs).toFixed(2)),
           shortRatio: Number((this.debug.shortCount / outputs).toFixed(2)),
+          anomalyRatio: Number((this.debug.anomalyCount / outputs).toFixed(2)),
           fallbackRatio: Number((this.debug.fallbackCount / outputs).toFixed(2)),
           formalLeaks: this.debug.formalLeaks
         },
@@ -1112,4 +1286,5 @@
   window.HORROR_CHAT_TUNING = TUNING;
   window.HORROR_CHAT_PERSONAS = PERSONAS;
   window.HORROR_CHAT_EVENTS = SYNTHETIC_EVENTS;
+  window.HORROR_CHAT_ANOMALY_LINES = ANOMALY_LINES;
 })();

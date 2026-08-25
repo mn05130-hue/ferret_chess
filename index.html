@@ -15,6 +15,14 @@
         <span class="title-brand-dot"></span>
         SONG STUDIO · MIDNIGHT ROOM
       </div>
+      <button class="title-music-button" id="title-music-button" type="button" aria-pressed="false" aria-label="타이틀 배경음악 재생">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 10v4h3l4 3V7L8 10H5Z"/>
+          <path class="music-wave" d="M15 9.2c.8.7 1.2 1.6 1.2 2.8s-.4 2.1-1.2 2.8M17.6 7c1.4 1.3 2.2 3 2.2 5s-.8 3.7-2.2 5"/>
+        </svg>
+        <span id="title-music-label">BGM 켜기</span>
+      </button>
+      <audio id="title-music" preload="metadata" loop></audio>
       <div class="title-content">
         <p class="title-alert"><span aria-hidden="true">●</span> UNKNOWN VIEWERS DETECTED</p>
         <h1 class="sr-only" id="game-title">구독 방송</h1>
@@ -70,16 +78,28 @@
         </div>
         <span class="signal-status" id="stream-signal">연결 안정</span>
       </div>
+      <div class="threat-timer" id="threat-timer" hidden aria-live="polite">
+        <span>SIGNAL CONTAMINATION</span>
+        <strong><span id="threat-seconds">20.0</span>s</strong>
+      </div>
     </section>
 
     <section class="game-hud" aria-label="게임 상태">
+      <div class="hud-stat stage-stat">
+        <span>스테이지</span>
+        <strong id="stage-display">1</strong>
+      </div>
+      <div class="hud-stat health-stat">
+        <span>체력</span>
+        <strong id="health-display" aria-label="체력 3">3</strong>
+      </div>
       <div class="hud-stat trust-stat">
         <span>신뢰도</span>
         <strong id="trust-display" aria-label="신뢰도 3">♥♥♥</strong>
       </div>
       <div class="hud-stat anomaly-stat">
         <span>남은 이상 시청자</span>
-        <strong id="anomaly-display">3</strong>
+        <strong id="anomaly-display">1</strong>
       </div>
       <div class="hud-stat score-stat">
         <span>점수</span>
@@ -159,17 +179,38 @@
       </section>
     </div>
 
+    <div class="stage-overlay" id="stage-overlay" aria-hidden="true">
+      <section class="stage-card" role="dialog" aria-modal="true" aria-labelledby="stage-result-title">
+        <p class="result-kicker" id="stage-result-kicker">STAGE 01 CLEAR</p>
+        <div class="stage-result-mark" id="stage-result-mark" aria-hidden="true">✓</div>
+        <h2 id="stage-result-title">이상 시청자 차단</h2>
+        <p id="stage-result-copy"></p>
+        <dl class="stage-summary">
+          <div><dt>차단</dt><dd id="stage-caught">0</dd></div>
+          <div><dt>놓침</dt><dd id="stage-missed">0</dd></div>
+          <div><dt>체력</dt><dd id="stage-health">3</dd></div>
+          <div><dt>신뢰도</dt><dd id="stage-trust">3</dd></div>
+        </dl>
+        <button class="stage-continue-button" id="stage-continue" type="button">다음 스테이지</button>
+      </section>
+    </div>
+
     <div class="game-overlay" id="game-overlay" aria-hidden="true">
       <section class="result-card" role="dialog" aria-modal="true" aria-labelledby="result-title">
         <p class="result-kicker" id="result-kicker">CONNECTION CLOSED</p>
         <h2 id="result-title">방송 종료</h2>
         <p id="result-copy"></p>
         <strong class="final-score" id="final-score">0000점</strong>
-        <button class="restart-button" id="game-restart" type="button">타이틀로</button>
+        <p class="final-stage-line">도달 스테이지 <strong id="final-stage">1</strong></p>
+        <div class="result-actions">
+          <button class="retry-button" id="game-retry" type="button">다시 하기</button>
+          <button class="restart-button" id="game-restart" type="button">타이틀로</button>
+        </div>
       </section>
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <div class="screen-interference" id="screen-interference" aria-hidden="true"></div>
     </div>
   </main>
 

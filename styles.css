@@ -98,6 +98,7 @@ button {
 }
 
 .title-brand,
+.title-music-button,
 .title-content,
 .title-hint {
   position: relative;
@@ -129,6 +130,57 @@ button {
   border-radius: 50%;
   background: var(--green);
   box-shadow: 0 0 9px var(--green);
+}
+
+.title-music-button {
+  position: absolute;
+  top: max(17px, env(safe-area-inset-top));
+  right: 18px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #ffffff24;
+  border-radius: 20px;
+  padding: 0 10px 0 8px;
+  color: #aebbb7;
+  background: #050707b8;
+  backdrop-filter: blur(8px);
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.title-music-button:hover,
+.title-music-button:focus-visible {
+  border-color: #75dfc1;
+  outline: none;
+  color: #e8fff8;
+}
+
+.title-music-button.is-playing {
+  border-color: #3ebd98;
+  color: #73e5c3;
+  box-shadow: 0 0 13px #00e5a522;
+}
+
+.title-music-button svg {
+  width: 16px;
+  fill: currentColor;
+}
+
+.title-music-button .music-wave {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  opacity: .25;
+}
+
+.title-music-button.is-playing .music-wave {
+  opacity: 1;
+  animation: music-wave 900ms ease-in-out infinite alternate;
 }
 
 .title-content {
@@ -497,6 +549,40 @@ button {
   font-size: 8px;
 }
 
+.threat-timer {
+  position: absolute;
+  z-index: 5;
+  top: 8px;
+  left: 50%;
+  min-width: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  translate: -50% 0;
+  border: 1px solid #ff4c5c;
+  border-radius: 5px;
+  padding: 4px 7px;
+  color: #ff8993;
+  background: #21080de8;
+  box-shadow: 0 0 16px #e3263947;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .05em;
+  animation: threat-pulse 900ms steps(2) infinite;
+}
+
+.threat-timer[hidden] {
+  display: none;
+}
+
+.threat-timer strong {
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
 .chat-app[data-director-state="TENSE"] .stream-stage,
 .chat-app[data-director-state="AFTERMATH"] .stream-stage {
   border-color: #76543c;
@@ -521,9 +607,9 @@ button {
   z-index: 4;
   height: 42px;
   display: grid;
-  grid-template-columns: .9fr 1.35fr .75fr 28px;
+  grid-template-columns: .62fr .6fr .88fr 1.2fr .72fr 26px;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   padding: 4px 7px;
   border-block: 1px solid #292b30;
   background: linear-gradient(180deg, #17171a, #111214);
@@ -537,7 +623,7 @@ button {
   gap: 1px;
 }
 
-.hud-stat span {
+.hud-stat > span {
   overflow: hidden;
   color: #747a84;
   font-size: 9px;
@@ -557,6 +643,15 @@ button {
 .trust-stat strong {
   color: #e94962;
   letter-spacing: 2px;
+}
+
+.stage-stat strong {
+  color: #7be2c2;
+  font-size: 12px;
+}
+
+.health-stat strong {
+  color: #ffb65d;
 }
 
 .anomaly-stat strong {
@@ -1061,6 +1156,7 @@ button {
 }
 
 .viewer-backdrop,
+.stage-overlay,
 .game-overlay {
   position: absolute;
   z-index: 30;
@@ -1072,6 +1168,7 @@ button {
 }
 
 .viewer-backdrop.open,
+.stage-overlay.open,
 .game-overlay.open {
   opacity: 1;
   visibility: visible;
@@ -1176,6 +1273,130 @@ button {
   background: linear-gradient(#a52d3a, #791e29);
 }
 
+.stage-overlay {
+  z-index: 38;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #050607e8;
+}
+
+.stage-card {
+  width: min(100%, 330px);
+  border: 1px solid #316f60;
+  border-radius: 14px;
+  padding: 24px 22px 21px;
+  background:
+    radial-gradient(circle at 50% 0, #41caa22b, transparent 50%),
+    #171a1a;
+  box-shadow: 0 20px 60px #000;
+  text-align: center;
+  scale: .95;
+  transition: scale 180ms ease;
+}
+
+.stage-overlay.open .stage-card {
+  scale: 1;
+}
+
+.stage-card.failed {
+  border-color: #80313a;
+  background:
+    radial-gradient(circle at 50% 0, #c52e3e27, transparent 50%),
+    #1a1718;
+}
+
+.stage-result-mark {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  margin: 12px auto 10px;
+  border: 1px solid #52d5ae;
+  border-radius: 50%;
+  color: #65e7bf;
+  background: #173e34;
+  box-shadow: 0 0 24px #27d5a044;
+  font-size: 27px;
+  font-weight: 900;
+}
+
+.stage-card.failed .stage-result-mark {
+  border-color: #e95865;
+  color: #ff7782;
+  background: #491a20;
+  box-shadow: 0 0 24px #e6324144;
+}
+
+.stage-card h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+
+.stage-card > p:not(.result-kicker) {
+  min-height: 44px;
+  margin: 0;
+  color: #aeb7b4;
+  font-size: 13px;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.stage-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 18px 0;
+  border-block: 1px solid #303634;
+}
+
+.stage-summary div {
+  display: grid;
+  gap: 4px;
+  padding: 10px 4px;
+}
+
+.stage-summary div + div {
+  border-left: 1px solid #303634;
+}
+
+.stage-summary dt {
+  color: #747d7a;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.stage-summary dd {
+  margin: 0;
+  color: #e9efed;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.stage-continue-button {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #47d8ac;
+  border-radius: 8px;
+  color: #071511;
+  background: linear-gradient(#5ce9bf, #18c795);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.stage-continue-button:hover,
+.stage-continue-button:focus-visible {
+  outline: 2px solid #caffef;
+  outline-offset: 2px;
+  filter: brightness(1.08);
+}
+
+.stage-card.failed .stage-continue-button {
+  border-color: #c94956;
+  color: #fff1f2;
+  background: linear-gradient(#9b2c38, #721e27);
+}
+
 .game-overlay {
   z-index: 40;
   display: grid;
@@ -1220,6 +1441,69 @@ button {
   color: #62d7b0;
   font-family: ui-monospace, "Cascadia Mono", monospace;
   font-size: 28px;
+}
+
+.final-stage-line {
+  margin: -9px 0 17px !important;
+  color: #818a88 !important;
+  font-size: 11px !important;
+}
+
+.final-stage-line strong {
+  color: #d7dfdd;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 14px;
+}
+
+.result-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.retry-button {
+  height: 45px;
+  border: 1px solid #3fd2a6;
+  border-radius: 8px;
+  color: #071511;
+  background: linear-gradient(#5ce8bd, #16c391);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.retry-button:hover,
+.retry-button:focus-visible {
+  outline: 2px solid #caffef;
+  outline-offset: 2px;
+  filter: brightness(1.08);
+}
+
+.screen-interference {
+  position: absolute;
+  z-index: 60;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.chat-app.interference-mosaic .screen-interference {
+  opacity: 1;
+  background:
+    conic-gradient(from 90deg at 50% 50%, #ff4058, #050505, #4dffe0, #111, #ff4058) 0 0 / 22px 22px,
+    repeating-linear-gradient(0deg, #fff8 0 2px, #0008 2px 5px);
+  mix-blend-mode: difference;
+  backdrop-filter: blur(5px) contrast(1.8);
+  animation: mosaic-interference 1.15s steps(4) both;
+}
+
+.chat-app.interference-color .screen-interference {
+  opacity: 1;
+  background:
+    linear-gradient(90deg, #ff183c66, transparent 30% 65%, #00ffd566),
+    repeating-linear-gradient(0deg, transparent 0 3px, #fff2 3px 4px);
+  mix-blend-mode: screen;
+  backdrop-filter: hue-rotate(145deg) saturate(3.2) contrast(1.25);
+  animation: color-interference 1.45s steps(3) both;
 }
 
 .chat-app.wrong-kick {
@@ -1268,6 +1552,32 @@ button {
   50% { opacity: .38; }
 }
 
+@keyframes music-wave {
+  from { opacity: .45; }
+  to { opacity: 1; }
+}
+
+@keyframes threat-pulse {
+  50% { border-color: #7b232d; box-shadow: 0 0 5px #e3263922; }
+}
+
+@keyframes mosaic-interference {
+  0% { opacity: 0; background-position: 0 0; }
+  14% { opacity: .88; }
+  35% { opacity: .28; background-position: 31px -18px; }
+  58% { opacity: .92; background-position: -17px 26px; }
+  82% { opacity: .35; }
+  100% { opacity: 0; background-position: 8px -9px; }
+}
+
+@keyframes color-interference {
+  0% { opacity: 0; translate: 0; }
+  18% { opacity: .95; translate: -4px 0; }
+  44% { opacity: .45; translate: 5px 0; }
+  70% { opacity: .82; translate: -2px 0; }
+  100% { opacity: 0; translate: 0; }
+}
+
 @keyframes signal-noise {
   0% { translate: -3px 0; }
   50% { translate: 4px 1px; }
@@ -1283,6 +1593,18 @@ button {
 @media (min-width: 431px) {
   .chat-app {
     border-inline: 1px solid #202226;
+  }
+}
+
+@media (max-width: 360px) {
+  .title-music-button {
+    width: 31px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .title-music-button span {
+    display: none;
   }
 }
 
