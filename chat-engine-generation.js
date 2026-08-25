@@ -137,6 +137,7 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
       elapsed: Math.floor(this.simTime / 1000),
       clock: toClock(openedAt),
       nowClock: toClock(now),
+      year: 1 + Math.floor(this.random.next() * 9),
       day: this.random.pick(SLOT_POOLS.day),
       nickname: viewer.name ?? "당신",
       otherNick: others.length ? this.random.pick(others).name : null,

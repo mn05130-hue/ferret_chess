@@ -99,7 +99,9 @@ CSS는 `styles/` 아래에서 기능별 파일로 나뉘며, `index.html`의 `<l
 | `.has-text` | `.composer` | 전송 버튼 활성 모양 표시 |
 | `.claimed` | 보상 버튼 | 수령 완료 상태 표시 |
 | `.blinded-message` | 강퇴된 메시지 | 닉네임과 본문을 비활성화 |
-| `.corrupted-message` | 이상 채팅 | 여러 줄 깨진 문자, 잔상, 흔들림 표시 |
+| `.corrupted-message` | 모든 이상 채팅 | 유형별 테두리·배경과 짧은 진입 흔들림 표시 |
+| `.ciphered-message` | 붕괴형/연결 없음 채팅 | 여러 줄 깨진 문자와 강한 잔상 표시 |
+| `.anomaly-prophecy` 등 | 이상 채팅 | 예언·관찰·기억·모방·침입 유형별 색상 표시 |
 | `.corrupted-chat-hit` | `.chat-app` | 이상 채팅 도착 순간 메시지 영역 흔들림 |
 | `.is-weak` | 연결 위젯 | 괴이 발생 중 와이파이 막대와 상태를 약한 연결로 표시 |
 | `.is-failed` | 연결 위젯 | 제한시간 초과 뒤 끊긴 연결 상태 표시 |
@@ -331,10 +333,12 @@ findRejection()
 4. 모든 예정 시청자가 등장하면 `enqueueAnomaly()`가 활성 이상 시청자의 추가 발화를 예약합니다.
 5. 추가 발화는 1일차 3~7초 범위이며, 일차 난이도와 `anomalyLevel`이 올라갈수록 간격이 줄어듭니다.
 6. 이상 시청자는 일반 발화 큐에서 제외되므로 예약된 이상 채팅이 채팅창의 첫 등장입니다.
-7. 엔진이 `anomalyEvidence` 또는 `anomalyMode` 메타데이터를 전달합니다.
-8. `handleEngineMessage()`가 해당 발화를 이상 채팅으로 판별하고 깨진 문자와 시각 효과를 적용합니다.
-9. 무한 모드이면 `startThreatCountdown(viewer)`가 즉시 시작됩니다.
-10. 스토리 모드이면 즉시 제한시간을 만들지 않고 오전 2시에 판정합니다.
+7. 엔진이 `anomalyEvidence`, `anomalyMode`, `anomalyLineId` 메타데이터를 전달합니다.
+8. `getAnomalyPresentation()`이 `gli-*` 붕괴형과 나머지 전용 유형을 구분합니다.
+9. 예언·관찰·기억·모방·침입형은 원문을 유지하고, 붕괴형만 `createUnknownChatText()`로 난독화합니다.
+10. `handleEngineMessage()`가 유형별 클래스와 시각 효과를 적용합니다.
+11. 무한 모드이면 `startThreatCountdown(viewer)`가 즉시 시작됩니다.
+12. 스토리 모드이면 즉시 제한시간을 만들지 않고 오전 2시에 판정합니다.
 
 이 과정에서는 이상 채팅 자체 외에 별도의 시스템 메시지나 토스트를 추가하지 않습니다. 플레이어는 깨진 채팅 모양과 무한 모드의 기존 제한시간 UI만 보고 판단합니다.
 
@@ -545,7 +549,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 
 - 난수/시청자: `createRoundRandom`, `shuffle`, `createNickname`, `createSeed`, `createViewers`
 - 닉네임: `normalizePlayerNickname`, `setNicknameError`, `commitPlayerNickname`, `initializePlayerNickname`
-- 이상 문장: `hashText`, `createUnknownChatText`, `triggerCorruptedChatPulse`
+- 이상 문장: `hashText`, `createUnknownChatText`, `getAnomalyPresentation`, `triggerCorruptedChatPulse`
 - 메시지 DOM: `createMessage`, `createSystemMessage`, `appendElement`
 - 스크롤: `isNearLatest`, `scrollToLatest`
 - 엔진 연결: `handleEngineMessage`, `appendSystemMessage`
@@ -654,6 +658,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 이상 시청자 문장 | `chat-engine-anomalies.js` |
 | 새 이상 시청자 등장 주기 | `chat-engine-config.js`의 `anomalyArrivalIntervalMs` |
 | 등장 후 이상 채팅 주기 | `chat-engine-config.js`의 `anomalyIntervalMs`, `anomalyLevelFrequencyStep`, `minimumAnomalyIntervalMs` |
+| 이상 채팅 표시 유형 | `app-chat.js`의 `getAnomalyPresentation()`과 `styles/chat.css`의 `.anomaly-*`, `.ciphered-message` |
 | 깨진 문자 재료 | `app-config.js`의 `UNKNOWN_CHAT_TOKENS` |
 | 채팅 속도/중복 기준 | `chat-engine-config.js`의 `TUNING` |
 | 화면 색상과 크기 | `styles/base.css`의 `:root` 및 `styles/`의 해당 기능 파일 |

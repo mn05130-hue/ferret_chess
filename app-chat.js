@@ -180,6 +180,25 @@ function createUnknownChatText(text, viewer) {
 }
 
 /**
+ * 엔진 메타데이터를 화면용 이상 유형으로 정리합니다. GLITCH 계열만 난독화 문장을 사용합니다.
+ */
+function getAnomalyPresentation(message) {
+  const isActualAnomaly = Boolean(
+    message.viewer?.anomalous && (message.anomalyEvidence || message.anomalyMode)
+  );
+  if (!isActualAnomaly) {
+    return { isActualAnomaly: false, type: null, usesCipherText: false };
+  }
+
+  const isGlitch = String(message.anomalyLineId || "").startsWith("gli-");
+  return {
+    isActualAnomaly: true,
+    type: isGlitch ? "glitch" : String(message.anomalyEvidence || "unknown").toLowerCase(),
+    usesCipherText: isGlitch
+  };
+}
+
+/**
  * 이상 채팅 도착 순간 메시지 영역의 짧은 흔들림 애니메이션을 다시 시작합니다.
  */
 function triggerCorruptedChatPulse() {
@@ -195,7 +214,7 @@ function triggerCorruptedChatPulse() {
  */
 function corruptVisibleMessagesForConnectionLoss() {
   messageList.querySelectorAll(".message:not(.system-message):not(.blinded-message)").forEach((item, index) => {
-    if (item.classList.contains("corrupted-message")) return;
+    if (item.classList.contains("ciphered-message")) return;
     const messageText = item.querySelector(".message-text");
     if (!messageText) return;
     const viewer = viewers.find(candidate => candidate.id === item.dataset.viewerId)
@@ -203,7 +222,7 @@ function corruptVisibleMessagesForConnectionLoss() {
     const displayedText = createUnknownChatText(messageText.textContent, viewer);
     messageText.textContent = displayedText;
     messageText.dataset.echo = displayedText.replace(/\s+/g, " ");
-    item.classList.add("corrupted-message");
+    item.classList.add("corrupted-message", "ciphered-message");
   });
   triggerCorruptedChatPulse();
 }
@@ -215,6 +234,12 @@ function createMessage(viewer, text, ownMessage = false, metadata = {}) {
   const item = document.createElement("li");
   item.className = "message";
   if (metadata.corrupted) item.classList.add("corrupted-message");
+  if (metadata.ciphered) item.classList.add("ciphered-message");
+  if (metadata.anomalyType) {
+    const anomalyType = String(metadata.anomalyType).replace(/[^a-z-]/g, "") || "unknown";
+    item.classList.add("anomaly-message", `anomaly-${anomalyType}`);
+    item.dataset.anomalyType = anomalyType;
+  }
   if (ownMessage) item.dataset.ownMessage = "true";
   if (viewer?.id) item.dataset.viewerId = viewer.id;
   if (metadata.intent) item.dataset.intent = metadata.intent;
@@ -239,7 +264,7 @@ function createMessage(viewer, text, ownMessage = false, metadata = {}) {
   const messageText = document.createElement("span");
   messageText.className = "message-text";
   messageText.textContent = text;
-  if (metadata.corrupted) messageText.dataset.echo = text.replace(/\s+/g, " ");
+  if (metadata.ciphered) messageText.dataset.echo = text.replace(/\s+/g, " ");
 
   copy.append(username, messageText);
   item.append(badge, copy);
@@ -294,15 +319,22 @@ function appendElement(element, behavior = "smooth") {
  */
 function handleEngineMessage(message) {
   const { viewer, text, historyOnly, behavior } = message;
-  const isActualAnomaly = viewer.anomalous && Boolean(message.anomalyEvidence || message.anomalyMode);
+  const anomalyPresentation = getAnomalyPresentation(message);
+  const { isActualAnomaly } = anomalyPresentation;
   // 연결 없음 상태에서는 실제 판정값을 건드리지 않고 정상 채팅도 화면에서만 오염시킵니다.
   const isConnectionCorruption = !historyOnly && apparitionActive && apparitionExpired;
   const isCorruptedMessage = isActualAnomaly || isConnectionCorruption;
-  const displayedText = isCorruptedMessage ? createUnknownChatText(text, viewer) : text;
+  const usesCipherText = anomalyPresentation.usesCipherText || isConnectionCorruption;
+  const displayedText = usesCipherText ? createUnknownChatText(text, viewer) : text;
   viewer.history.push(displayedText);
   if (viewer.history.length > 10) viewer.history.shift();
   if (historyOnly) return;
-  appendElement(createMessage(viewer, displayedText, false, { ...message, corrupted: isCorruptedMessage }), behavior);
+  appendElement(createMessage(viewer, displayedText, false, {
+    ...message,
+    corrupted: isCorruptedMessage,
+    ciphered: usesCipherText,
+    anomalyType: anomalyPresentation.type
+  }), behavior);
   if (isCorruptedMessage) triggerCorruptedChatPulse();
 
   if (isActualAnomaly && gameMode === GAME_MODES.ENDLESS) startThreatCountdown(viewer);
