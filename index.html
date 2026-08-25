@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#111214">
   <meta name="description" content="라이브 방송용 모바일 채팅 인터페이스">
-  <title>Song Studio Live Chat</title>
+  <title>Buzzi Live Chat</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
     <section class="title-screen" id="title-screen" aria-labelledby="game-title">
       <div class="title-brand" aria-hidden="true">
         <span class="title-brand-dot"></span>
-        SONG STUDIO · MIDNIGHT ROOM
+        BUZZI · MIDNIGHT ROOM
       </div>
       <div class="title-audio-controls" aria-label="타이틀 배경음악 설정">
         <button class="title-music-button" id="title-music-button" type="button" aria-pressed="false" aria-label="타이틀 배경음악 재생">
@@ -45,7 +45,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
           </button>
           <button class="title-start-button endless-start-button" id="game-start" type="button">
-            <span><strong>무한 모드</strong><small>기존 스테이지 도전</small></span>
+            <span><strong>무한 모드</strong><small>최대한 오래 생존하십시오</small></span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
           </button>
         </div>
@@ -65,8 +65,8 @@
       <svg class="pin-icon" aria-hidden="true" viewBox="0 0 24 24">
         <path d="m15.8 3.2 5 5-2 2-1-.35-3.45 3.45.35 2-1.4 1.4-2.65-2.65-5.3 5.3-1.4-1.4 5.3-5.3L6.6 10l1.4-1.4 2 .35 3.45-3.45-.35-1 2.7-1.3Z"/>
       </svg>
-      <div class="address" title="https://www.songstudio.live/midnight-room">
-        <span>https://www.songstudio.live/mid...</span>
+      <div class="address" title="https://www.cizzk.never.co/buzzi/live/">
+        <span>https://www.cizzk.never.co/buzzi/live/</span>
         <button class="address-menu" type="button" aria-label="주소 메뉴">•••</button>
       </div>
       <button class="collapse-button" type="button" aria-label="상단 바 접기">
@@ -108,7 +108,7 @@
           </div>
           <span class="viewer-count" aria-label="현재 시청자 수">
             <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 10s2.7-4.5 7.5-4.5 7.5 4.5 7.5 4.5-2.7 4.5-7.5 4.5S2.5 10 2.5 10Z"/><circle cx="10" cy="10" r="2.1"/></svg>
-            <span id="stream-viewer-count">1,284</span>
+            <span id="stream-viewer-count">124</span>
           </span>
         </div>
       </div>
@@ -282,7 +282,23 @@
     </div>
   </main>
 
+  <!-- Chat engine: data → utilities → runtime layers → public API -->
+  <script src="chat-engine-config.js"></script>
+  <script src="chat-engine-dialogue.js"></script>
+  <script src="chat-engine-anomalies.js"></script>
+  <script src="chat-engine-utils.js"></script>
+  <script src="chat-engine-core.js"></script>
+  <script src="chat-engine-generation.js"></script>
+  <script src="chat-engine-diagnostics.js"></script>
   <script src="chat-engine.js"></script>
+
+  <!-- Game app: shared state → feature systems → event bindings -->
+  <script src="app-config.js"></script>
+  <script src="app-chat.js"></script>
+  <script src="app-audio.js"></script>
+  <script src="app-survival.js"></script>
+  <script src="app-results.js"></script>
+  <script src="app-game.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
