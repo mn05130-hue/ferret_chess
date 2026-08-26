@@ -24,6 +24,11 @@
   <link rel="stylesheet" href="styles/responsive.css">
 </head>
 <body>
+  <!--
+    화면 표시 상태는 세 속성을 목적에 맞게 함께 사용합니다.
+    hidden은 레이아웃에서 제거하고, aria-hidden은 보조 기술에서 숨기며,
+    inert는 게임 화면이 보이지 않을 때 내부 버튼과 입력란의 초점을 막습니다.
+  -->
   <main class="chat-app" aria-label="라이브 채팅">
     <!--
       브라우저의 오디오 자동 재생 제한을 해제하면서 플레이어 닉네임도 확정하는 첫 진입 화면입니다.

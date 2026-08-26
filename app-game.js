@@ -1,6 +1,11 @@
 "use strict";
 
-// Screens, viewer actions, stage lifecycle, and game startup.
+/*
+ * 화면 이동과 게임 수명 주기를 담당합니다.
+ * 진입 화면 → 타이틀 → 게임 → 하루/스테이지 결과 → 최종 결과의 전환을 제어하고,
+ * 시청자 기록 열기·강퇴 판정·새 스테이지 생성·채팅 엔진 시작 및 정리를 연결합니다.
+ * 화면을 떠날 때는 해당 화면의 타이머, 오디오, 엔진, 접근성 상태를 함께 정리합니다.
+ */
 /**
  * 최초 로드에서는 타이틀과 게임을 비활성화하고 닉네임을 입력받을 진입 화면만 표시합니다.
  */
@@ -44,6 +49,7 @@ function enterTitleFromEntry() {
 
 /**
  * 진행 중인 타이머·엔진·오버레이·음악을 정리하고 안전하게 타이틀 화면으로 돌아갑니다.
+ * @param {boolean} shouldFocus true이면 전환 뒤 스토리 시작 버튼에 초점을 옮김
  */
 function showTitle(shouldFocus = true) {
   window.clearTimeout(interferenceTimer);
@@ -77,6 +83,7 @@ function showTitle(shouldFocus = true) {
 
 /**
  * 닉네임 검증 후 선택 모드를 저장하고 타이틀에서 게임 화면으로 전환합니다.
+ * @param {"endless"|"story"} mode 시작할 게임 모드 식별자
  */
 function enterGame(mode = GAME_MODES.ENDLESS) {
   if (!commitPlayerNickname()) return;
@@ -94,6 +101,7 @@ function enterGame(mode = GAME_MODES.ENDLESS) {
 
 /**
  * 활성 시청자를 찾아 최근 발화 이력을 모달에 렌더링하고 강퇴 대상을 지정합니다.
+ * @param {string} viewerId 메시지 요소에 저장된 시청자 고유 ID
  */
 function openViewerPanel(viewerId) {
   if (gameOver || stageReviewOpen) return;
@@ -125,6 +133,8 @@ function closeViewerPanel() {
 
 /**
  * 강퇴된 시청자의 기존 메시지를 블라인드 문구로 바꾸고 재선택할 수 없게 합니다.
+ * @param {object} viewer 비활성화된 시청자 객체
+ * @param {string} replacementText 기존 발화 대신 표시할 블라인드 안내문
  */
 function markViewerAsKicked(viewer, replacementText = "블라인드 처리 된 시청자입니다.") {
   document.querySelectorAll(`.message[data-viewer-id="${viewer.id}"]`).forEach(message => {
@@ -248,6 +258,7 @@ function updateComposerState() {
 
 /**
  * 현재 커서와 선택 범위를 보존하면서 이모지 문자열을 입력창에 삽입합니다.
+ * @param {string} value 입력창에 삽입할 이모지 또는 짧은 채팅 문자열
  */
 function insertAtCursor(value) {
   const start = messageInput.selectionStart ?? messageInput.value.length;
@@ -305,6 +316,7 @@ function exposeDebugApi() {
 
 /**
  * 고정 시드 테스트에서는 스테이지 번호를 혼합하고 일반 플레이에서는 새 시드를 만듭니다.
+ * @returns {number} 현재 스테이지의 시청자와 엔진을 결정할 32비트 시드
  */
 function createStageSeed() {
   if (fixedSeed !== null) {

@@ -1,9 +1,16 @@
 "use strict";
 
-// Candidate generation, anomaly overrides, particles, and style transforms.
+/*
+ * 발화 생성 계층입니다.
+ * core가 선택한 요청과 화자를 받아 일반 템플릿/초단문/괴이 대사 중 하나를 만들고,
+ * 슬롯 치환 → 한국어 조사 결합 → 페르소나 말투 변형 → 중복 검사 순서로 처리합니다.
+ * 아래 클래스 재할당은 상속으로 기능을 덧붙이는 구조이며 script 로드 순서가 중요합니다.
+ */
 HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
   /**
    * 큐 요청을 처리해 화자와 후보 문장을 고르고 중복 필터를 통과한 최종 발화를 외부로 보냅니다.
+   * @param {object} originalRequest core 큐에서 꺼낸 발화 요청
+   * @param {object} options 초기 기록 여부와 필터 생략 여부
    */
   processRequest(originalRequest, options = {}) {
     const request = { ...originalRequest };
@@ -48,6 +55,9 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
 
   /**
    * 일반 템플릿 또는 강제 이상 대사 중 하나를 선택해 메타데이터가 포함된 문장 후보를 만듭니다.
+   * @param {object} viewer core가 선택한 화자 객체
+   * @param {object} request 의도와 슬롯 힌트를 포함한 발화 요청
+   * @returns {object} 화면 본문과 중복 검사 키를 함께 가진 후보
    */
   generateCandidate(viewer, request) {
     const anomalyOverride = request.forceAnomaly
@@ -89,6 +99,11 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
 
   /**
    * 채팅 폭주에 적합한 짧은 문장을 고르고 페르소나별 이모티콘과 fallback 변형을 적용합니다.
+   * @param {object} viewer 발화할 시청자
+   * @param {string} intent SHORT_LINES에서 선택할 의도
+   * @param {object} slotHints 기록에 보존할 사건 슬롯
+   * @param {boolean} fallback 모든 일반 후보가 거절된 뒤의 최종 안전망인지 여부
+   * @returns {object} short 플래그가 true인 발화 후보
    */
   generateShortCandidate(viewer, intent, slotHints = {}, fallback = false) {
     const pool = SHORT_LINES[intent] || SHORT_LINES.REACT;
@@ -119,6 +134,8 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
 
   /**
    * 이상 권한과 현재 장면 컨텍스트로 공포 대사를 선택해 일반 후보를 교체합니다.
+   * @param {object} viewer anomalous와 anomalyPermission을 가진 시청자
+   * @returns {object|null} 괴이 메타데이터가 포함된 후보 또는 생성 불가 시 null
    */
   createAnomalyOverride(viewer) {
     if (!viewer.anomalous) return null;
@@ -144,12 +161,18 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
       lastText: this.recentOutputs.at(-1) ?? null
     };
 
-    // 이상 채팅의 내용 강도는 anomalyLevel과 무관합니다.
-    // 어떤 이상도에서도 전담 유형 전체와 공용 붕괴 풀 전체를 사용합니다.
-    const candidates = [
-      ...(ANOMALY_LINES[viewer.anomalyPermission] || []),
-      ...ANOMALY_LINES.GLITCH
-    ].filter(entry => !entry.needs || entry.needs(ctx));
+    /*
+     * 전담 괴이와 GLITCH 후보를 분리한 뒤 glitchChance로 먼저 유형을 정합니다.
+     * 따라서 배열에 대사가 몇 개씩 들어 있더라도 GLITCH 비율은 후보 개수가 아니라
+     * 설정한 확률을 따릅니다. 한쪽 후보가 비어 있으면 사용 가능한 쪽으로 안전하게 대체합니다.
+     */
+    const isAvailable = entry => !entry.needs || entry.needs(ctx);
+    const permissionCandidates = (ANOMALY_LINES[viewer.anomalyPermission] || []).filter(isAvailable);
+    const glitchCandidates = ANOMALY_LINES.GLITCH.filter(isAvailable);
+    const glitchChance = Math.min(1, Math.max(0, Number(TUNING.glitchChance) || 0));
+    const useGlitch = glitchCandidates.length > 0
+      && (!permissionCandidates.length || this.random.next() < glitchChance);
+    const candidates = useGlitch ? glitchCandidates : permissionCandidates;
 
     if (!candidates.length) return null;
     const entry = this.random.pick(candidates);
@@ -181,6 +204,10 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
 
   /**
    * 요청 힌트, 장면 상태, 기본 슬롯 풀 순서로 템플릿 자리표시자의 실제 값을 결정합니다.
+   * @param {string} name topic, food, thing, day 등의 슬롯 이름
+   * @param {object} hints 현재 사건이 제공한 우선 슬롯 값
+   * @param {object} viewer 이전 선택값을 기억할 시청자
+   * @returns {string} 템플릿에 삽입하고 시청자 기억에 저장한 값
    */
   resolveSlot(name, hints, viewer) {
     const value = hints?.[name]
@@ -193,6 +220,9 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
 
   /**
    * 받침 유무를 검사해 은/는, 이/가 같은 한국어 조사를 올바르게 붙입니다.
+   * @param {string} value 조사를 붙일 단어
+   * @param {string} pair 받침형/무받침형 순서의 조사 쌍
+   * @returns {string} 받침 규칙에 맞는 조사를 붙인 값
    */
   attachParticle(value, pair) {
     const lastCharacter = String(value).at(-1);
@@ -210,6 +240,10 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
 
   /**
    * 축약·어미·이모티콘·오타 확률을 적용해 정중한 원문을 시청자 고유 채팅 말투로 바꿉니다.
+   * @param {string} input 변형 전 채팅 문장
+   * @param {object} viewer personaKey를 가진 화자
+   * @param {number} [factorOverride] 모든 변형 확률에 곱할 강제 배율
+   * @returns {string} 페르소나 말투를 적용하고 앞뒤 공백을 정리한 문장
    */
   transformStyle(input, viewer, factorOverride) {
     const style = PERSONAS[viewer.personaKey].style;

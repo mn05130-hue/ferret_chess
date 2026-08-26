@@ -1,8 +1,14 @@
 "use strict";
 
-// Title/game music and story scare audio.
+/*
+ * 타이틀·게임 배경음악과 결과 공포 효과음을 담당합니다.
+ * HTMLAudioElement의 재생 상태, range 입력, localStorage 값을 항상 동기화하고,
+ * 브라우저 자동 재생 거부는 예외로 처리해 화면 진행 자체가 막히지 않게 합니다.
+ * 정전기 효과는 별도 음원 없이 Web Audio API 노드로 매번 짧게 합성합니다.
+ */
 /**
  * 타이틀 음악의 실제 재생 여부를 버튼 클래스, aria-pressed, 라벨에 동기화합니다.
+ * @param {boolean} playing audio.play()가 성공해 현재 재생 중인지 여부
  */
 function setTitleMusicUi(playing) {
   titleMusicButton.classList.toggle("is-playing", playing);
@@ -13,6 +19,7 @@ function setTitleMusicUi(playing) {
 
 /**
  * 게임 음악의 실제 재생 여부를 버튼 클래스와 접근성 라벨에 동기화합니다.
+ * @param {boolean} playing audio.play()가 성공해 현재 재생 중인지 여부
  */
 function setGameMusicUi(playing) {
   gameMusicButton.classList.toggle("is-playing", playing);
@@ -22,6 +29,8 @@ function setGameMusicUi(playing) {
 
 /**
  * 트랙 목록에서 곡을 고르되 가능하면 현재 재생 중인 곡과 다른 항목을 선택합니다.
+ * @param {readonly string[]} tracks 선택할 수 있는 오디오 파일 경로
+ * @returns {string} 무작위로 선택한 한 트랙 경로
  */
 function chooseMusicTrack(tracks) {
   let randomValue;
@@ -37,6 +46,8 @@ function chooseMusicTrack(tracks) {
 
 /**
  * localStorage의 음량을 0~100 범위로 검증하고 잘못된 값은 기본값으로 대체합니다.
+ * @param {{storageKey: string, defaultVolume: number}} settings 저장 키와 기본 음량
+ * @returns {number} audio와 range에 적용할 검증된 0~100 값
  */
 function readStoredVolume({ storageKey, defaultVolume }) {
   try {
@@ -53,6 +64,12 @@ function readStoredVolume({ storageKey, defaultVolume }) {
 
 /**
  * range 값을 오디오 볼륨과 화면 퍼센트에 적용하고 선택적으로 저장소에 기록합니다.
+ * @param {HTMLAudioElement} audio 실제 volume을 변경할 오디오
+ * @param {HTMLInputElement} input 값을 동기화할 range 입력
+ * @param {HTMLOutputElement} output 퍼센트를 표시할 출력 요소
+ * @param {{storageKey: string}} settings 저장에 사용할 음량 설정
+ * @param {number|string} value 새 0~100 음량
+ * @param {boolean} persist localStorage에도 기록할지 여부
  */
 function applyVolume(audio, input, output, settings, value, persist = true) {
   const volume = Math.min(100, Math.max(0, Number(value)));
@@ -78,6 +95,7 @@ function initializeAudioVolumes() {
 
 /**
  * 필요하면 타이틀 곡을 선택한 뒤 브라우저 재생 정책 실패까지 안전하게 처리합니다.
+ * @returns {Promise<void>} 재생 시도와 UI 동기화가 끝날 때 완료되는 Promise
  */
 async function playTitleMusic() {
   try {
@@ -94,6 +112,7 @@ async function playTitleMusic() {
 
 /**
  * 타이틀 음악을 멈추고 선택에 따라 재생 위치도 처음으로 되돌립니다.
+ * @param {boolean} reset true이면 currentTime도 0으로 되돌림
  */
 function stopTitleMusic(reset = true) {
   titleMusic.pause();
@@ -113,6 +132,7 @@ function prepareTitleMusic() {
 
 /**
  * 필요하면 게임 곡을 선택하고 재생 성공 여부에 맞춰 버튼 상태를 갱신합니다.
+ * @returns {Promise<void>} 재생 시도와 UI 동기화가 끝날 때 완료되는 Promise
  */
 async function playGameMusic() {
   try {
@@ -129,6 +149,7 @@ async function playGameMusic() {
 
 /**
  * 게임 음악을 멈추고 선택에 따라 다음 시작을 위해 재생 위치를 초기화합니다.
+ * @param {boolean} reset true이면 currentTime도 0으로 되돌림
  */
 function stopGameMusic(reset = true) {
   gameMusic.pause();

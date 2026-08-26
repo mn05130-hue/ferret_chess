@@ -1,6 +1,11 @@
 "use strict";
 
-// Story clock, threat timer, and compact Wi-Fi connection encounters.
+/*
+ * 플레이 중 시간 제한을 담당합니다.
+ * 스토리 모드에서는 실제 경과 시간을 오후 7시~오전 2시로 환산하고, 무한 모드에서는
+ * 이상 채팅별 대응 시간을 셉니다. 별도의 방송 화면 괴이는 작은 와이파이 위젯으로만
+ * 알리며, 실제 출현 여부와 만료 여부를 구분해 재연결의 성공·오판을 판정합니다.
+ */
 /**
  * 스토리 시계 interval을 중지하고 마지막 tick 기준값을 제거합니다.
  */
@@ -11,6 +16,8 @@ function stopStoryClock() {
 
 /**
  * 실제 경과 시간을 오후 7시부터 오전 2시까지의 게임 내 시각 문자열로 변환합니다.
+ * @param {number} elapsedMs 이번 하루가 시작된 뒤 흐른 실제 밀리초
+ * @returns {string} 오전/오후와 시:분으로 구성한 게임 시각
  */
 function formatStoryTime(elapsedMs) {
   const progress = Math.min(1, Math.max(0, elapsedMs / storyDayDurationMs));
@@ -102,6 +109,7 @@ function updateThreatCountdown() {
 
 /**
  * 스테이지 상승에 따라 감소하되 최소값 이하로 내려가지 않는 제한시간을 계산합니다.
+ * @returns {number} 현재 스테이지에서 허용하는 대응 시간(밀리초)
  */
 function getStageGraceMs() {
   return Math.max(
@@ -112,6 +120,7 @@ function getStageGraceMs() {
 
 /**
  * 새 이상 시청자를 제한시간 대상으로 지정하고 HUD 타이머를 시작합니다.
+ * @param {object} viewer 이번 제한시간 안에 차단해야 하는 활성 시청자
  */
 function startThreatCountdown(viewer) {
   if (gameMode === GAME_MODES.STORY || pendingThreat || gameOver || stageReviewOpen || !viewer.active) return;
@@ -127,6 +136,8 @@ function startThreatCountdown(viewer) {
 
 /**
  * 지정된 최소·최대 범위에서 다음 괴이 출현까지의 지연을 선택합니다.
+ * @param {[number, number]} range 밀리초 단위의 최소·최대값
+ * @returns {number} 현재 스테이지 난수로 선택한 대기 시간
  */
 function getApparitionDelay([minimum, maximum]) {
   return minimum + apparitionRandom() * (maximum - minimum);
@@ -160,6 +171,7 @@ function clearStreamApparition() {
 
 /**
  * 게임 진행 상태를 확인한 뒤 초기/반복 범위에 맞춰 다음 괴이 출현을 예약합니다.
+ * @param {boolean} initial true이면 게임 시작 직후의 짧은 출현 범위를 사용함
  */
 function scheduleStreamApparition(initial = false) {
   window.clearTimeout(apparitionSpawnTimer);
@@ -177,6 +189,7 @@ function scheduleStreamApparition(initial = false) {
 
 /**
  * 별도 알림 메시지나 큰 화면 변화 없이 상단 와이파이 위젯만 약한 연결 상태로 전환합니다.
+ * @returns {boolean} 새 괴이를 실제로 시작했으면 true, 진행 불가 상태면 false
  */
 function spawnStreamApparition() {
   if (apparitionActive || gameOver || stageReviewOpen || titleScreen.hidden === false) return false;

@@ -1,3 +1,8 @@
+/*
+ * 게임 상단의 주소창, 방송 무대, 연결 위젯, HUD를 담당합니다.
+ * .collapsed는 주소창 높이, .is-weak/.is-failed는 와이파이 상태,
+ * .connection-lost는 방송 전체 오염, data-director-state는 채팅 엔진 분위기를 표현합니다.
+ */
 /* 가상 주소창은 실제 방송 페이지처럼 보이게 하며 collapsed 상태에서 높이가 줄어듭니다. */
 .browser-bar {
   z-index: 5;

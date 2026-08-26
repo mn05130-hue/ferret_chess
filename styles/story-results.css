@@ -1,3 +1,8 @@
+/*
+ * 스토리 하루 종료 전용 결과 연출입니다.
+ * .open이 검은 화면과 형상을 시작하고, .is-wrong이 오답용 정전기 효과를 허용하며,
+ * .scare-hit이 순간 충격을, .results-visible이 마지막 결과 카드 공개를 담당합니다.
+ */
 /* 스토리 하루 종료 연출은 검은 화면 → 불길한 형상 → 결과 카드 순으로 공개됩니다. */
 .story-night-overlay {
   position: absolute;

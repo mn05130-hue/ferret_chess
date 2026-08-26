@@ -1,9 +1,16 @@
 "use strict";
 
-// Duplicate filtering, utterance history, bootstrap, observation, and debug state.
+/*
+ * 기록·검증 계층입니다.
+ * generation에서 만든 후보의 중복을 검사하고 승인 발화를 화면 콜백으로 내보내며,
+ * 초기 채팅 구성과 시청자 관찰, 개발용 상태 스냅샷까지 완성합니다.
+ * 이 클래스가 다시 HorrorChatEngine 이름에 할당된 뒤 chat-engine.js가 공개 API로 내보냅니다.
+ */
 HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
   /**
    * 정확 일치, 템플릿, 시그니처, 바이그램 유사도를 검사해 후보를 거절할 이유를 반환합니다.
+   * @param {object} candidate generation이 만든 발화 후보
+   * @returns {string|null} exact/template/signature/similarity 또는 통과 시 null
    */
   findRejection(candidate) {
     if (this.recentOutputs.includes(candidate.text)) return "exact";
@@ -20,6 +27,8 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
 
   /**
    * 공백과 문장부호를 제거하고 소문자로 바꿔 표기 차이에 흔들리지 않는 비교 문자열을 만듭니다.
+   * @param {string} text 변형 전 표준 문장
+   * @returns {string} Unicode 정규화 후 공백·기호를 제거한 비교값
    */
   normalizeForSimilarity(text) {
     return text.normalize("NFKD").replace(/[\s\p{P}\p{S}]/gu, "").toLowerCase();
@@ -27,6 +36,9 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
 
   /**
    * 두 문자열의 2글자 집합으로 Jaccard 유사도를 계산합니다.
+   * @param {string} left 첫 번째 정규화 문자열
+   * @param {string} right 두 번째 정규화 문자열
+   * @returns {number} 0(완전히 다름)부터 1(같음) 사이의 유사도
    */
   jaccardBigrams(left, right) {
     const toBigrams = value => {
@@ -44,6 +56,9 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
 
   /**
    * 템플릿 ID와 정렬된 슬롯 값을 합쳐 의미가 같은 문장을 식별할 키를 만듭니다.
+   * @param {string} templateId 선택한 템플릿의 고유 ID
+   * @param {object} slots 실제 치환에 사용한 슬롯 이름과 값
+   * @returns {string} 최근 시그니처 기록과 비교할 문자열 키
    */
   signature(templateId, slots) {
     return `${templateId}:${Object.entries(slots).map(([key, value]) => `${key}=${value}`).join("|")}`;
@@ -53,6 +68,10 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
 
   /**
    * 승인된 발화를 최근 기록·시청자 기록·통계에 저장하고 외부 onMessage 콜백을 호출합니다.
+   * @param {object} viewer 발화를 만든 시청자
+   * @param {object} request 원래 발화 의도와 예약 정보
+   * @param {object} utterance 필터를 통과한 최종 후보
+   * @param {object} options 초기 이력 여부와 스크롤 동작
    */
   recordUtterance(viewer, request, utterance, options) {
     viewer.lastSpokeAt = this.simTime;
@@ -125,6 +144,7 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
 
   /**
    * 게임 UI가 특정 시청자 기록을 열 때 엔진 관찰 통계와 마지막 확인 시각을 갱신합니다.
+   * @param {string} viewerId 기록 모달에서 확인한 시청자 ID
    */
   observeViewer(viewerId) {
     const viewer = this.viewers.find(candidate => candidate.id === viewerId && candidate.active);
@@ -138,6 +158,7 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
 
   /**
    * 현재 디렉터·큐·사건·시청자·필터 통계를 변경 불가능한 진단용 사본으로 반환합니다.
+   * @returns {object} 개발자 도구에서 검사할 수 있는 현재 엔진 상태
    */
   getDebugSnapshot() {
     const outputs = this.debug.outputCount || 1;
@@ -152,6 +173,7 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
         arrivalIntervalMs: [...TUNING.anomalyArrivalIntervalMs],
         nextArrivalAt: this.nextAnomalyArrivalAt,
         baseIntervalMs: [...TUNING.anomalyIntervalMs],
+        glitchChance: TUNING.glitchChance,
         nextAt: this.nextAnomalyAt
       },
       style: {

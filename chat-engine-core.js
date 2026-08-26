@@ -1,11 +1,18 @@
 "use strict";
 
-// Scheduling, director state, speaker selection, and event intake.
+/*
+ * 채팅 엔진의 실행 골격입니다.
+ * 일정한 tick마다 시뮬레이션 시간을 전진시키고, 발화 요청 큐 → 분위기 상태 →
+ * 화자 선택 순서까지 담당합니다. 실제 문장 생성은 generation 확장 클래스가,
+ * 기록·중복 검사·공개 진단값은 diagnostics 확장 클래스가 이어서 담당합니다.
+ */
 class HorrorChatEngine {
   /**
    * 외부 콜백·시청자·시드·난이도를 저장하고 큐, 디렉터, 중복 검사 통계를 초기화합니다.
+   * @param {object} options 시청자 목록, 콜백, seed, 난이도, 합성 사건 설정
    */
   constructor(options) {
+    // 외부 입력: 앱이 만든 시청자 배열, 출력/상태 콜백, 재현용 seed와 난이도입니다.
     this.viewers = options.viewers;
     this.onMessage = options.onMessage;
     this.onStateChange = options.onStateChange || (() => {});
@@ -18,12 +25,14 @@ class HorrorChatEngine {
       initiallyFocused: typeof document === "undefined" ? true : document.hasFocus()
     };
 
+    // 디렉터 상태: 실제 시간이 아니라 tickMs 단위로 전진하는 엔진 내부 시간입니다.
     this.simTime = 0;
     this.tension = 0;
     this.state = "AMBIENT";
     this.lastEventAt = 0;
     this.burstUntil = 0;
     this.aftermathUntil = 0;
+    // 예약 상태: 큐와 중복 예약 플래그를 함께 관리해 같은 종류가 두 번 쌓이지 않게 합니다.
     this.queue = [];
     this.ambientQueued = false;
     this.anomalyArrivalQueued = false;
@@ -31,16 +40,20 @@ class HorrorChatEngine {
     this.anomalyQueued = false;
     this.nextAnomalyAt = null;
     this.futureEvent = null;
+    // 수명 주기 상태: interval ID, 일시정지 여부, 실행 여부입니다.
     this.timer = null;
     this.paused = false;
     this.running = false;
+    // 최근 발화 기록: 연속 화자와 같은 의미의 문장이 반복되는 것을 방지합니다.
     this.lastSpeakerId = null;
     this.intentLastAt = new Map();
     this.recentOutputs = [];
     this.recentTemplates = [];
     this.recentSignatures = [];
     this.recentSemanticMessages = [];
+    // 템플릿 슬롯의 현재 장면 기본값이며 emitEvent가 새 정보로 갱신합니다.
     this.scene = { topic: "어제 얘기", food: "치킨", thing: "마이크", day: "어제" };
+    // 개발용 통계는 게임 규칙에 영향을 주지 않고 getDebugSnapshot에서만 공개합니다.
     this.debug = {
       speakerSelections: [],
       filterRejects: { exact: 0, template: 0, signature: 0, similarity: 0 },
@@ -104,6 +117,7 @@ class HorrorChatEngine {
 
   /**
    * 탭 비활성화나 모달 표시 중 발화 생성을 일시정지하거나 다시 시작합니다.
+   * @param {boolean} paused true이면 tick의 시간 전진과 발화를 멈춤
    */
   setPaused(paused) {
     this.paused = Boolean(paused);
@@ -177,6 +191,7 @@ class HorrorChatEngine {
 
   /**
    * 새 발화 요청을 시간순 큐에 추가하고 디버그용 최대 큐 크기를 기록합니다.
+   * @param {object} request intent, scheduledAt, source 등을 가진 발화 요청
    */
   enqueue(request) {
     this.queue.push({ priority: 1, threadId: null, ...request });
@@ -185,6 +200,7 @@ class HorrorChatEngine {
 
   /**
    * 현재 디렉터 상태에 적합한 일반 발화 요청을 지정 지연 뒤 큐에 넣습니다.
+   * @param {number} [delay] 생략하면 현재 상태의 interval 범위에서 선택하는 지연
    */
   enqueueAmbient(delay) {
     if (this.ambientQueued) return;
@@ -201,7 +217,8 @@ class HorrorChatEngine {
   }
 
   /**
-   * 아직 채팅창에 나타나지 않은 이상 시청자 한 명의 첫 발화를 5~8초 뒤에 예약합니다.
+   * 아직 채팅창에 나타나지 않은 이상 시청자 한 명의 첫 발화를 설정 범위 뒤에 예약합니다.
+   * @param {number} [delay] 테스트나 초기화에서 강제로 지정할 지연
    */
   enqueueAnomalyArrival(delay) {
     if (this.anomalyArrivalQueued) return;
@@ -224,8 +241,9 @@ class HorrorChatEngine {
   }
 
   /**
-   * 활성 이상 시청자의 전용 발화를 예약합니다. 1일차는 3~7초 범위이며
+   * 활성 이상 시청자의 전용 발화를 예약합니다. 1일차는 3~5초 범위이며
    * 진행 난이도와 anomalyLevel이 오를수록 간격만 짧아집니다.
+   * @param {number} [delay] 테스트에서 기본 간격 계산을 대체할 지연
    */
   enqueueAnomaly(delay) {
     if (this.anomalyQueued) return;
@@ -260,6 +278,8 @@ class HorrorChatEngine {
 
   /**
    * 상태별 의도 가중치와 최근 사용 쿨다운을 결합해 다음 발화 의도를 선택합니다.
+   * @param {string} state 현재 디렉터 상태
+   * @returns {string} CHAT, REACT 등 다음 발화 의도
    */
   chooseIntent(state) {
     const weights = TUNING.stateIntents[state];
@@ -273,6 +293,9 @@ class HorrorChatEngine {
 
   /**
    * 외부 또는 합성 방송 사건을 장면 상태에 반영하고 여러 반응 채팅을 예약합니다.
+   * @param {string} type SYNTHETIC_EVENTS와 연결할 사건 종류
+   * @param {object} slots 템플릿 자리표시자를 덮어쓸 장면 값
+   * @param {number} [intensityOverride] 기본값 대신 적용할 0~1 긴장 강도
    */
   emitEvent(type, slots = {}, intensityOverride) {
     const preset = SYNTHETIC_EVENTS.find(event => event.type === type);
@@ -329,10 +352,13 @@ class HorrorChatEngine {
 
   /**
    * 활성 시청자의 페르소나 적합도·침묵 시간·쿨다운·긴장 반응을 계산해 화자를 고릅니다.
+   * @param {string} intent 이번 발화 요청의 의도
+   * @param {string} [forcedSpeakerId] 이상 예약처럼 화자를 고정할 때의 ID
+   * @returns {object|null|undefined} 선택된 활성 시청자 또는 후보가 없을 때 빈 값
    */
   chooseSpeaker(intent, forcedSpeakerId) {
     if (forcedSpeakerId) return this.viewers.find(viewer => viewer.id === forcedSpeakerId && viewer.active);
-    // 이상 시청자는 전용 3~7초 예약에서만 등장해야 첫 발화가 확실한 이상 채팅이 됩니다.
+    // 이상 시청자는 전용 예약에서만 등장해야 첫 발화가 확실한 이상 채팅이 됩니다.
     const active = this.viewers.filter(viewer => viewer.active && !viewer.anomalous);
     if (!active.length) return null;
     const alternatives = active.filter(viewer => viewer.id !== this.lastSpeakerId);

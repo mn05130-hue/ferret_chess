@@ -1,6 +1,11 @@
 "use strict";
 
-// Stage resolution, story-night verdicts, and transition effects.
+/*
+ * 판정과 결과 화면 전환을 담당합니다.
+ * 무한 모드는 이상 채팅을 처리하는 즉시 한 스테이지 결과를 공개하지만, 스토리 모드는
+ * 오전 2시까지 선택을 숨긴 뒤 정상 오판·이상 미처리·연결 실패를 한꺼번에 집계합니다.
+ * 결과 카드는 검은 화면 대기 후 공개되며 오답일 때만 정전기 공포 연출을 추가합니다.
+ */
 /**
  * 일반 스테이지/최종 결과의 예약 공개를 취소하고 대기 클래스를 제거합니다.
  */
@@ -13,6 +18,10 @@ function clearStandardResultReveal() {
 
 /**
  * 어두운 결과 배경을 먼저 연 뒤 4초가 지나면 카드와 조작 버튼을 공개합니다.
+ * @param {HTMLElement} overlay open/results-visible 상태를 받을 오버레이
+ * @param {HTMLElement} card 지연 공개 중 접근성 트리에서도 숨길 결과 카드
+ * @param {HTMLButtonElement[]} controls 공개 전까지 비활성화할 조작 버튼
+ * @param {HTMLElement} focusTarget 공개 완료 후 키보드 초점을 옮길 요소
  */
 function beginStandardResultReveal(overlay, card, controls, focusTarget) {
   clearStandardResultReveal();
@@ -29,6 +38,7 @@ function beginStandardResultReveal(overlay, card, controls, focusTarget) {
 
 /**
  * 지정한 간섭 클래스를 재시작해 오답·침투 상황의 전 화면 효과를 재생합니다.
+ * @param {"mosaic"|"color"} type 정상 시청자 오판 또는 이상 신호 침투 효과 종류
  */
 function triggerScreenInterference(type) {
   window.clearTimeout(interferenceTimer);
@@ -42,6 +52,7 @@ function triggerScreenInterference(type) {
 
 /**
  * 무한 모드 한 스테이지를 정지하고 성공/실패 요약을 결과 카드에 채웁니다.
+ * @param {{success: boolean, title: string, copy: string}} result 카드에 표시할 판정
  */
 function finishStage({ success, title, copy }) {
   if (stageReviewOpen || gameOver) return;
@@ -98,6 +109,8 @@ function expireThreat() {
 
 /**
  * 스토리 하루 결과의 세부 판정 한 줄을 상태 클래스와 함께 추가합니다.
+ * @param {string} text 이상 차단·놓침·오판 등의 상세 문장
+ * @param {string} className correct 또는 danger 같은 표시 클래스
  */
 function appendStoryResultDetail(text, className = "") {
   const item = document.createElement("li");
@@ -122,6 +135,7 @@ function resetStoryNightReveal() {
 
 /**
  * 검은 화면과 불길한 형상을 먼저 보여 준 뒤 오답 여부에 따라 결과 공개 효과를 분기합니다.
+ * @param {boolean} hasWrongAnswer 체력 피해를 일으킨 오답 또는 미처리가 있었는지 여부
  */
 function beginStoryNightReveal(hasWrongAnswer) {
   resetStoryNightReveal();

@@ -4,8 +4,18 @@
  * 정상 시청자의 대사 재료와 방송 이벤트를 모은 데이터 파일입니다.
  * 템플릿 ID와 슬롯은 중복 검사에도 쓰이므로 기존 ID를 임의로 재사용하지 않습니다.
  */
-// Templates use [templateId, formal text, casual chat text].
+/*
+ * 각 템플릿은 [templateId, formalText, casualText] 순서로 구성됩니다.
+ * - templateId: 최근 사용 기록과 중복 검사를 위한 고유 식별자
+ * - formalText: 문법을 비교적 온전히 유지하는 기본 문장
+ * - casualText: 인터넷 방송 채팅에 맞게 짧게 줄인 문장
+ *
+ * 중괄호로 표시한 슬롯은 SLOT_POOLS 또는 방송 사건의 slots 값으로 치환됩니다.
+ * 어떤 의도를 사용할지는 현재 상태의 stateIntents와 시청자 성격의 fit을
+ * 함께 계산해 정합니다.
+ */
 const TEMPLATES = Object.freeze({
+  // GREET: 새로 들어오거나 돌아온 시청자의 인사.
   GREET: [
     ["greet-hi",    "안녕하십니까, 오늘도 잘 부탁드립니다.",   "안녕"],
     ["greet-late",  "조금 늦게 들어왔습니다.",                 "늦게 들어왔다"],
@@ -13,6 +23,7 @@ const TEMPLATES = Object.freeze({
     ["greet-first", "오늘 처음 보러 왔습니다.",                "오늘 처음 왔어"],
     ["greet-work",  "퇴근하고 바로 들어왔습니다.",             "퇴근하고 바로 왔다"]
   ],
+  // CHAT: 별도 사건이 없을 때 채팅 흐름을 이어 주는 일반 잡담.
   CHAT: [
     ["chat-today",   "오늘 방송 분위기가 좋습니다.",           "오늘 분위기 좋다"],
     ["chat-topic",   "{topic} 계속 듣고 싶습니다.",            "{topic} 더 해줘"],
@@ -21,6 +32,7 @@ const TEMPLATES = Object.freeze({
     ["chat-mood",    "이런 잡담 방송이 제일 편합니다.",        "이런 잡담이 제일 편해"],
     ["chat-work",    "일하면서 틀어 놓고 있습니다.",           "일하면서 틀어놨어"]
   ],
+  // REACT: 방송에서 막 일어난 사건에 대한 즉각적인 반응.
   REACT: [
     ["react-what",    "방금 그 이야기가 정말 놀랍습니다.",     "방금 그거 놀랍다"],
     ["react-empathy", "그 부분은 정말 공감이 됩니다.",         "그건 진짜 공감된다"],
@@ -29,6 +41,7 @@ const TEMPLATES = Object.freeze({
     ["react-real",    "정말입니까?",                          "진짜야?"],
     ["react-shock",   "그 이야기는 조금 충격적입니다.",         "그거 좀 충격이다"]
   ],
+  // LAUGH: 재미있는 장면에서 빠르게 이어지는 웃음 반응.
   LAUGH: [
     ["laugh-hard",  "지금 크게 웃었습니다.",                  "방금 크게 웃었다"],
     ["laugh-clip",  "지금 부분은 편집해야 합니다.",            "지금 거 편집각"],
@@ -37,6 +50,7 @@ const TEMPLATES = Object.freeze({
     ["laugh-sound", "웃음소리가 더 웃깁니다.",                 "웃음소리가 더 웃겨"],
     ["laugh-out",   "옆방에 들릴 정도로 웃었습니다.",          "옆방까지 들리게 웃었다"]
   ],
+  // TEASE: 스트리머의 말이나 행동을 가볍게 놀리는 반응.
   TEASE: [
     ["tease-old",   "그 이야기는 저번에도 하셨습니다.",        "그거 저번에도 했어"],
     ["tease-lie",   "그 말은 믿기가 조금 어렵습니다.",         "그 말 못 믿겠는데"],
@@ -45,6 +59,7 @@ const TEMPLATES = Object.freeze({
     ["tease-late",  "오늘도 늦게 시작했습니다.",               "오늘도 늦게 시작함"],
     ["tease-food",  "{food} 이야기만 계속 하고 있습니다.",     "{food} 얘기만 계속 한다"]
   ],
+  // QUESTION: 스트리머에게 답변이나 다음 행동을 묻는 문장.
   QUESTION: [
     ["question-plan",  "오늘은 몇 시까지 방송합니까?",         "오늘 몇 시까지 해?"],
     ["question-topic", "{topic} 어떻게 됐습니까?",             "{topic} 어떻게 됐어?"],
@@ -53,6 +68,7 @@ const TEMPLATES = Object.freeze({
     ["question-thing", "{thing} 새로 바꾸셨습니까?",           "{thing} 새로 바꿨어?"],
     ["question-sleep", "어제는 몇 시에 주무셨습니까?",         "어제 몇 시에 잤어?"]
   ],
+  // AGREE: 스트리머 또는 직전 채팅의 의견에 동의하는 반응.
   AGREE: [
     ["agree-yes",   "그 말이 정말 맞습니다.",                 "그 말 맞아"],
     ["agree-me",    "저도 완전히 같은 생각입니다.",            "나도 완전 같은 생각이야"],
@@ -60,6 +76,7 @@ const TEMPLATES = Object.freeze({
     ["agree-know",  "그 기분을 정말 잘 압니다.",               "그 기분 잘 안다"],
     ["agree-right", "역시 그렇게 하는 것이 맞습니다.",         "역시 그게 맞아"]
   ],
+  // NAG: 휴식이나 플레이 방식을 조언하고 재촉하는 문장.
   NAG: [
     ["nag-water",   "물을 조금 마시는 것이 좋겠습니다.",       "물 좀 마셔"],
     ["nag-posture", "자세가 조금 무너졌습니다.",               "자세 무너졌다"],
@@ -68,6 +85,7 @@ const TEMPLATES = Object.freeze({
     ["nag-thing",   "{thing} 위치를 조금 조정해야 합니다.",    "{thing} 위치 좀 고쳐"],
     ["nag-meal",    "끼니는 거르지 않는 것이 좋겠습니다.",     "끼니 거르지 마"]
   ],
+  // STORY: 실제 시청자의 일상처럼 보이게 하는 짧은 경험담.
   STORY: [
     ["story-day",     "오늘 하루가 정말 길었습니다.",           "오늘 하루 길었다"],
     ["story-work",    "회사에서 있었던 일이 아직도 생각납니다.", "회사 일 아직 생각난다"],
@@ -75,6 +93,7 @@ const TEMPLATES = Object.freeze({
     ["story-food",    "점심에 {food} 먹었습니다.",              "점심에 {food} 먹었어"],
     ["story-weekend", "이번 주말에는 아무것도 하지 않았습니다.", "주말에 아무것도 안 했어"]
   ],
+  // FOOD: 긴장된 흐름을 환기하는 음식과 야식 관련 잡담.
   FOOD: [
     ["food-want",  "{food} 먹고 싶어졌습니다.",                  "{food} 먹고 싶다"],
     ["food-order", "방금 {food} 시켰습니다.",                    "방금 {food} 시켰어"],
@@ -82,6 +101,7 @@ const TEMPLATES = Object.freeze({
     ["food-ask",   "{food} 좋아하십니까?",                       "{food} 좋아해?"],
     ["food-eat",   "지금 {food} 먹으면서 보고 있습니다.",         "지금 {food} 먹으면서 봐"]
   ],
+  // RECALL: 이전 방송이나 조금 전 장면을 다시 언급하는 반응.
   RECALL: [
     ["recall-day",     "{day} 방송이 정말 재미있었습니다.",      "{day} 방송 재밌었어"],
     ["recall-topic",   "{day}에도 {topic} 이야기를 하셨습니다.", "{day}에도 {topic} 얘기했어"],
@@ -89,6 +109,7 @@ const TEMPLATES = Object.freeze({
     ["recall-miss",    "{day} 방송은 놓쳤습니다.",               "{day} 방송 놓쳤어"],
     ["recall-promise", "{day}에 하신 약속이 있었습니다.",        "{day}에 약속했잖아"]
   ],
+  // COMPLAIN: 방송 품질이나 진행 상황에 대한 가벼운 불평.
   COMPLAIN: [
     ["complain-mic",   "마이크 소리가 조금 작습니다.",         "마이크 소리 좀 작아"],
     ["complain-light", "화면이 조금 어둡습니다.",              "화면 좀 어둡다"],
@@ -98,6 +119,7 @@ const TEMPLATES = Object.freeze({
   ],
   /* SUSPICION은 정상 시청자가 "채팅이 좀 이상하다"고 느끼는 지점입니다.
      가중치를 낮게 유지하세요. 자주 나오면 힌트가 아니라 소음이 됩니다. */
+  // 등장 빈도가 낮을 때만 공포의 전조가 되는 정상 시청자의 의심.
   SUSPICION: [
     ["suspicion-chat",   "채팅에 조금 이상한 사람이 있는 것 같습니다.", "채팅에 이상한 사람 있는 거 같은데"],
     ["suspicion-repeat", "방금 그 채팅을 아까도 본 것 같습니다.",      "방금 그 채팅 아까도 봤는데"],
@@ -110,7 +132,11 @@ const TEMPLATES = Object.freeze({
 /* ==========================================================================
  * 4. 초단문 풀 — 전체 발화의 절반 이상이 여기서 나갑니다.
  * ======================================================================== */
-// 빠른 채팅 폭주에는 긴 템플릿 대신 의도별 초단문 풀을 사용합니다.
+/*
+ * 빠른 채팅 폭주에는 긴 템플릿 대신 의도별 초단문 풀을 사용합니다.
+ * BURST 상태이거나 성격의 shortChance 판정에 성공했을 때 선택하며,
+ * 키 이름은 TEMPLATES 및 TUNING.stateIntents의 의도 이름과 같습니다.
+ */
 const SHORT_LINES = Object.freeze({
   GREET: ["ㅎㅇ", "안녕", "왔다", "ㅎㅇㅎㅇ", "출첵", "지금 왔음",
           "안녕하세요", "오늘도 왔다", "이제 봄", "늦게 왔다"],
@@ -142,9 +168,13 @@ const SHORT_LINES = Object.freeze({
 
 // {topic}, {food} 같은 템플릿 슬롯의 기본 후보입니다.
 const SLOT_POOLS = Object.freeze({
+  // topic: 방송에서 이야기하고 있다고 가정할 화제.
   topic: ["어제 얘기", "회사 얘기", "그 드라마", "새로 산 거", "여행 얘기", "그 영화"],
+  // food: 음식 문장의 자리표시자를 채울 야식·간식 이름.
   food:  ["치킨", "떡볶이", "마라탕", "라면", "곱창", "피자", "김밥"],
+  // thing: 시청자가 보고 있거나 문제가 생겼다고 말할 방송 장비.
   thing: ["마이크", "조명", "의자", "카메라", "브금", "키보드"],
+  // day: 경험담의 시점을 자연스럽게 바꾸는 상대 날짜.
   day:   ["어제", "지난주", "저번 방송", "지지난주", "저번에"]
 });
 
@@ -154,7 +184,13 @@ const SLOT_POOLS = Object.freeze({
  *    omen은 예언형 이상 시청자가 미리 말해버릴 문구입니다.
  *    게임 쪽에서 emitEvent(type, slots, intensity)로 직접 호출해도 됩니다.
  * ======================================================================== */
-// 실제 방송 행동이 없어도 엔진이 주기적으로 반응할 수 있게 만드는 가상 사건입니다.
+/*
+ * 실제 방송 행동이 없어도 엔진이 주기적으로 반응할 수 있게 만드는 가상 사건입니다.
+ * - type: 사건 종류. 생성기가 반응 의도를 정할 때 사용하는 분류값
+ * - intensity: 사건이 엔진의 긴장도에 더하는 상대 강도
+ * - omen: 예언형 괴이 채팅이 사건보다 먼저 말할 수 있는 전조
+ * - slots: 사건에 반응하는 템플릿의 자리표시자를 우선 치환할 값
+ */
 const SYNTHETIC_EVENTS = Object.freeze([
   { type: "STORY_STARTED",  intensity: .35, omen: "새로운 이야기가 시작될 것입니다.",
     slots: { topic: "어제 얘기" } },

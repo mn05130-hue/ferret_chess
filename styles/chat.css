@@ -1,3 +1,9 @@
+/*
+ * 채팅 목록과 입력 조작부를 담당합니다.
+ * JavaScript가 메시지에 .anomaly-message, .ciphered-message, .corrupted-message,
+ * .blinded-message를 붙여 판정·난독화·연결 오염·강퇴 상태를 구분합니다.
+ * 입력 폼의 .has-text와 패널의 hidden 속성도 이 파일의 시각 상태 스위치입니다.
+ */
 /* 메시지 영역만 내부 스크롤하며, 새 메시지를 놓친 경우 하단 이동 버튼을 띄웁니다. */
 .message-region {
   position: relative;

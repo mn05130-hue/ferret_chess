@@ -1,9 +1,15 @@
-/* 공통 모션 정의: 채팅 진입, 글자 흔들림, 음악 파형, 위협 및 신호 간섭을 담당합니다. */
+/*
+ * 여러 화면에서 공유하는 키프레임 모음입니다.
+ * 실제 적용 대상과 재생 조건은 각 기능 CSS의 animation 선언 및 JavaScript 상태 클래스가
+ * 결정하며, 여기서는 시작·중간·종료 프레임만 정의합니다.
+ */
+/* 새 채팅을 아래에서 짧게 올려 자연스럽게 목록에 합류시킵니다. */
 @keyframes message-in {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* 난독화된 괴이 글자를 대부분 정지시키고 드물게 1px만 흔듭니다. */
 @keyframes corrupted-glyph-jitter {
   0%, 88%, 100% { transform: translate(0); }
   91% { transform: translate(1px, 0); }
@@ -11,6 +17,7 @@
   97% { transform: translate(0, -1px); }
 }
 
+/* 연결이 끊기는 순간 채팅 영역 전체를 짧게 좌우로 충돌시킵니다. */
 @keyframes corrupted-region-hit {
   0%, 100% { transform: translate(0); filter: none; }
   25% { transform: translate(-2px, 1px); filter: contrast(1.12); }
@@ -18,10 +25,12 @@
   75% { transform: translate(-1px, -1px); filter: contrast(1.08); }
 }
 
+/* 입력 안내용 가상 커서를 절반 주기로 숨겨 점멸시킵니다. */
 @keyframes caret-blink {
   50% { opacity: 0; }
 }
 
+/* 정상 시청자 오판 시 앱을 빠르게 좌우로 흔들어 피해를 전달합니다. */
 @keyframes wrong-kick {
   20% { translate: -5px 0; filter: saturate(1.5); }
   40% { translate: 5px 0; }
@@ -29,34 +38,41 @@
   80% { translate: 3px 0; }
 }
 
+/* 타이틀 배경을 천천히 확대·증감해 정지 이미지의 미세한 움직임을 만듭니다. */
 @keyframes title-breathe {
   from { scale: 1.01; filter: brightness(.88); }
   to { scale: 1.055; filter: brightness(1); }
 }
 
+/* 타이틀 메뉴 카드를 아래에서 서서히 등장시킵니다. */
 @keyframes title-content-in {
   from { opacity: 0; translate: 0 16px; }
   to { opacity: 1; translate: 0 0; }
 }
 
+/* LIVE 점과 경고 점의 밝기를 두 단계로 반복합니다. */
 @keyframes live-pulse {
   50% { opacity: .38; }
 }
 
+/* 음악 재생 중 스피커 파형을 밝고 어둡게 왕복시킵니다. */
 @keyframes music-wave {
   from { opacity: .45; }
   to { opacity: 1; }
 }
 
+/* 약한 연결 위젯의 주황색 외곽광을 서서히 키웁니다. */
 @keyframes connection-widget-weak {
   from { box-shadow: 0 7px 18px #0009, 0 0 3px #f3a93a2e; }
   to { box-shadow: 0 7px 18px #0009, 0 0 13px #f3a93a59; }
 }
 
+/* 연결 없음 위젯의 불투명도와 붉은 테두리를 점멸시킵니다. */
 @keyframes connection-widget-failed {
   50% { opacity: .72; border-color: #5f171f; }
 }
 
+/* 정상 상태에서 재연결한 오판을 작은 좌우 흔들림으로 알립니다. */
 @keyframes connection-widget-wrong {
   20% { translate: -4px 0; }
   40% { translate: 4px 0; }
@@ -64,10 +80,12 @@
   80% { translate: 2px 0; }
 }
 
+/* 무한 모드 대응 제한시간의 붉은 테두리를 맥동시킵니다. */
 @keyframes threat-pulse {
   50% { border-color: #7b232d; box-shadow: 0 0 5px #e3263922; }
 }
 
+/* 정상 시청자 강퇴 때 불규칙 모자이크가 번쩍인 뒤 완전히 사라집니다. */
 @keyframes mosaic-interference {
   0% { opacity: 0; background-position: 0 0; }
   14% { opacity: .88; }
@@ -77,6 +95,7 @@
   100% { opacity: 0; background-position: 8px -9px; }
 }
 
+/* 이상 신호 침투 때 색 분리 레이어를 좌우로 어긋나게 합니다. */
 @keyframes color-interference {
   0% { opacity: 0; translate: 0; }
   18% { opacity: .95; translate: -4px 0; }
@@ -85,12 +104,14 @@
   100% { opacity: 0; translate: 0; }
 }
 
+/* 방송 노이즈 레이어를 매 프레임 다른 방향으로 이동시킵니다. */
 @keyframes signal-noise {
   0% { translate: -3px 0; }
   50% { translate: 4px 1px; }
   100% { translate: -1px -1px; }
 }
 
+/* 제한시간 경고 표시를 중심축 주변에서 짧게 튀게 합니다. */
 @keyframes signal-jump {
   0% { translate: calc(-50% - 2px) 0; }
   50% { translate: calc(-50% + 3px) -1px; }

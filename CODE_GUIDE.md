@@ -658,6 +658,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 이상 시청자 문장 | `chat-engine-anomalies.js` |
 | 새 이상 시청자 등장 주기 | `chat-engine-config.js`의 `anomalyArrivalIntervalMs` |
 | 등장 후 이상 채팅 주기 | `chat-engine-config.js`의 `anomalyIntervalMs`, `anomalyLevelFrequencyStep`, `minimumAnomalyIntervalMs` |
+| 이상 채팅의 GLITCH 비율 | `chat-engine-config.js`의 `glitchChance` (`0`은 없음, `1`은 항상 GLITCH) |
 | 이상 채팅 표시 유형 | `app-chat.js`의 `getAnomalyPresentation()` 및 `createMessage()`의 판별용 `.anomaly-*`, `.ciphered-message` 클래스 |
 | 깨진 문자 재료 | `app-config.js`의 `UNKNOWN_CHAT_TOKENS` |
 | 채팅 속도/중복 기준 | `chat-engine-config.js`의 `TUNING` |

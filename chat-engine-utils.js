@@ -1,9 +1,16 @@
 "use strict";
 
-// Deterministic text helpers and seeded random number generation.
+/*
+ * 채팅 엔진 공통 유틸리티입니다.
+ * chat-engine-config/anomalies에 선언된 한글 자모 표를 사용하며, 같은 seed에서
+ * 같은 시청자·대사·시간 순서를 재현할 수 있도록 모든 난수 선택을 한곳에 모읍니다.
+ * 이 파일은 core보다 먼저 로드되어 SeededRandom을 전역 lexical binding으로 제공합니다.
+ */
 // "아" → "ㅇㅏ"처럼 첫 글자를 자모로 흘리는 오타를 만듭니다.
 /**
  * 받침 없는 첫 한글 음절을 초성·중성으로 풀어 실제 채팅에서 보이는 자모 오타를 만듭니다.
+ * @param {string} text 변형할 채팅 문자열
+ * @returns {string} 변형 조건이 맞으면 첫 음절만 분해한 문자열
  */
 function spillFirstSyllable(text) {
   if (!text) return text;
@@ -21,6 +28,7 @@ function spillFirstSyllable(text) {
 class SeededRandom {
   /**
    * 0도 유효한 입력으로 받아 내부 32비트 난수 상태를 초기화합니다.
+   * @param {number} seed 같은 생성 순서를 재현할 초기값
    */
   constructor(seed) {
     this.state = (Number(seed) >>> 0) || 0x6d2b79f5;
@@ -28,6 +36,7 @@ class SeededRandom {
 
   /**
    * Mulberry32 계열 연산으로 0 이상 1 미만의 다음 결정론적 난수를 반환합니다.
+   * @returns {number} 0 이상 1 미만의 실수
    */
   next() {
     this.state += 0x6d2b79f5;
@@ -39,6 +48,9 @@ class SeededRandom {
 
   /**
    * 두 경계 사이의 실수 난수를 반환해 시간 간격과 확률 선택에 사용합니다.
+   * @param {number} min 포함되는 최소 경계
+   * @param {number} max 포함되지 않는 최대 경계
+   * @returns {number} min 이상 max 미만의 실수
    */
   range(min, max) {
     return min + this.next() * (max - min);
@@ -46,6 +58,9 @@ class SeededRandom {
 
   /**
    * 배열에서 난수 위치의 항목 하나를 반환합니다.
+   * @template T
+   * @param {T[]} items 비어 있지 않은 후보 배열
+   * @returns {T} 선택된 항목
    */
   pick(items) {
     return items[Math.floor(this.next() * items.length)];
@@ -53,6 +68,9 @@ class SeededRandom {
 
   /**
    * 입력 배열을 수정하지 않고 결정론적인 순서로 섞은 사본을 반환합니다.
+   * @template T
+   * @param {T[]} items 원본 순서를 보존할 배열
+   * @returns {T[]} 같은 항목을 섞어 담은 새 배열
    */
   shuffle(items) {
     const output = [...items];
@@ -65,6 +83,9 @@ class SeededRandom {
 
   /**
    * 가중치 합에서 난수 커서를 차감해 확률에 비례하는 항목을 선택합니다.
+   * @template T
+   * @param {Array<{value: T, weight: number}>} entries 값과 0 이상의 상대 가중치
+   * @returns {T|undefined} 선택값 또는 빈 후보일 때 undefined
    */
   weighted(entries) {
     const total = entries.reduce((sum, entry) => sum + Math.max(0, entry.weight), 0);

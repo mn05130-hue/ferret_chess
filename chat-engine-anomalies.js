@@ -4,7 +4,19 @@
  * 이상 시청자만 접근할 수 있는 공포 대사와 표기 변형 자원입니다.
  * 정상 대사 데이터와 분리해 일반 시청자에게 공포 문장이 섞이는 실수를 방지합니다.
  */
-// Anomaly entries may read event timing, clocks, nicknames, and recent chat.
+/*
+ * 괴이 대사 항목의 공통 필드는 다음과 같습니다.
+ * - id: 최근 사용 기록과 중복 검사를 위한 고유 식별자
+ * - level: 문장이 등장할 수 있는 최소 괴이 단계
+ * - mode: 후처리 방식. casual/formal은 말투를 다듬고 raw는 훼손을 보존함
+ * - needs(context): 필요한 문맥이 준비됐는지 확인하는 선택 조건
+ * - make(context): 현재 문맥으로 화면에 표시할 문자열을 만드는 함수
+ * - bypass: true이면 의도적인 반복을 살리기 위해 일반 중복 필터를 건너뜀
+ *
+ * context에는 남은 시간(seconds), 경과량(elapsed), 전조(omen), 게임 시계
+ * (nowClock/clock), 날짜(year/day), 최근 채팅(lastText), 다른 닉네임
+ * (otherNick), 플레이어 닉네임(nickname)이 필요한 문장에만 전달됩니다.
+ */
 const ANOMALY_LINES = Object.freeze({
 
   /* ---- 예언형 : 아직 일어나지 않은 방송 이벤트를 읽습니다 ---- */
@@ -14,7 +26,7 @@ const ANOMALY_LINES = Object.freeze({
     { id: "pro-hint",   level: 2, mode: "casual",
       make: () => `지난 여름의 기억이 자꾸 기억나기억나기억나기억나` },
     { id: "pro-count",  level: 2, mode: "casual", needs: c => c.seconds != null,
-      make: c => `지금부터 ${c.seconds}개의 기억나기억나들이 올거야` },
+      make: c => `지금부터 ${c.seconds}개의 눈이 널 주시할거야` },
     { id: "pro-omen",   level: 3, mode: "formal", needs: c => c.omen != null,
       make: c => `${c.seconds}초 뒤에 그들이 온다. ${c.omen}` },
     { id: "pro-seen",   level: 3, mode: "formal", needs: c => c.omen != null,
@@ -22,7 +34,7 @@ const ANOMALY_LINES = Object.freeze({
     { id: "pro-tick",   level: 3, mode: "raw", needs: c => c.seconds != null && c.seconds >= 3,
       make: c => `${c.seconds}... ${c.seconds - 1}... ${c.seconds - 2}...` },
     { id: "pro-know",   level: 4, mode: "formal",
-      make: () => `이 다음 장면을 저는 알고 있습니다. 당신도 곧 알게 됩니다. 알고싶진 않겠지만...` },
+      make: () => `이 다음 장면을 저는 알고 있습니다. 당신도 곧 알게 됩니다. 알고싶진 않을거야.` },
     { id: "pro-repeat", level: 4, mode: "raw", needs: c => c.seconds != null,
       make: c => `${c.seconds}초. ${c.seconds}초. ${c.seconds}초.` },
     { id: "pro-nostop", level: 4, mode: "formal",
@@ -215,5 +227,7 @@ const TYPO_PAIRS = Object.freeze([
   ["어디", "어됴"], ["빨리", "빨ㄹ"], ["먹었", "머겄"], ["재밌", "잼있"]
 ]);
 
+// 글자 분해 효과가 첫소리를 바꿀 때 선택하는 한글 초성 목록입니다.
 const CHOSEONG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
+// 글자 분해 효과가 가운뎃소리를 바꿀 때 선택하는 한글 중성 목록입니다.
 const JUNGSEONG = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ";
