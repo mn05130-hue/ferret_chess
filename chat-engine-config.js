@@ -10,7 +10,7 @@ const TUNING = Object.freeze({
   tickMs: 100,
 
   // 긴장도가 현재 값의 절반으로 자연 감소하는 데 걸리는 시간(ms)입니다.
-  tensionHalfLifeMs: 10000,
+  tensionHalfLifeMs: 1000,
 
   // 감소 중인 긴장도가 이 값을 넘으면 평상시(AMBIENT) 대신 긴장(TENSE) 상태를 선택합니다.
   tenseThreshold: 0.4,
@@ -19,7 +19,7 @@ const TUNING = Object.freeze({
   burstDurationMs: 2000,
 
   // BURST 종료 후 여운이 남는 AFTERMATH 상태를 유지하는 시간(ms)입니다.
-  aftermathDurationMs: 9000,
+  aftermathDurationMs: 15000,
 
   // 마지막 방송 사건 이후 이 시간(ms) 동안 새 사건이 없으면 한산한 LULL 상태로 들어갑니다.
   lullAfterMs: 25000,
@@ -31,16 +31,16 @@ const TUNING = Object.freeze({
   maxAnomalyLevel: 4,
 
   // 스테이지 시작 후 이상 시청자의 첫 이상 발화가 도착하는 최소~최대 대기시간(ms)입니다.
-  anomalyArrivalIntervalMs: [3000, 8000],
+  anomalyArrivalIntervalMs: [5000, 10000],
 
   // 첫 발화 이후 이상 시청자가 다음 이상 발화를 만드는 기본 최소~최대 간격(ms)입니다.
-  anomalyIntervalMs: [3000, 5000],
+  anomalyIntervalMs: [5000, 5000],
 
   // 이상 단계가 1 오를 때마다 발화 빈도 배율에 더하는 값입니다. 현재 값이면 단계마다 2%씩 증가합니다.
   anomalyLevelFrequencyStep: 0.02,
 
   // 이상 채팅 한 건이 전담 유형 대신 GLITCH 난독화 채팅으로 선택될 확률입니다. 0.5는 50%입니다.
-  glitchChance: 0.1,
+  glitchChance: 0.2,
 
   // 단계와 난수 계산으로 간격이 짧아져도 절대 이 값(ms)보다 빠르게 이상 발화를 만들지 않습니다.
   minimumAnomalyIntervalMs: 2000,
@@ -49,7 +49,7 @@ const TUNING = Object.freeze({
   maxGenerationRetries: 3,
 
   // 최근 문장과의 2-gram Jaccard 유사도가 이 값을 넘으면 중복 문장으로 판정합니다.
-  similarityThreshold: 0.7,
+  similarityThreshold: 0.5,
 
   // 같은 발화 의도를 연속 선택할 때 원래 가중치가 완전히 회복되는 데 걸리는 시간(ms)입니다.
   intentCooldownMs: 5000,

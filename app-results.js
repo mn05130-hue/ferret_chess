@@ -57,6 +57,7 @@ function triggerScreenInterference(type) {
 function finishStage({ success, title, copy }) {
   if (stageReviewOpen || gameOver) return;
   stageReviewOpen = true;
+  clearAnomalyChatEffect();
   clearThreatCountdown(false);
   clearStreamApparition();
   streamSignal.textContent = "스테이지 정산 중";
@@ -167,6 +168,7 @@ function beginStoryNightReveal(hasWrongAnswer) {
 function finishStoryDay() {
   if (gameMode !== GAME_MODES.STORY || stageReviewOpen || gameOver) return;
   stageReviewOpen = true;
+  clearAnomalyChatEffect();
   stopStoryClock();
   clearThreatCountdown(false);
   settleActiveApparitionAsMissed();

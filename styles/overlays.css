@@ -415,6 +415,25 @@
   animation: color-interference 1.45s steps(3) both;
 }
 
+/*
+ * 실제 이상 채팅이 올라올 때 30% 확률로 붙는 순간 효과입니다.
+ * shake는 게임 화면만 흔들고, static은 입력을 막지 않는 정전기 레이어를 짧게 덮습니다.
+ */
+.chat-app.anomaly-chat-shake .game-screen {
+  animation: anomaly-chat-shake 520ms steps(2) both;
+}
+
+.chat-app.anomaly-chat-static .screen-interference {
+  opacity: 1;
+  background:
+    repeating-linear-gradient(0deg, #fff8 0 1px, #000b 1px 3px, transparent 3px 5px),
+    repeating-linear-gradient(90deg, transparent 0 5px, #8fffe51f 5px 6px);
+  background-size: 100% 7px, 13px 100%;
+  mix-blend-mode: screen;
+  backdrop-filter: contrast(1.35) brightness(.82);
+  animation: anomaly-chat-static 520ms steps(6) both;
+}
+
 .chat-app.wrong-kick {
   animation: wrong-kick 260ms linear;
 }

@@ -161,13 +161,16 @@ function setConnectionStage(stage) {
  */
 function resetConnectionWidget() {
   window.clearTimeout(apparitionWeakTimer);
+  window.clearTimeout(apparitionMosaicTimer);
   window.clearTimeout(apparitionExpireTimer);
   window.clearTimeout(connectionFeedbackTimer);
   apparitionWeakTimer = undefined;
+  apparitionMosaicTimer = undefined;
   apparitionExpireTimer = undefined;
   connectionFeedbackTimer = undefined;
   apparitionActive = false;
   apparitionExpired = false;
+  chatApp.classList.remove("connection-pixelated");
   chatApp.classList.remove("connection-lost");
   connectionWidget.classList.remove("is-false-reconnect");
   setConnectionStage(CONNECTION_STAGES.GOOD);
@@ -218,12 +221,17 @@ function spawnStreamApparition() {
     weakenStreamConnection,
     APPARITION_LIFETIME_MS * APPARITION_WEAK_STAGE_RATIO
   );
+  // 전체 제한시간의 마지막 2초에만 저해상도 모자이크를 켭니다.
+  apparitionMosaicTimer = window.setTimeout(
+    startConnectionMosaic,
+    Math.max(0, APPARITION_LIFETIME_MS - APPARITION_MOSAIC_DURATION_MS)
+  );
   apparitionExpireTimer = window.setTimeout(expireStreamApparition, APPARITION_LIFETIME_MS);
   return true;
 }
 
 /**
- * 연결 괴이 대응 시간이 절반 지나면 위젯을 3단계인 약함 상태로 악화시킵니다.
+ * 연결 괴이 대응 시간이 설정된 비율만큼 지나면 위젯을 3단계인 약함 상태로 악화시킵니다.
  */
 function weakenStreamConnection() {
   if (!apparitionActive || apparitionExpired) return;
@@ -233,6 +241,25 @@ function weakenStreamConnection() {
   }
   apparitionWeakTimer = undefined;
   setConnectionStage(CONNECTION_STAGES.WEAK);
+}
+
+/**
+ * 연결이 끊기기 직전 마지막 구간에 방송 화면만 낮은 해상도처럼 깨뜨립니다.
+ * 탭이 숨겨져 있으면 보이지 않는 동안 연출 시간이 소모되지 않도록 짧게 다시 확인합니다.
+ */
+function startConnectionMosaic() {
+  if (!apparitionActive || apparitionExpired) return;
+  if (document.hidden) {
+    apparitionMosaicTimer = window.setTimeout(startConnectionMosaic, 500);
+    return;
+  }
+
+  apparitionMosaicTimer = undefined;
+  // 설정값이 바뀌어 약함 전환 시점이 늦어져도 모자이크 구간은 항상 약함으로 표시합니다.
+  if (connectionWidget.dataset.connectionStage !== CONNECTION_STAGES.WEAK) {
+    setConnectionStage(CONNECTION_STAGES.WEAK);
+  }
+  chatApp.classList.add("connection-pixelated");
 }
 
 /**
@@ -246,10 +273,14 @@ function expireStreamApparition() {
   }
 
   window.clearTimeout(apparitionWeakTimer);
+  window.clearTimeout(apparitionMosaicTimer);
   window.clearTimeout(apparitionExpireTimer);
   apparitionWeakTimer = undefined;
+  apparitionMosaicTimer = undefined;
   apparitionExpireTimer = undefined;
   apparitionExpired = true;
+  // 끊김은 별도의 공포 연출을 사용하므로 직전 단계의 모자이크를 즉시 제거합니다.
+  chatApp.classList.remove("connection-pixelated");
   chatApp.classList.add("connection-lost");
   corruptVisibleMessagesForConnectionLoss();
   setConnectionStage(CONNECTION_STAGES.DISCONNECTED);

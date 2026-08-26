@@ -58,6 +58,7 @@ function showTitle(shouldFocus = true) {
   corruptedChatTimer = undefined;
   gameOver = true;
   stageReviewOpen = false;
+  clearAnomalyChatEffect();
   clearStandardResultReveal();
   clearThreatCountdown();
   clearStreamApparition();
@@ -89,7 +90,7 @@ function enterGame(mode = GAME_MODES.ENDLESS) {
   if (!commitPlayerNickname()) return;
   gameMode = mode;
   chatApp.dataset.gameMode = gameMode;
-  if (gameMode === GAME_MODES.STORY) primeScareAudio();
+  primeScareAudio();
   stopTitleMusic();
   titleScreen.hidden = true;
   titleScreen.setAttribute("aria-hidden", "true");
@@ -162,6 +163,7 @@ function markViewerAsKicked(viewer, replacementText = "블라인드 처리 된 �
 function endGame() {
   gameOver = true;
   stageReviewOpen = false;
+  clearAnomalyChatEffect();
   clearStandardResultReveal();
   clearThreatCountdown(false);
   clearStreamApparition();
@@ -333,6 +335,7 @@ function startStage() {
   window.clearTimeout(corruptedChatTimer);
   corruptedChatTimer = undefined;
   chatApp.classList.remove("corrupted-chat-hit");
+  clearAnomalyChatEffect();
   clearStandardResultReveal();
   clearThreatCountdown(false);
   clearStreamApparition();

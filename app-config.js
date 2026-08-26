@@ -47,14 +47,14 @@ const VIEWER_STYLES = [
  * - MAX_MESSAGES: DOM에 남겨 두는 채팅 메시지 최대 개수
  * - MAX_HEALTH: 새 게임 시작 체력
  */
-const BASE_ANOMALIES_PER_STAGE = 5;
-const MAX_ANOMALIES_PER_STAGE = 10;
-const STAGES_PER_ADDITIONAL_ANOMALY = 2;
+const BASE_ANOMALIES_PER_STAGE = 10;
+const MAX_ANOMALIES_PER_STAGE = 16;
+const STAGES_PER_ADDITIONAL_ANOMALY = 1;
 const BASE_ANOMALY_GRACE_MS = 20000;
 const MIN_ANOMALY_GRACE_MS = 6000;
 const STAGE_GRACE_STEP_MS = 900;
 const MAX_MESSAGES = 100;
-const MAX_HEALTH = 3;
+const MAX_HEALTH = 5;
 
 /*
  * 스토리 시간 규칙입니다.
@@ -63,21 +63,30 @@ const MAX_HEALTH = 3;
  */
 const STORY_TOTAL_DAYS = 7;
 const STORY_START_MINUTES = 19 * 60;
-const STORY_DURATION_MINUTES = 7 * 60;
+const STORY_DURATION_MINUTES = 7 * 4;
 const DEFAULT_STORY_DAY_DURATION_MS = 84000;
 
 /*
  * 방송 화면 연결 괴이와 결과 연출 시간입니다.
  * - APPARITION_LIFETIME_MS: 보통/약함 단계에서 재연결할 수 있는 전체 시간
  * - APPARITION_WEAK_STAGE_RATIO: 전체 대응 시간 중 보통에서 약함으로 바뀌는 지점
+ * - APPARITION_MOSAIC_DURATION_MS: 연결이 끊기기 직전 모자이크가 유지되는 시간
  * - RESULT_REVEAL_DELAY_MS: 검은 화면 뒤 결과 카드가 나타날 때까지의 시간
  * - *_DELAY_RANGE_MS: 첫 출현과 이후 반복 출현의 [최소, 최대] 대기 범위
  */
-const APPARITION_LIFETIME_MS = 4000;
-const APPARITION_WEAK_STAGE_RATIO = 0.5;
-const RESULT_REVEAL_DELAY_MS = 4000;
-const APPARITION_INITIAL_DELAY_RANGE_MS = Object.freeze([5000, 8000]);
+const APPARITION_LIFETIME_MS = 8000;
+const APPARITION_WEAK_STAGE_RATIO = 0.4;
+const APPARITION_MOSAIC_DURATION_MS = 2000;
+const RESULT_REVEAL_DELAY_MS = 10000;
+const APPARITION_INITIAL_DELAY_RANGE_MS = Object.freeze([6000, 8000]);
 const APPARITION_DELAY_RANGE_MS = Object.freeze([12000, 18000]);
+
+/*
+ * 실제 이상 채팅이 새로 표시될 때 재생할 순간 공포 효과입니다.
+ * 0.3은 이상 채팅 한 건마다 30% 확률이며, 당첨 뒤 흔들림/정전기를 다시 반반 선택합니다.
+ */
+const ANOMALY_CHAT_EFFECT_CHANCE = 0.3;
+const ANOMALY_CHAT_EFFECT_DURATION_MS = 560;
 
 // 내부 분기와 data-game-mode 속성이 공유하는 고정 모드 식별자입니다.
 const GAME_MODES = Object.freeze({ ENDLESS: "endless", STORY: "story" });
@@ -109,10 +118,10 @@ const STORY_DAY_INTROS = Object.freeze([
  * 이 배열은 화면 표시만 바꾸며 viewer.anomalous 판정이나 원본 엔진 기록은 변경하지 않습니다.
  */
 const UNKNOWN_CHAT_TOKENS = Object.freeze([
-  "ㄱ▤ɯ", "G의", "GG", "뾰", "JJG", "R▥ɯ", "JJ나는", "RRG이▤ɯ",
-  "GGG▤ɯ", "R를", "Gflies", "pps▥ɯ", "G…을▤ɯ", "R라▥ɯ", "RR그",
-  "Grar", "pp다▤ɯ", "JJ가▥ɯ", "GGGyard", "ᚫ", "ȣ", "҂", "∴", "ƎƎ",
-  "ㅿ", "▥ɯR", "J. JJ", "G…p", "R▤ɯR", "GG그", "RRG", "j▥ɯ"
+  "ㄱ▤ɯ", "踰꾩컡諛⑹", "踰꾩컡", "ì¶”ì²", "ƒ ë“œë ¤ìš”", "R▥ɯ", "4444444", "RG이▤ɯ",
+  "GGG▤ɯ", "방̶̢̨̛̝̩̭͚̻̦̟͇͕̝̼̺̭̩̥͙̭̥̺̪͓̗̟̝͈͈̻̦͔̞̹́̑̓͂̉͌́̔̄̽̾̋̓̐͊̈́̉̓̄̕̕͘͜͝ͅ송̶̧͙͔͇̝͎̯̋̚을̴̧̧̨̧͕͎̙̖̰̙̖͇͔̬͉̥̜͇̱̦̗̱̳̹̯̮̲͓̻̝͎̖̳̰͉̓̊̈́̒͜͝봐̶̛̬̗̂̃̍̍̎̔̐̐̆̏̐̍̓̏͂͋̀͆͊̿͆͌̿̎̕͝͝주̶̡̛̞̠̖͓̝̩̟̥̬̬͎͇̊̄세̸̡̧̡̛̭͙̲͙̺͈͚͍͖̲͓̺̣̟̤̟̞͈͚̣̘͕͈͉̌̇͊̿͊̐͋̏̽͛̓̀͂͗̋̋͐̐͊͐̈́̾̎̂̃̔̐̊̄ͅͅ요̴̡͖̎̏̎́̅͒͆̅̓̑͒̎̀̎͜", "ㅼ슂", "pps▥ɯ", "G…을▤ɯ", "R라▥ɯ", "RR그",
+  "버̵̨̡̢̢̲͖̰̙̣͙͉͔̫̥̙̹͚̠͔͍̗͈͔̦͓̟̽̃͂͊̄̀͊̈́̃͋̈́̅̈́̉̽͗̌͘͘͜͜͝ͅ찌̶̡̪͖̼̯̯͓͓̼̻͉͖̠̪̻̙͈͇̖̱̼̬̫͇̫̺̝̰̮͕̃̾͊̏̏͌̓͑̉͛̋̏̓̚͘̚͝͝ͅͅ", "pp다▤ɯ", "JJ가▥ɯ", "버̶̡̼̹͇̦͇̼͉̣̫̰̲̦̟̰̟̬̟͕̙̤̘̖͖͔͕̫̻̬͕͂̄̀́̚͠ͅ찌̸̨͈͔̞̲̓̎͂̓̈́̈̄̒̅͋̿̌͋̎͛̀̈͊́̃̍́̃̍̉̑̇͘͜͝바̷̡̧̡̛̦̭̯͙̱͙͙̘̞̞͓͈̻̰̗̘̳͍̟͈̦̙̰̠͖̼̋͗̐͐́̎͒̇̈̂́̽͛̊́̑̾͜͜͠͝보̷̡̧̨̢̠̳͓̪̖̣̝͖̞̭̹̪̝̟̻̯̱̯̺̳͎̦̱̣̺̗̻͉̑̾̋͗̅̓̊͂͒͒͑͒͆͐͑̇̽̋̂͘͜͝͠͝͝", "ᚫ", "ȣ", "҂", "∴", "ƎƎ",
+  "ㅿ", "▥ɯR", "J. JJ", "G…p", "R▤ɯR", "텛泥쒕", "ì°Œë°©ì†", "j▥ɯ"
 ]);
 
 /*
@@ -232,10 +241,10 @@ const screenInterference = document.querySelector("#screen-interference");
  * 키는 TUNING.intervals/stateIntents와 같고 값은 방송 하단의 stream-signal에 표시합니다.
  */
 const STREAM_STATE_LABELS = {
-  AMBIENT: "연결 안정",
-  TENSE: "신호 흔들림",
-  BURST: "§§§ 감지",
-  AFTERMATH: "?????",
+  AMBIENT: " ",
+  TENSE: "",
+  BURST: "",
+  AFTERMATH: "",
   LULL: "미약한 신호"
 };
 
@@ -321,6 +330,7 @@ let lastDamageReason = "missed";
 let apparitionRandom = Math.random;
 let apparitionSpawnTimer;
 let apparitionWeakTimer;
+let apparitionMosaicTimer;
 let apparitionExpireTimer;
 let connectionFeedbackTimer;
 let apparitionActive = false;
@@ -337,3 +347,4 @@ let storyScareTimer;
 let resultRevealTimer;
 let scareAudioContext;
 let corruptedChatTimer;
+let anomalyChatEffectTimer;

@@ -168,7 +168,7 @@ function prepareGameMusic() {
 }
 
 /**
- * 스토리 공포 효과 전에 AudioContext를 만들어 첫 효과음의 지연을 줄입니다.
+ * 게임 진입 제스처 안에서 AudioContext를 만들어 정전기 효과음의 첫 재생 지연을 줄입니다.
  */
 function primeScareAudio() {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -182,12 +182,12 @@ function primeScareAudio() {
 }
 
 /**
- * Web Audio 노드로 짧은 정전기 노이즈와 저주파 충격음을 합성한 뒤 자원을 해제합니다.
+ * Web Audio 노드로 지정 길이와 음량의 정전기 노이즈를 합성한 뒤 자원을 해제합니다.
+ * @param {{duration?: number, peakScale?: number}} options 재생 길이와 게임 음량 대비 최대 크기
  */
-function emitStaticNoise() {
+function emitStaticNoise({ duration = .72, peakScale = .24 } = {}) {
   if (!scareAudioContext || scareAudioContext.state !== "running") return;
   try {
-    const duration = .72;
     const frameCount = Math.floor(scareAudioContext.sampleRate * duration);
     const buffer = scareAudioContext.createBuffer(1, frameCount, scareAudioContext.sampleRate);
     const samples = buffer.getChannelData(0);
@@ -200,15 +200,15 @@ function emitStaticNoise() {
     const filter = scareAudioContext.createBiquadFilter();
     const gain = scareAudioContext.createGain();
     const now = scareAudioContext.currentTime;
-    const peak = .24 * gameMusic.volume;
+    const peak = peakScale * gameMusic.volume;
     filter.type = "bandpass";
     filter.frequency.value = 1750;
     filter.Q.value = .65;
     gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(peak, now + .015);
-    gain.gain.setValueAtTime(peak * .35, now + .17);
-    gain.gain.setValueAtTime(peak, now + .29);
-    gain.gain.setValueAtTime(peak * .25, now + .48);
+    gain.gain.linearRampToValueAtTime(peak, now + duration * .02);
+    gain.gain.setValueAtTime(peak * .35, now + duration * .24);
+    gain.gain.setValueAtTime(peak, now + duration * .40);
+    gain.gain.setValueAtTime(peak * .25, now + duration * .67);
     gain.gain.linearRampToValueAtTime(0, now + duration);
     source.buffer = buffer;
     source.connect(filter).connect(gain).connect(scareAudioContext.destination);
@@ -216,6 +216,19 @@ function emitStaticNoise() {
   } catch {
     // 오디오 API를 사용할 수 없어도 시각 연출은 그대로 진행합니다.
   }
+}
+
+/**
+ * 이상 채팅용으로 결과 화면 효과보다 짧고 작은 정전기 소리를 재생합니다.
+ */
+function playChatStaticNoise() {
+  if (!scareAudioContext) return;
+  const play = () => emitStaticNoise({ duration: .32, peakScale: .09 });
+  if (scareAudioContext.state === "suspended") {
+    scareAudioContext.resume().then(play).catch(() => {});
+    return;
+  }
+  play();
 }
 
 /**

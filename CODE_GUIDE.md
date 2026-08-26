@@ -102,11 +102,14 @@ CSS는 `styles/` 아래에서 기능별 파일로 나뉘며, `index.html`의 `<l
 | `.corrupted-message` | 모든 이상 채팅 | 일반 채팅과 같은 모양을 유지하는 판별용 클래스 |
 | `.ciphered-message` | 붕괴형/연결 끊김 채팅 | 별도 글꼴·굵기 효과가 없는 판별용 클래스 |
 | `.anomaly-prophecy` 등 | 이상 채팅 | 시각 강조 없이 이상 유형을 구분하는 메타데이터 클래스 |
+| `.anomaly-chat-shake` | `.chat-app` | 이상 채팅 순간 확률 효과로 게임 화면을 짧게 흔듦 |
+| `.anomaly-chat-static` | `.chat-app` | 이상 채팅 순간 확률 효과로 정전기 화면과 소리를 재생 |
 | `.corrupted-chat-hit` | `.chat-app` | 연결 끊김으로 채팅이 오염되는 순간 메시지 영역 흔들림 |
 | `.is-good` | 연결 위젯 | 1단계 좋음: 초록색 정상 연결 |
 | `.is-normal` | 연결 위젯 | 2단계 보통: 괴이 발생 직후 노란색 연결 |
 | `.is-weak` | 연결 위젯 | 3단계 약함: 대응 시간 후반의 빨간색 경고 |
 | `.is-disconnected` | 연결 위젯 | 4단계 끊김: 제한시간 초과 뒤 검은색 단절 상태 |
+| `.connection-pixelated` | `.chat-app` | 끊김 직전 마지막 2초 동안 방송 화면에만 모자이크 적용 |
 | `.is-false-reconnect` | 연결 위젯 | 정상 연결을 잘못 재연결했을 때 짧은 오판 흔들림 표시 |
 | `.interference-mosaic` | `.chat-app` | 모자이크 간섭 효과 |
 | `.interference-color` | `.chat-app` | 색 분리 간섭 효과 |
@@ -169,7 +172,7 @@ showEntryScreen()
 
 1. `commitPlayerNickname()`으로 첫 화면에서 확정한 닉네임을 한 번 더 안전하게 검증합니다.
 2. `gameMode`와 `.chat-app.dataset.gameMode`를 갱신합니다.
-3. 스토리 모드이면 공포 효과음용 `AudioContext`를 준비합니다.
+3. 두 모드 모두 이상 채팅과 결과 화면의 정전기 효과음용 `AudioContext`를 준비합니다.
 4. 타이틀 음악을 중지합니다.
 5. 타이틀을 숨기고 게임 화면의 `inert`를 해제합니다.
 6. 게임 음악을 준비합니다.
@@ -329,22 +332,22 @@ findRejection()
 
 ### 이상 채팅일 때 추가되는 과정
 
-1. `enqueueAnomalyArrival()`가 대기 중인 이상 시청자 한 명의 첫 등장을 5~8초 뒤로 예약합니다.
+1. `enqueueAnomalyArrival()`가 대기 중인 이상 시청자 한 명의 첫 등장을 `anomalyArrivalIntervalMs` 범위 뒤로 예약합니다.
 2. 예약 시점이 되면 해당 시청자를 활성화하고 첫 이상 채팅을 생성합니다.
-3. 다음 대기 시청자도 다시 5~8초 뒤에 예약하므로 서로 다른 이상 시청자가 차례로 나타납니다.
+3. 다음 대기 시청자도 같은 설정 범위 뒤에 예약하므로 서로 다른 이상 시청자가 차례로 나타납니다.
 4. 모든 예정 시청자가 등장하면 `enqueueAnomaly()`가 활성 이상 시청자의 추가 발화를 예약합니다.
-5. 추가 발화는 1일차 3~7초 범위이며, 일차 난이도와 `anomalyLevel`이 올라갈수록 간격이 줄어듭니다.
+5. 추가 발화는 `anomalyIntervalMs`를 기본으로 하며, 일차 난이도와 `anomalyLevel`이 올라갈수록 간격이 줄어듭니다.
 6. 이상 시청자는 일반 발화 큐에서 제외되므로 예약된 이상 채팅이 채팅창의 첫 등장입니다.
 7. 엔진이 `anomalyEvidence`, `anomalyMode`, `anomalyLineId` 메타데이터를 전달합니다.
 8. `getAnomalyPresentation()`이 `gli-*` 붕괴형과 나머지 전용 유형을 구분합니다.
 9. 예언·관찰·기억·모방·침입형은 원문을 유지하고, 붕괴형만 `createUnknownChatText()`로 난독화합니다.
-10. `handleEngineMessage()`가 유형별 판별 클래스를 적용하며, 이상 채팅의 시각 효과는 일반 채팅과 동일하게 유지합니다.
+10. `handleEngineMessage()`가 유형별 판별 클래스를 적용하고 실제 이상 채팅마다 30% 확률로 흔들림 또는 정전기 효과를 재생합니다.
 11. 무한 모드이면 `startThreatCountdown(viewer)`가 즉시 시작됩니다.
 12. 스토리 모드이면 즉시 제한시간을 만들지 않고 오전 2시에 판정합니다.
 
 이 과정에서는 이상 채팅 자체 외에 별도의 시스템 메시지나 토스트를 추가하지 않습니다. 플레이어는 깨진 채팅 모양과 무한 모드의 기존 제한시간 UI만 보고 판단합니다.
 
-연결 괴이를 4초 동안 복구하지 않아 `끊김`이 된 경우에는 실제 이상 여부와 관계없이 이후 자동 채팅이 같은 깨진 문자로 표시됩니다. 이때 `viewer.anomalous` 값은 바뀌지 않으므로 정상 시청자를 차단하면 오판으로 처리됩니다. 이상 메시지 스타일은 배지와 닉네임의 원래 색을 유지하고 채팅 본문에만 글리치 효과를 적용합니다.
+연결 괴이를 8초 동안 복구하지 않아 `끊김`이 된 경우에는 실제 이상 여부와 관계없이 이후 자동 채팅이 같은 깨진 문자로 표시됩니다. 이때 `viewer.anomalous` 값은 바뀌지 않으므로 정상 시청자를 차단하면 오판으로 처리됩니다. 이상 메시지 스타일은 배지와 닉네임의 원래 색을 유지하고 채팅 본문에만 글리치 효과를 적용합니다.
 
 ### 메시지 목록 관리
 
@@ -408,7 +411,7 @@ kickSelectedViewer()
 4. 제한시간 안에 해당 시청자를 강퇴하면 정답 처리됩니다.
 5. 시간이 0이 되면 `expireThreat()`가 실행됩니다.
 6. 체력이 남으면 계속 진행하고, 0이면 `endGame()`으로 이동합니다.
-7. 모든 이상 시청자를 처리하면 `finishStage()`가 결과 배경을 열고 4초 뒤 결과 카드를 공개합니다.
+7. 모든 이상 시청자를 처리하면 `finishStage()`가 결과 배경을 열고 현재 설정인 10초 뒤 결과 카드를 공개합니다.
 8. 계속 버튼을 누르면 `continueFromStageResult()`가 다음 스테이지를 시작합니다.
 
 스테이지가 올라갈수록 제한시간은 `STAGE_GRACE_STEP_MS`만큼 줄어들지만 `MIN_ANOMALY_GRACE_MS`보다 짧아지지 않습니다.
@@ -459,9 +462,11 @@ beginStoryNightReveal()
 
 - 화면 전체를 바꾸거나 게임 조작을 막지 않습니다.
 - 항상 상단에 있는 `#connection-widget`을 초록색 `좋음`에서 노란색 `보통`으로 바꿉니다.
-- 전체 대응 시간의 50%가 지나면 `weakenStreamConnection()`이 빨간색 `약함`으로 바꿉니다.
+- 전체 대응 시간의 40%인 3.2초가 지나면 `weakenStreamConnection()`이 빨간색 `약함`으로 바꿉니다.
+- 제한시간의 마지막 2초가 시작되면 `startConnectionMosaic()`이 방송 화면에만 `.connection-pixelated`를 적용합니다.
+- 모자이크는 큰 픽셀 블록이 불규칙하게 이동해 낮은 해상도의 영상처럼 보이며, 위젯과 채팅에는 적용되지 않습니다.
 - 플레이어의 현재 초점을 강제로 이동하지 않습니다.
-- `APPARITION_LIFETIME_MS`인 4초 동안 제한시간 측정
+- `APPARITION_LIFETIME_MS`인 8초 동안 제한시간 측정
 
 ### 성공
 
@@ -485,6 +490,7 @@ beginStoryNightReveal()
 시간 안에 연결을 누르지 않으면 `expireStreamApparition()`이 실행됩니다.
 
 - 실패는 한 번만 기록되고 위젯에 `.is-disconnected`와 검은색 `끊김`이 표시됩니다.
+- `끊김`으로 바뀌는 순간 `.connection-pixelated`를 제거하므로 직전 2초의 모자이크는 즉시 사라집니다.
 - 체력과 점수는 감소하지 않습니다.
 - 이후 자동 채팅은 실제 판정값과 관계없이 화면에서 이상 채팅처럼 깨져 보입니다.
 - 정상 시청자의 실제 판정값은 유지되므로 이 상태에서 강퇴하면 오판입니다.
@@ -492,7 +498,7 @@ beginStoryNightReveal()
 
 ## 15. 결과 공개 지연
 
-무한 스테이지 결과와 최종 결과는 `beginStandardResultReveal()`이 배경과 `SIGNAL ANALYSIS` 문구를 먼저 표시하고 `RESULT_REVEAL_DELAY_MS`인 4초 뒤 카드를 공개합니다. 스토리 결과도 `beginStoryNightReveal()`의 공포 연출을 4초 동안 보여 준 뒤 일일 판정 카드를 공개합니다. 대기 중에는 결과 버튼을 비활성화하고 카드에 `aria-hidden="true"`를 적용합니다.
+무한 스테이지 결과와 최종 결과는 `beginStandardResultReveal()`이 배경과 `SIGNAL ANALYSIS` 문구를 먼저 표시하고 `RESULT_REVEAL_DELAY_MS`인 10초 뒤 카드를 공개합니다. 스토리 결과도 `beginStoryNightReveal()`의 공포 연출을 10초 동안 보여 준 뒤 일일 판정 카드를 공개합니다. 대기 중에는 결과 버튼을 비활성화하고 카드에 `aria-hidden="true"`를 적용합니다.
 
 ## 16. 오디오 흐름
 
@@ -539,7 +545,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 
 ### 공포 효과음
 
-스토리 모드 진입 시 `primeScareAudio()`가 `AudioContext`를 준비합니다. 오답 결과에서는 `playStaticScare()`가 `emitStaticNoise()`를 호출해 별도 음원 파일 없이 정전기와 저주파 충격음을 합성합니다.
+게임 진입 시 `primeScareAudio()`가 `AudioContext`를 준비합니다. 이상 채팅 정전기 효과는 `playChatStaticNoise()`가 짧고 작은 노이즈를 만들고, 오답 결과에서는 `playStaticScare()`가 더 길고 큰 노이즈를 재생합니다.
 
 ## 17. 앱 파일별 함수 목록
 
@@ -563,14 +569,14 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 - 공통 설정: `chooseMusicTrack`, `readStoredVolume`, `applyVolume`, `initializeAudioVolumes`
 - 타이틀 음악: `playTitleMusic`, `stopTitleMusic`, `prepareTitleMusic`
 - 게임 음악: `playGameMusic`, `stopGameMusic`, `prepareGameMusic`
-- 공포 소리: `primeScareAudio`, `emitStaticNoise`, `playStaticScare`
+- 공포 소리: `primeScareAudio`, `emitStaticNoise`, `playChatStaticNoise`, `playStaticScare`
 
 ### `app-survival.js`
 
 - 스토리 시계: `stopStoryClock`, `formatStoryTime`, `renderStoryClock`, `updateStoryClock`, `startStoryClock`
 - 일시정지: `syncEnginePause`
 - 이상 채팅 제한시간: `clearThreatCountdown`, `updateThreatCountdown`, `getStageGraceMs`, `startThreatCountdown`
-- 연결 괴이: `getApparitionDelay`, `resetConnectionWidget`, `clearStreamApparition`, `scheduleStreamApparition`, `spawnStreamApparition`, `expireStreamApparition`, `reconnectStreamConnection`, `settleActiveApparitionAsMissed`
+- 연결 괴이: `getApparitionDelay`, `resetConnectionWidget`, `clearStreamApparition`, `scheduleStreamApparition`, `spawnStreamApparition`, `weakenStreamConnection`, `startConnectionMosaic`, `expireStreamApparition`, `reconnectStreamConnection`, `settleActiveApparitionAsMissed`
 
 ### `app-results.js`
 
@@ -651,6 +657,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 스토리 총 일수 | `STORY_TOTAL_DAYS`, `STORY_DAY_INTROS` |
 | 스토리 하루 실제 길이 | `DEFAULT_STORY_DAY_DURATION_MS` |
 | 연결 복구 제한시간 | `APPARITION_LIFETIME_MS` |
+| 끊김 직전 모자이크 시간 | `APPARITION_MOSAIC_DURATION_MS` |
 | 결과 공개 지연 | `RESULT_REVEAL_DELAY_MS` |
 | 괴이 등장 간격 | `APPARITION_INITIAL_DELAY_RANGE_MS`, `APPARITION_DELAY_RANGE_MS` |
 | 배경음악 파일 | `TITLE_MUSIC_TRACKS`, `GAME_MUSIC_TRACKS` |
@@ -662,6 +669,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 등장 후 이상 채팅 주기 | `chat-engine-config.js`의 `anomalyIntervalMs`, `anomalyLevelFrequencyStep`, `minimumAnomalyIntervalMs` |
 | 이상 채팅의 GLITCH 비율 | `chat-engine-config.js`의 `glitchChance` (`0`은 없음, `1`은 항상 GLITCH) |
 | 이상 채팅 표시 유형 | `app-chat.js`의 `getAnomalyPresentation()` 및 `createMessage()`의 판별용 `.anomaly-*`, `.ciphered-message` 클래스 |
+| 이상 채팅 순간 효과 확률 | `app-config.js`의 `ANOMALY_CHAT_EFFECT_CHANCE` |
 | 깨진 문자 재료 | `app-config.js`의 `UNKNOWN_CHAT_TOKENS` |
 | 채팅 속도/중복 기준 | `chat-engine-config.js`의 `TUNING` |
 | 화면 색상과 크기 | `styles/base.css`의 `:root` 및 `styles/`의 해당 기능 파일 |

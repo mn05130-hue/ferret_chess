@@ -78,6 +78,30 @@
   50% { opacity: .72; filter: brightness(.72); }
 }
 
+/* 약함 단계의 마지막 2초 동안 큰 픽셀 블록 위치와 명암을 불규칙하게 바꿉니다. */
+@keyframes connection-pixel-break {
+  0% {
+    opacity: .78;
+    background-position: 0 8%, 0 46%, 0 82%, 0 0, 0 0;
+    transform: translate(0);
+  }
+  25% {
+    opacity: .9;
+    background-position: 21px 14%, -38px 51%, 13px 77%, 11px -7px, 0 9px;
+    transform: translate(-2px, 1px) scaleX(1.015);
+  }
+  50% {
+    opacity: .68;
+    background-position: -17px 4%, 26px 39%, -11px 86%, -13px 5px, 0 -8px;
+    transform: translate(3px, -1px) scaleY(1.025);
+  }
+  75% {
+    opacity: .86;
+    background-position: 9px 11%, -12px 48%, 18px 80%, 19px 12px, 0 6px;
+    transform: translate(-1px, 2px) scaleX(.99);
+  }
+}
+
 /* 정상 상태에서 재연결한 오판을 작은 좌우 흔들림으로 알립니다. */
 @keyframes connection-widget-wrong {
   20% { translate: -4px 0; }
@@ -108,6 +132,26 @@
   44% { opacity: .45; translate: 5px 0; }
   70% { opacity: .82; translate: -2px 0; }
   100% { opacity: 0; translate: 0; }
+}
+
+/* 이상 채팅 순간 효과 중 하나로 게임 화면을 짧고 불규칙하게 흔듭니다. */
+@keyframes anomaly-chat-shake {
+  0%, 100% { translate: 0 0; filter: none; }
+  14% { translate: -3px 1px; filter: contrast(1.12); }
+  31% { translate: 4px -1px; }
+  48% { translate: -2px -2px; filter: contrast(1.22); }
+  66% { translate: 3px 1px; }
+  84% { translate: -1px 0; filter: none; }
+}
+
+/* 이상 채팅 순간 효과 중 하나로 흑백 정전기 레이어를 여러 번 끊어 표시합니다. */
+@keyframes anomaly-chat-static {
+  0%, 100% { opacity: 0; background-position: 0 0, 0 0; }
+  12% { opacity: .8; background-position: 9px -13px, -6px 0; }
+  27% { opacity: .18; }
+  43% { opacity: .72; background-position: -17px 8px, 11px 0; }
+  61% { opacity: .3; }
+  78% { opacity: .88; background-position: 5px 19px, -14px 0; }
 }
 
 /* 방송 노이즈 레이어를 매 프레임 다른 방향으로 이동시킵니다. */

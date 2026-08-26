@@ -121,6 +121,38 @@
   transition: border-color 180ms, filter 180ms;
 }
 
+/*
+ * 연결 종료 직전에는 방송 무대 위에 큰 사각 픽셀층을 얹어 낮은 해상도로 깨진 신호를 표현합니다.
+ * 위젯과 채팅은 이 레이어 밖에 있으므로 방송 영상만 손상되며, 기본 상태에서는 완전히 숨겨집니다.
+ */
+.stream-stage::after {
+  content: "";
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.chat-app.connection-pixelated .stream-stage {
+  border-color: #8f2933;
+  filter: saturate(.45) contrast(1.42) brightness(.82);
+}
+
+.chat-app.connection-pixelated .stream-stage::after {
+  opacity: .82;
+  background:
+    linear-gradient(90deg, transparent 0 6%, #020505e0 6% 19%, transparent 19% 44%, #9fc8ba2b 44% 61%, #07100ed4 61% 76%, transparent 76%) 0 8% / 100% 18% no-repeat,
+    linear-gradient(90deg, #b9dbd11c 0 12%, transparent 12% 33%, #010303c9 33% 57%, transparent 57% 82%, #718b8329 82%) 0 46% / 100% 16% no-repeat,
+    linear-gradient(90deg, transparent 0 23%, #020505dc 23% 37%, #bcd9d01c 37% 69%, transparent 69% 88%, #000c 88%) 0 82% / 100% 13% no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 17px, #0205056e 17px 31px, #b9d8ce16 31px 39px, transparent 39px 57px),
+    repeating-linear-gradient(0deg, transparent 0 11px, #02050552 11px 17px, transparent 17px 29px);
+  mix-blend-mode: hard-light;
+  backdrop-filter: blur(2px) contrast(1.8) saturate(.3);
+  image-rendering: pixelated;
+  animation: connection-pixel-break 280ms steps(1, end) infinite;
+}
+
 .stream-room,
 .stream-noise {
   position: absolute;

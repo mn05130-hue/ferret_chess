@@ -356,6 +356,39 @@ function appendElement(element, behavior = "smooth") {
 }
 
 /**
+ * 진행 중인 이상 채팅 순간 효과를 중단하고 화면을 기본 상태로 되돌립니다.
+ */
+function clearAnomalyChatEffect() {
+  window.clearTimeout(anomalyChatEffectTimer);
+  anomalyChatEffectTimer = undefined;
+  chatApp.classList.remove("anomaly-chat-shake", "anomaly-chat-static");
+}
+
+/**
+ * 실제 이상 채팅마다 설정 확률을 판정해 화면 흔들림 또는 짧은 정전기 효과를 재생합니다.
+ * 두 효과는 당첨된 30% 안에서 각각 절반 확률이며, 선택된 효과 이름을 테스트용으로 반환합니다.
+ * @param {() => number} random 0 이상 1 미만 값을 반환하는 확률 함수
+ * @returns {"shake"|"static"|null} 실행한 효과 또는 확률에서 벗어나면 null
+ */
+function maybeTriggerAnomalyChatEffect(random = Math.random) {
+  if (random() >= ANOMALY_CHAT_EFFECT_CHANCE) return null;
+
+  clearAnomalyChatEffect();
+  const effect = random() < .5 ? "shake" : "static";
+  const className = effect === "shake" ? "anomaly-chat-shake" : "anomaly-chat-static";
+  // 같은 효과가 연속 당첨되어도 애니메이션이 처음부터 다시 시작되게 레이아웃을 갱신합니다.
+  void screenInterference.offsetWidth;
+  chatApp.classList.add(className);
+  if (effect === "static") playChatStaticNoise();
+
+  anomalyChatEffectTimer = window.setTimeout(() => {
+    chatApp.classList.remove(className);
+    anomalyChatEffectTimer = undefined;
+  }, ANOMALY_CHAT_EFFECT_DURATION_MS);
+  return effect;
+}
+
+/**
  * 엔진 발화를 기록·렌더링하고 이상 대사 변환 및 무한 모드 제한시간을 연결합니다.
  * @param {object} message 엔진이 전달한 화자·본문·상태·괴이 메타데이터
  */
@@ -379,7 +412,10 @@ function handleEngineMessage(message) {
   }), behavior);
   if (isConnectionCorruption) triggerCorruptedChatPulse();
 
-  if (isActualAnomaly && gameMode === GAME_MODES.ENDLESS) startThreatCountdown(viewer);
+  if (isActualAnomaly) {
+    maybeTriggerAnomalyChatEffect();
+    if (gameMode === GAME_MODES.ENDLESS) startThreatCountdown(viewer);
+  }
 }
 
 /**
