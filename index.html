@@ -119,9 +119,10 @@
 
     <!--
       화면 상단에 항상 보이는 작은 연결 컨트롤입니다.
-      괴이가 있을 때는 와이파이 막대가 약해지고, 없을 때 재연결을 누르면 오판으로 체력이 감소합니다.
+      좋음(초록) → 보통(노랑) → 약함(빨강) → 끊김(검정) 순서로 연결 상태가 악화됩니다.
+      괴이가 없을 때 재연결을 누르면 오판으로 체력이 감소합니다.
     -->
-    <aside class="connection-widget" id="connection-widget" aria-label="방송 연결 상태: 안정">
+    <aside class="connection-widget is-good" id="connection-widget" data-connection-stage="good" aria-label="방송 연결 상태: 좋음">
       <span class="wifi-meter" aria-hidden="true">
         <i class="wifi-wave wave-outer"></i>
         <i class="wifi-wave wave-middle"></i>
@@ -129,7 +130,7 @@
       </span>
       <span class="connection-widget-copy">
         <small>LIVE CONNECTION</small>
-        <strong id="connection-status">연결 안정</strong>
+        <strong id="connection-status">좋음</strong>
       </span>
       <button class="reconnect-button" id="reconnect-button" type="button">재연결</button>
     </aside>

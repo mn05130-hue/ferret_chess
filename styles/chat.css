@@ -156,7 +156,7 @@
 
 /* 이상 채팅은 내용만 다르며 글꼴·굵기·배치·등장 효과는 일반 채팅과 같습니다. */
 
-/* 연결 없음 상태는 실제 판정값을 바꾸지 않고 화면에 남은 일반 채팅 본문만 불안정하게 보이게 합니다. */
+/* 연결 끊김 상태는 실제 판정값을 바꾸지 않고 화면에 남은 일반 채팅 본문만 불안정하게 보이게 합니다. */
 .connection-lost .message:not(.system-message, .blinded-message) .message-text {
   text-shadow: 1px 0 #ff264436, -1px 0 #25e0cc36;
   animation: corrupted-glyph-jitter 1.8s steps(3) infinite;

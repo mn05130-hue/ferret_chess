@@ -4,7 +4,7 @@
  * 플레이 중 시간 제한을 담당합니다.
  * 스토리 모드에서는 실제 경과 시간을 오후 7시~오전 2시로 환산하고, 무한 모드에서는
  * 이상 채팅별 대응 시간을 셉니다. 별도의 방송 화면 괴이는 작은 와이파이 위젯으로만
- * 알리며, 실제 출현 여부와 만료 여부를 구분해 재연결의 성공·오판을 판정합니다.
+ * 알리며, 좋음→보통→약함→끊김 네 단계와 실제 출현/만료 여부로 성공·오판을 판정합니다.
  */
 /**
  * 스토리 시계 interval을 중지하고 마지막 tick 기준값을 제거합니다.
@@ -144,20 +144,33 @@ function getApparitionDelay([minimum, maximum]) {
 }
 
 /**
+ * 연결 위젯에서 기존 단계 클래스를 제거하고 새 단계의 색상·문구·접근성 상태를 동기화합니다.
+ * @param {{key: string, label: string}} stage CONNECTION_STAGES에 정의된 대상 단계
+ */
+function setConnectionStage(stage) {
+  connectionWidget.classList.remove("is-good", "is-normal", "is-weak", "is-disconnected");
+  connectionWidget.classList.add(`is-${stage.key}`);
+  connectionWidget.dataset.connectionStage = stage.key;
+  connectionWidget.setAttribute("aria-label", `방송 연결 상태: ${stage.label}`);
+  connectionStatus.textContent = stage.label;
+  reconnectButton.setAttribute("aria-label", `방송 재연결 · 현재 상태 ${stage.label}`);
+}
+
+/**
  * 연결 관련 타이머와 작은 상단 위젯을 정상 와이파이 상태로 되돌립니다.
  */
 function resetConnectionWidget() {
+  window.clearTimeout(apparitionWeakTimer);
   window.clearTimeout(apparitionExpireTimer);
   window.clearTimeout(connectionFeedbackTimer);
+  apparitionWeakTimer = undefined;
   apparitionExpireTimer = undefined;
   connectionFeedbackTimer = undefined;
   apparitionActive = false;
   apparitionExpired = false;
   chatApp.classList.remove("connection-lost");
-  connectionWidget.classList.remove("is-weak", "is-failed", "is-false-reconnect");
-  connectionWidget.setAttribute("aria-label", "방송 연결 상태: 안정");
-  connectionStatus.textContent = "연결 안정";
-  reconnectButton.setAttribute("aria-label", "방송 재연결");
+  connectionWidget.classList.remove("is-false-reconnect");
+  setConnectionStage(CONNECTION_STAGES.GOOD);
 }
 
 /**
@@ -188,7 +201,7 @@ function scheduleStreamApparition(initial = false) {
 }
 
 /**
- * 별도 알림 메시지나 큰 화면 변화 없이 상단 와이파이 위젯만 약한 연결 상태로 전환합니다.
+ * 별도 알림 메시지나 큰 화면 변화 없이 상단 위젯을 2단계인 보통 상태로 전환합니다.
  * @returns {boolean} 새 괴이를 실제로 시작했으면 true, 진행 불가 상태면 false
  */
 function spawnStreamApparition() {
@@ -199,17 +212,31 @@ function spawnStreamApparition() {
   apparitionExpired = false;
   window.clearTimeout(connectionFeedbackTimer);
   connectionFeedbackTimer = undefined;
-  connectionWidget.classList.remove("is-failed", "is-false-reconnect");
-  connectionWidget.classList.add("is-weak");
-  connectionWidget.setAttribute("aria-label", "방송 연결 상태: 약함");
-  connectionStatus.textContent = "연결 약함";
-  reconnectButton.setAttribute("aria-label", "약해진 방송 연결 재연결");
+  connectionWidget.classList.remove("is-false-reconnect");
+  setConnectionStage(CONNECTION_STAGES.NORMAL);
+  apparitionWeakTimer = window.setTimeout(
+    weakenStreamConnection,
+    APPARITION_LIFETIME_MS * APPARITION_WEAK_STAGE_RATIO
+  );
   apparitionExpireTimer = window.setTimeout(expireStreamApparition, APPARITION_LIFETIME_MS);
   return true;
 }
 
 /**
- * 제한시간 안에 재접속하지 못한 경우 한 번만 실패로 기록하고 상단 위젯을 끊김 상태로 유지합니다.
+ * 연결 괴이 대응 시간이 절반 지나면 위젯을 3단계인 약함 상태로 악화시킵니다.
+ */
+function weakenStreamConnection() {
+  if (!apparitionActive || apparitionExpired) return;
+  if (document.hidden) {
+    apparitionWeakTimer = window.setTimeout(weakenStreamConnection, 500);
+    return;
+  }
+  apparitionWeakTimer = undefined;
+  setConnectionStage(CONNECTION_STAGES.WEAK);
+}
+
+/**
+ * 제한시간 안에 재접속하지 못한 경우 한 번만 실패로 기록하고 위젯을 4단계인 끊김으로 유지합니다.
  */
 function expireStreamApparition() {
   if (!apparitionActive || apparitionExpired) return;
@@ -218,14 +245,14 @@ function expireStreamApparition() {
     return;
   }
 
+  window.clearTimeout(apparitionWeakTimer);
   window.clearTimeout(apparitionExpireTimer);
+  apparitionWeakTimer = undefined;
   apparitionExpireTimer = undefined;
   apparitionExpired = true;
   chatApp.classList.add("connection-lost");
   corruptVisibleMessagesForConnectionLoss();
-  connectionWidget.classList.add("is-failed");
-  connectionWidget.setAttribute("aria-label", "방송 연결 상태: 연결 없음");
-  connectionStatus.textContent = "연결 없음";
+  setConnectionStage(CONNECTION_STAGES.DISCONNECTED);
   missedApparitions += 1;
   dayMissedApparitions += 1;
 }
@@ -244,8 +271,8 @@ function reconnectStreamConnection() {
     connectionWidget.classList.remove("is-false-reconnect");
     void connectionWidget.offsetWidth;
     connectionWidget.classList.add("is-false-reconnect");
-    connectionWidget.setAttribute("aria-label", "방송 연결 상태: 정상, 불필요한 재연결");
-    connectionStatus.textContent = "정상 연결 · 오판";
+    connectionWidget.setAttribute("aria-label", "방송 연결 상태: 좋음, 불필요한 재연결");
+    connectionStatus.textContent = "좋음 · 오판";
 
     if (health === 0) {
       if (gameMode === GAME_MODES.STORY) endGame();
@@ -259,8 +286,7 @@ function reconnectStreamConnection() {
 
     connectionFeedbackTimer = window.setTimeout(() => {
       connectionWidget.classList.remove("is-false-reconnect");
-      connectionWidget.setAttribute("aria-label", "방송 연결 상태: 안정");
-      connectionStatus.textContent = "연결 안정";
+      setConnectionStage(CONNECTION_STAGES.GOOD);
       connectionFeedbackTimer = undefined;
     }, 1100);
     return;

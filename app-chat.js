@@ -230,7 +230,7 @@ function getAnomalyPresentation(message) {
 }
 
 /**
- * 연결 없음으로 채팅 화면이 오염되는 순간에만 짧은 흔들림 애니메이션을 다시 시작합니다.
+ * 연결이 끊겨 채팅 화면이 오염되는 순간에만 짧은 흔들림 애니메이션을 다시 시작합니다.
  */
 function triggerCorruptedChatPulse() {
   window.clearTimeout(corruptedChatTimer);
@@ -363,7 +363,7 @@ function handleEngineMessage(message) {
   const { viewer, text, historyOnly, behavior } = message;
   const anomalyPresentation = getAnomalyPresentation(message);
   const { isActualAnomaly } = anomalyPresentation;
-  // 연결 없음 상태에서는 실제 판정값을 건드리지 않고 정상 채팅도 화면에서만 오염시킵니다.
+  // 연결 끊김 상태에서는 실제 판정값을 건드리지 않고 정상 채팅도 화면에서만 오염시킵니다.
   const isConnectionCorruption = !historyOnly && apparitionActive && apparitionExpired;
   const isCorruptedMessage = isActualAnomaly || isConnectionCorruption;
   const usesCipherText = anomalyPresentation.usesCipherText || isConnectionCorruption;

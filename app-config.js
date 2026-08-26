@@ -68,17 +68,31 @@ const DEFAULT_STORY_DAY_DURATION_MS = 84000;
 
 /*
  * 방송 화면 연결 괴이와 결과 연출 시간입니다.
- * - APPARITION_LIFETIME_MS: 약한 연결을 발견하고 재연결할 수 있는 시간
+ * - APPARITION_LIFETIME_MS: 보통/약함 단계에서 재연결할 수 있는 전체 시간
+ * - APPARITION_WEAK_STAGE_RATIO: 전체 대응 시간 중 보통에서 약함으로 바뀌는 지점
  * - RESULT_REVEAL_DELAY_MS: 검은 화면 뒤 결과 카드가 나타날 때까지의 시간
  * - *_DELAY_RANGE_MS: 첫 출현과 이후 반복 출현의 [최소, 최대] 대기 범위
  */
 const APPARITION_LIFETIME_MS = 4000;
+const APPARITION_WEAK_STAGE_RATIO = 0.5;
 const RESULT_REVEAL_DELAY_MS = 4000;
 const APPARITION_INITIAL_DELAY_RANGE_MS = Object.freeze([5000, 8000]);
 const APPARITION_DELAY_RANGE_MS = Object.freeze([12000, 18000]);
 
 // 내부 분기와 data-game-mode 속성이 공유하는 고정 모드 식별자입니다.
 const GAME_MODES = Object.freeze({ ENDLESS: "endless", STORY: "story" });
+
+/*
+ * 상단 연결 위젯의 네 단계입니다.
+ * key는 CSS의 is-* 클래스와 data-connection-stage 값으로 사용하고,
+ * label은 화면 문구와 aria-label을 함께 갱신할 때 사용합니다.
+ */
+const CONNECTION_STAGES = Object.freeze({
+  GOOD: Object.freeze({ key: "good", label: "좋음" }),
+  NORMAL: Object.freeze({ key: "normal", label: "보통" }),
+  WEAK: Object.freeze({ key: "weak", label: "약함" }),
+  DISCONNECTED: Object.freeze({ key: "disconnected", label: "끊김" })
+});
 
 // 배열 인덱스 0~6이 각각 1~7일차 시작 시스템 메시지에 대응합니다.
 const STORY_DAY_INTROS = Object.freeze([
@@ -91,7 +105,7 @@ const STORY_DAY_INTROS = Object.freeze([
   "마지막 밤입니다. 이 방송에 남아 있는 이상 연결을 찾아내세요."
 ]);
 /*
- * GLITCH 괴이 또는 연결 없음 상태의 문장을 만드는 토큰 재료입니다.
+ * GLITCH 괴이 또는 연결 끊김 상태의 문장을 만드는 토큰 재료입니다.
  * 이 배열은 화면 표시만 바꾸며 viewer.anomalous 판정이나 원본 엔진 기록은 변경하지 않습니다.
  */
 const UNKNOWN_CHAT_TOKENS = Object.freeze([
@@ -301,11 +315,12 @@ let storyVictory = false;
 let lastDamageReason = "missed";
 /*
  * 상단 연결 괴이 상태입니다.
- * active는 약한 연결이 출현했음을, expired는 복구 시간이 지나 연결 없음이 됐음을 뜻합니다.
+ * active는 연결 괴이가 출현했음을, expired는 복구 시간이 지나 끊김이 됐음을 뜻합니다.
  * day 접두 통계는 하루 결과용이며 접두어가 없는 통계는 최종 결과까지 누적합니다.
  */
 let apparitionRandom = Math.random;
 let apparitionSpawnTimer;
+let apparitionWeakTimer;
 let apparitionExpireTimer;
 let connectionFeedbackTimer;
 let apparitionActive = false;

@@ -61,15 +61,21 @@
   to { opacity: 1; }
 }
 
-/* 약한 연결 위젯의 주황색 외곽광을 서서히 키웁니다. */
-@keyframes connection-widget-weak {
-  from { box-shadow: 0 7px 18px #0009, 0 0 3px #f3a93a2e; }
-  to { box-shadow: 0 7px 18px #0009, 0 0 13px #f3a93a59; }
+/* 2단계 보통 연결의 노란 외곽광을 서서히 키웁니다. */
+@keyframes connection-widget-normal {
+  from { box-shadow: 0 7px 18px #0009, 0 0 3px #f0c94f2e; }
+  to { box-shadow: 0 7px 18px #0009, 0 0 12px #f0c94f59; }
 }
 
-/* 연결 없음 위젯의 불투명도와 붉은 테두리를 점멸시킵니다. */
-@keyframes connection-widget-failed {
-  50% { opacity: .72; border-color: #5f171f; }
+/* 3단계 약한 연결의 빨간 외곽광을 빠르게 맥동시킵니다. */
+@keyframes connection-widget-weak {
+  from { box-shadow: 0 7px 18px #0009, 0 0 3px #ef4d5e35; }
+  to { box-shadow: 0 7px 18px #0009, 0 0 13px #ef4d5e70; }
+}
+
+/* 4단계 끊김 위젯은 검은 상태를 유지하며 내용만 희미하게 점멸합니다. */
+@keyframes connection-widget-disconnected {
+  50% { opacity: .72; filter: brightness(.72); }
 }
 
 /* 정상 상태에서 재연결한 오판을 작은 좌우 흔들림으로 알립니다. */

@@ -302,6 +302,7 @@ function exposeDebugApi() {
     missApparition: expireStreamApparition,
     apparition() {
       return {
+        stage: connectionWidget.dataset.connectionStage,
         active: apparitionActive,
         banished: banishedApparitions,
         missed: missedApparitions,

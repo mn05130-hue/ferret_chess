@@ -1,6 +1,6 @@
 /*
  * 게임 상단의 주소창, 방송 무대, 연결 위젯, HUD를 담당합니다.
- * .collapsed는 주소창 높이, .is-weak/.is-failed는 와이파이 상태,
+ * .collapsed는 주소창 높이, .is-good/.is-normal/.is-weak/.is-disconnected는 연결 단계,
  * .connection-lost는 방송 전체 오염, data-director-state는 채팅 엔진 분위기를 표현합니다.
  */
 /* 가상 주소창은 실제 방송 페이지처럼 보이게 하며 collapsed 상태에서 높이가 줄어듭니다. */
@@ -187,7 +187,7 @@
 .connection-widget {
   position: absolute;
   z-index: 18;
-  top: 58px;
+  top: 200px;
   right: 8px;
   width: 148px;
   min-height: 38px;
@@ -293,35 +293,94 @@
   filter: brightness(1.18);
 }
 
-.connection-widget.is-weak {
+/* 1단계 좋음: 평상시 연결이며 위젯 전체를 초록색으로 표시합니다. */
+.connection-widget.is-good {
+  border-color: #315047;
+  color: #69d8b5;
+  background: #07100ee8;
+}
+
+.connection-widget.is-good .connection-widget-copy strong {
+  color: #8ef1d2;
+}
+
+/* 2단계 보통: 괴이가 시작된 직후 노란색으로 바뀌어 조용히 재연결을 유도합니다. */
+.connection-widget.is-normal {
   border-color: #ad7524;
-  color: #f3a93a;
-  background: #1b1108f2;
+  color: #f0c94f;
+  background: #1b1708f2;
   opacity: 1;
-  animation: connection-widget-weak 1.2s ease-in-out infinite alternate;
+  animation: connection-widget-normal 1.2s ease-in-out infinite alternate;
+}
+
+.connection-widget.is-normal .connection-widget-copy strong {
+  color: #ffe17a;
+}
+
+.connection-widget.is-normal .wifi-wave.wave-outer {
+  opacity: .52;
+}
+
+/* 3단계 약함: 대응 시간이 절반 지나면 빨간색과 줄어든 와이파이 막대로 경고합니다. */
+.connection-widget.is-weak {
+  border-color: #a6303c;
+  color: #ef4d5e;
+  background: #1d070aef;
+  opacity: 1;
+  animation: connection-widget-weak 720ms ease-in-out infinite alternate;
+}
+
+.connection-widget.is-weak .connection-widget-copy strong {
+  color: #ff7a87;
 }
 
 .connection-widget.is-weak .wifi-wave.wave-outer {
-  opacity: .08;
+  opacity: .06;
 }
 
 .connection-widget.is-weak .wifi-wave.wave-middle {
-  opacity: .24;
+  opacity: .2;
 }
 
-.connection-widget.is-failed,
+/* 4단계 끊김: 위젯을 검게 잠그고 와이파이 파형을 꺼 재연결 전까지 단절을 유지합니다. */
+.connection-widget.is-disconnected {
+  border-color: #000;
+  color: #303030;
+  background: #000;
+  box-shadow: 0 7px 18px #000d, inset 0 0 0 1px #151515;
+  opacity: 1;
+  animation: connection-widget-disconnected 900ms steps(2) infinite;
+}
+
+.connection-widget.is-disconnected .connection-widget-copy small {
+  color: #4e4e4e;
+}
+
+.connection-widget.is-disconnected .connection-widget-copy strong {
+  color: #8b8b8b;
+}
+
+.connection-widget.is-disconnected .wifi-wave {
+  opacity: 0;
+}
+
+.connection-widget.is-disconnected .wifi-dot {
+  background: #303030;
+  box-shadow: none;
+}
+
+.connection-widget.is-disconnected .reconnect-button {
+  border-color: #282828;
+  color: #929292;
+  background: #090909;
+}
+
+/* 정상 연결에서 재연결한 경우 단계 색보다 붉은 오판 피드백을 잠깐 우선합니다. */
 .connection-widget.is-false-reconnect {
   border-color: #a6303c;
   color: #ef4d5e;
   background: #1d070aef;
   opacity: 1;
-}
-
-.connection-widget.is-failed {
-  animation: connection-widget-failed 760ms steps(2) infinite;
-}
-
-.connection-widget.is-false-reconnect {
   animation: connection-widget-wrong 320ms linear;
 }
 

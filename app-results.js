@@ -219,7 +219,7 @@ function finishStoryDay() {
   missedToday.forEach(viewer => appendStoryResultDetail(`놓친 이상 시청자 · ${viewer.name}`, "danger"));
   wrongToday.forEach(viewer => appendStoryResultDetail(`정상 시청자 오판 · ${viewer.name}`, "danger"));
   if (dayBanishedApparitions) appendStoryResultDetail(`방송 연결 복구 성공 · ${dayBanishedApparitions}회`, "correct");
-  if (dayMissedApparitions) appendStoryResultDetail(`연결 없음 발생 · 채팅 오염 ${dayMissedApparitions}회`, "danger");
+  if (dayMissedApparitions) appendStoryResultDetail(`연결 끊김 발생 · 채팅 오염 ${dayMissedApparitions}회`, "danger");
   if (!storyResultDetails.childElementCount) appendStoryResultDetail("오늘 기록에는 판정할 연결이 없습니다.");
 
   if (health === 0) storyContinue.textContent = "최종 결과 보기";
