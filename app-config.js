@@ -53,9 +53,9 @@ const VIEWER_STYLES = [
  * - MAX_MESSAGES: DOM에 남겨 두는 채팅 메시지 최대 개수
  * - MAX_HEALTH: 새 게임 시작 체력
  */
-const BASE_ANOMALIES_PER_STAGE = 4;
-const MAX_ANOMALIES_PER_STAGE = 10;
-const STAGES_PER_ADDITIONAL_ANOMALY = 1;
+const BASE_ANOMALIES_PER_STAGE = 6;
+const MAX_ANOMALIES_PER_STAGE = 12;
+const STAGES_PER_ADDITIONAL_ANOMALY = 2;
 const BASE_ANOMALY_GRACE_MS = 20000;
 const MIN_ANOMALY_GRACE_MS = 6000;
 const STAGE_GRACE_STEP_MS = 1000;
@@ -72,7 +72,7 @@ const STORY_TOTAL_DAYS = 7;
 const STORY_START_MINUTES = 19 * 60;
 const STORY_DURATION_MINUTES = 7 * 60;
 const STORY_CLOCK_STEP_MINUTES = 30;
-const DEFAULT_STORY_DAY_DURATION_MS = 14000;
+const DEFAULT_STORY_DAY_DURATION_MS = 140000;
 
 /*
  * 방송 화면 연결 괴이와 결과 연출 시간입니다.
@@ -298,6 +298,21 @@ const storyDayDurationMs = storyDayDurationParameter !== null
   && Number.isFinite(parsedStoryDayDuration)
   ? Math.max(1000, parsedStoryDayDuration)
   : DEFAULT_STORY_DAY_DURATION_MS;
+
+
+// 하루의 90% 안에 모든 이상 시청자가 등장하도록 여유를 둡니다.
+const anomalyArrivalMaxMs = Math.floor(
+  storyDayDurationMs * 0.9 / MAX_ANOMALIES_PER_STAGE
+);
+
+TUNING.anomalyArrivalIntervalMs[0] = Math.min(
+  TUNING.anomalyArrivalIntervalMs[0],
+  Math.floor(anomalyArrivalMaxMs * 0.6)
+);
+TUNING.anomalyArrivalIntervalMs[1] = Math.min(
+  TUNING.anomalyArrivalIntervalMs[1],
+  anomalyArrivalMaxMs
+);
 
 /*
  * 한 게임 전체에서 유지되는 핵심 상태입니다.

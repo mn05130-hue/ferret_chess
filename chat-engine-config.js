@@ -43,7 +43,7 @@ const TUNING = Object.freeze({
   glitchChance: 0.2,
 
   // 단계와 난수 계산으로 간격이 짧아져도 절대 이 값(ms)보다 빠르게 이상 발화를 만들지 않습니다.
-  minimumAnomalyIntervalMs: 3000,
+  minimumAnomalyIntervalMs: 5000,
 
   // 중복·금지 조건으로 문장 생성에 실패했을 때 다른 문장을 다시 뽑는 최대 횟수입니다.
   maxGenerationRetries: 3,
