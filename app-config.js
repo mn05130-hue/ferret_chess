@@ -62,11 +62,6 @@ const STAGE_GRACE_STEP_MS = 1000;
 const MAX_MESSAGES = 100;
 const MAX_HEALTH = 5;
 
-if(DEFAULT_STORY_DAY_DURATION_MS < MAX_ANOMALIES_PER_STAGE* anomalyArrivalIntervalMs[1])
-{
-  anomalyArrivalIntervalMs[1]=DEFAULT_STORY_DAY_DURATION_MS/MAX_ANOMALIES_PER_STAGE;
-}
-
 /*
  * 스토리 시간 규칙입니다.
  * 실제 84초(DEFAULT_STORY_DAY_DURATION_MS)를 게임 속 7시간으로 환산합니다.
@@ -91,6 +86,7 @@ const APPARITION_LIFETIME_MS = 8000;
 const APPARITION_WEAK_STAGE_RATIO = 0.4;
 const APPARITION_MOSAIC_DURATION_MS = 2000;
 const RESULT_REVEAL_DELAY_MS = 10000;
+const END_REVEAL_DELAY_MS = 1000;
 const APPARITION_INITIAL_DELAY_RANGE_MS = Object.freeze([6000, 8000]);
 const APPARITION_DELAY_RANGE_MS = Object.freeze([15000, 18000]);
 
@@ -295,7 +291,7 @@ const NICKNAME_EASTER_EGGS = Object.freeze({
   "너나비": "왕큰왕왕큰.",
   "치쿠사마": "선샌니",
   "모나": "뱀파이어가 입장했습니다.",
-  "시네진": "바보입니다",
+  "시네진": "이마 큰 미소녀",
 
 });
 

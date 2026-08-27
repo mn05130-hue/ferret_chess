@@ -121,6 +121,13 @@
   transition: border-color 180ms, filter 180ms;
 }
 
+/* 연결이 끊기면 assetconfig.js의 끊김 전용 방송 배경으로 전환합니다. */
+.chat-app.connection-lost .stream-stage {
+  background:
+    linear-gradient(180deg, #06100e42, #02040382),
+    var(--asset-stream-disconnected-background, none) center 55% / cover no-repeat;
+}
+
 /*
  * 연결 종료 직전에는 방송 무대 위에 큰 사각 픽셀층을 얹어 낮은 해상도로 깨진 신호를 표현합니다.
  * 위젯과 채팅은 이 레이어 밖에 있으므로 방송 영상만 손상되며, 기본 상태에서는 완전히 숨겨집니다.

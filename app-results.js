@@ -33,7 +33,7 @@ function beginStandardResultReveal(overlay, card, controls, focusTarget) {
     controls.forEach(control => { control.disabled = false; });
     focusTarget.focus();
     resultRevealTimer = undefined;
-  }, RESULT_REVEAL_DELAY_MS);
+  }, END_REVEAL_DELAY_MS);
 }
 
 /**

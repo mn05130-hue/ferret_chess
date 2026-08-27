@@ -58,6 +58,7 @@ function applyVisualAssets() {
   const backgroundAssets = [
     ["--asset-title-background", ASSET_CONFIG.title?.background],
     ["--asset-stream-background", ASSET_CONFIG.stream?.background],
+    ["--asset-stream-disconnected-background", ASSET_CONFIG.stream?.disconnectedBackground],
     ["--asset-stage-result-waiting", ASSET_CONFIG.results?.stage?.waitingBackground],
     ["--asset-stage-result-revealed", ASSET_CONFIG.results?.stage?.revealedBackground],
     ["--asset-story-result-waiting", ASSET_CONFIG.results?.storyDay?.waitingBackground],
