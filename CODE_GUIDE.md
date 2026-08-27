@@ -554,7 +554,7 @@ beginStoryNightReveal()
 
 ### 설정 위치
 
-`bgmconfig.js`의 `BGM_CONFIG`가 상황별 음악 경로를 정의하고, `app-config.js`의 `AUDIO_SETTINGS`가 저장 키와 기본 음량을 정의합니다.
+`bgmconfig.js`의 `BGM_CONFIG`가 상황별 음악 경로를 정의하고, `app-config.js`의 `AUDIO_SETTINGS`가 저장 키와 기본 음량을 정의합니다. 게임 중 무작위 공포 효과음 경로는 `assetconfig.js`의 `ASSET_CONFIG.soundEffects.ambientHorror`, 첫 등장과 반복 간격은 `AMBIENT_HORROR_SFX_*_DELAY_RANGE_MS`에서 관리합니다.
 
 `BGM_CONFIG`의 각 값은 한 곡짜리 배열 또는 여러 곡 배열입니다. 여러 경로를 넣으면 해당 상황에 들어갈 때 한 곡을 무작위 선택합니다. 빈 배열은 현재 재생 중인 곡을 그대로 유지합니다.
 
@@ -587,6 +587,10 @@ const AUDIO_SETTINGS = Object.freeze({
   game: { storageKey: "ferret-chess-game-volume", defaultVolume: 10 }
 });
 ```
+
+### 게임 중 공포 효과음
+
+`scheduleAmbientHorrorSfx()`는 스테이지 시작 뒤 9~16초에 첫 효과음을 예약하고, 이후 18~36초 간격으로 반복합니다. 등록된 효과음은 한 순환 안에서 중복 없이 무작위 재생되며 게임 음량 슬라이더를 따릅니다. 결과 화면, 타이틀 화면, 백그라운드 탭에서는 `stopAmbientHorrorSfx()`가 현재 재생과 다음 예약을 함께 정리합니다.
 
 ### 타이틀 음악
 
@@ -745,6 +749,8 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 결과 공개 지연 | `RESULT_REVEAL_DELAY_MS` |
 | 괴이 등장 간격 | `APPARITION_INITIAL_DELAY_RANGE_MS`, `APPARITION_DELAY_RANGE_MS` |
 | 상황별 배경음악 파일 | `bgmconfig.js`의 `BGM_CONFIG` |
+| 게임 중 공포 효과음 파일 | `ASSET_CONFIG.soundEffects.ambientHorror` |
+| 공포 효과음 등장 간격 | `AMBIENT_HORROR_SFX_INITIAL_DELAY_RANGE_MS`, `AMBIENT_HORROR_SFX_DELAY_RANGE_MS` |
 | 기본 음량 | `AUDIO_SETTINGS` |
 | 타이틀 자동 재생 | `app-audio.js`의 `prepareTitleMusic()` |
 | 일반 채팅 문장 | `chat-engine-dialogue.js` |

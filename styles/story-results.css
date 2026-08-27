@@ -80,8 +80,8 @@
   display: block;
   border-radius: 47% 53% 42% 46%;
   background:
-    radial-gradient(circle at 50% 35%, #232323, #080808 57%, #000 74%);
-  box-shadow: 0 0 55px #ffffff0d, inset 0 -18px 35px #000;
+    radial-gradient(circle at 50% 35%, #000000, #000000 57%, #000 74%);
+  box-shadow: 0 0 55px #000, inset 0 -18px 35px #000;
   clip-path: polygon(13% 2%, 85% 0, 100% 63%, 78% 100%, 52% 89%, 24% 100%, 0 60%);
 }
 
@@ -96,8 +96,8 @@
   width: 28px;
   height: 7px;
   border-radius: 50%;
-  background: #d8d8d8;
-  box-shadow: 0 0 13px #fff6;
+  background: #000;
+  box-shadow: 0 0 13px #000;
 }
 
 .story-omen-eye.eye-left {
@@ -118,7 +118,7 @@
   translate: -50% 0;
   border-radius: 8px 8px 50% 50%;
   background: #000;
-  box-shadow: inset 0 -3px #5c0a16;
+  box-shadow: inset 0 -3px #000;
 }
 
 .story-omen-copy {
@@ -133,12 +133,12 @@
 }
 
 .story-night-overlay.is-wrong .story-omen-eye {
-  background: #ff334e;
-  box-shadow: 0 0 18px #f02, 0 0 35px #a00022;
+  background: #000;
+  box-shadow: 0 0 18px #000, 0 0 35px #000;
 }
 
 .story-night-overlay.is-wrong .story-omen-mouth {
-  box-shadow: inset 0 -5px #a30d22, 0 0 24px #6f0018;
+  box-shadow: inset 0 -5px #000, 0 0 24px #000;
 }
 
 .story-night-overlay.is-wrong.scare-hit .story-night-omen {

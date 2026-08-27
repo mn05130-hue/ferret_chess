@@ -111,6 +111,120 @@ function applyVolume(audio, input, output, settings, value, persist = true) {
 function initializeAudioVolumes() {
   applyVolume(titleMusic, titleVolume, titleVolumeValue, AUDIO_SETTINGS.title, readStoredVolume(AUDIO_SETTINGS.title) , false);
   applyVolume(gameMusic, gameVolume, gameVolumeValue, AUDIO_SETTINGS.game, readStoredVolume(AUDIO_SETTINGS.game), false);
+  initializeAmbientHorrorSfx();
+}
+
+/**
+ * 설정된 공포 효과음마다 재사용할 audio 객체를 만들고 게임 음량에 맞춥니다.
+ */
+function initializeAmbientHorrorSfx() {
+  stopAmbientHorrorSfx();
+  ambientHorrorSfxPlayers = normalizeMusicTracks(ASSET_CONFIG.soundEffects?.ambientHorror)
+    .map(path => {
+      const audio = new Audio(path);
+      audio.preload = "auto";
+      return { path, audio };
+    });
+  ambientHorrorSfxQueue = [];
+  lastAmbientHorrorSfxPath = "";
+  syncAmbientHorrorSfxVolume();
+}
+
+/**
+ * 효과음이 BGM보다 묻히지 않도록 게임 음량에 배율을 적용합니다.
+ */
+function syncAmbientHorrorSfxVolume() {
+  const volume = Math.min(1, gameMusic.volume * AMBIENT_HORROR_SFX_VOLUME_SCALE);
+  ambientHorrorSfxPlayers.forEach(({ audio }) => { audio.volume = volume; });
+}
+
+/**
+ * 최소~최대 범위에서 다음 효과음까지의 무작위 대기 시간을 계산합니다.
+ * @param {readonly number[]} range [최소, 최대] 밀리초 범위
+ * @returns {number} setTimeout에 전달할 밀리초
+ */
+function getAmbientHorrorSfxDelay(range) {
+  const [minimum, maximum] = range;
+  return Math.round(minimum + Math.random() * (maximum - minimum));
+}
+
+/**
+ * 세 효과음을 모두 한 번씩 사용하기 전에는 같은 파일을 다시 뽑지 않습니다.
+ * @returns {{path: string, audio: HTMLAudioElement}|null} 다음 재생 항목
+ */
+function takeNextAmbientHorrorSfx() {
+  if (!ambientHorrorSfxQueue.length) {
+    ambientHorrorSfxQueue = [...ambientHorrorSfxPlayers];
+  }
+  if (!ambientHorrorSfxQueue.length) return null;
+
+  const candidates = ambientHorrorSfxQueue.filter(({ path }) => path !== lastAmbientHorrorSfxPath);
+  const pool = candidates.length ? candidates : ambientHorrorSfxQueue;
+  const picked = pool[Math.floor(Math.random() * pool.length)];
+  ambientHorrorSfxQueue.splice(ambientHorrorSfxQueue.indexOf(picked), 1);
+  lastAmbientHorrorSfxPath = picked.path;
+  return picked;
+}
+
+/**
+ * 결과나 타이틀이 아닌 실제 게임 진행 중에만 효과음을 예약할 수 있는지 확인합니다.
+ * @returns {boolean} 효과음 재생 가능 여부
+ */
+function canPlayAmbientHorrorSfx() {
+  return !document.hidden && !gameOver && !stageReviewOpen
+    && !gameScreen.inert && gameScreen.getAttribute("aria-hidden") === "false";
+}
+
+/**
+ * 다음 공포 효과음 한 건을 예약합니다.
+ * @param {boolean} initial 스테이지 시작 직후의 짧은 대기 범위를 사용할지 여부
+ */
+function scheduleAmbientHorrorSfx(initial = false) {
+  window.clearTimeout(ambientHorrorSfxTimer);
+  ambientHorrorSfxTimer = undefined;
+  if (!canPlayAmbientHorrorSfx() || !ambientHorrorSfxPlayers.length) return;
+
+  const range = initial
+    ? AMBIENT_HORROR_SFX_INITIAL_DELAY_RANGE_MS
+    : AMBIENT_HORROR_SFX_DELAY_RANGE_MS;
+  ambientHorrorSfxTimer = window.setTimeout(() => {
+    ambientHorrorSfxTimer = undefined;
+    if (!canPlayAmbientHorrorSfx()) return;
+
+    const picked = takeNextAmbientHorrorSfx();
+    if (picked) {
+      ambientHorrorSfxPlayers.forEach(({ audio }) => {
+        audio.pause();
+        try { audio.currentTime = 0; } catch { /* 아직 메타데이터가 없어도 다음 재생은 계속 시도합니다. */ }
+      });
+      picked.audio.play().catch(() => {});
+    }
+    scheduleAmbientHorrorSfx();
+  }, getAmbientHorrorSfxDelay(range));
+}
+
+/**
+ * 현재 효과음과 예약을 정리합니다.
+ */
+function stopAmbientHorrorSfx() {
+  window.clearTimeout(ambientHorrorSfxTimer);
+  ambientHorrorSfxTimer = undefined;
+  ambientHorrorSfxPlayers.forEach(({ audio }) => {
+    audio.pause();
+    try { audio.currentTime = 0; } catch { /* 로드 전 audio는 위치를 바꿀 수 없습니다. */ }
+  });
+}
+
+/**
+ * 탭 표시 여부와 게임 진행 상태가 바뀔 때 효과음 예약도 같은 상태로 맞춥니다.
+ */
+function syncAmbientHorrorSfx() {
+  if (!canPlayAmbientHorrorSfx()) {
+    stopAmbientHorrorSfx();
+    return;
+  }
+  syncAmbientHorrorSfxVolume();
+  if (ambientHorrorSfxTimer === undefined) scheduleAmbientHorrorSfx();
 }
 
 /**

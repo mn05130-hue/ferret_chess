@@ -23,6 +23,7 @@ function showEntryScreen() {
   gameScreen.setAttribute("aria-hidden", "true");
   stopTitleMusic();
   stopGameMusic();
+  stopAmbientHorrorSfx();
   requestAnimationFrame(() => playerNicknameInput.focus());
 }
 
@@ -77,6 +78,7 @@ function showTitle(shouldFocus = true) {
   gameScreen.setAttribute("aria-hidden", "true");
   titleScreen.hidden = false;
   titleScreen.setAttribute("aria-hidden", "false");
+  stopAmbientHorrorSfx();
   stopGameMusic();
   prepareTitleMusic();
   if (shouldFocus) requestAnimationFrame(() => storyStart.focus());
@@ -170,6 +172,7 @@ function endGame() {
   clearStreamApparition();
   stopStoryClock();
   chatEngine?.stop();
+  stopAmbientHorrorSfx();
   closeViewerPanel();
   stageOverlay.classList.remove("open");
   stageOverlay.setAttribute("aria-hidden", "true");
@@ -343,6 +346,7 @@ function startStage() {
   clearStreamApparition();
   stopStoryClock();
   chatEngine?.stop();
+  stopAmbientHorrorSfx();
   currentSeed = createStageSeed();
   remainingAnomalies = getAnomalyCountForStage(currentStage);
   viewers = createViewers(currentSeed, remainingAnomalies);
@@ -399,6 +403,7 @@ function startStage() {
   requestAnimationFrame(() => scrollToLatest());
   exposeDebugApi();
   scheduleStreamApparition(true);
+  scheduleAmbientHorrorSfx(true);
 }
 
 /**
