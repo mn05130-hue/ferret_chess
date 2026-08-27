@@ -62,6 +62,11 @@ const STAGE_GRACE_STEP_MS = 1000;
 const MAX_MESSAGES = 100;
 const MAX_HEALTH = 5;
 
+if(DEFAULT_STORY_DAY_DURATION_MS < MAX_ANOMALIES_PER_STAGE* anomalyArrivalIntervalMs[1])
+{
+  anomalyArrivalIntervalMs[1]=DEFAULT_STORY_DAY_DURATION_MS/MAX_ANOMALIES_PER_STAGE;
+}
+
 /*
  * 스토리 시간 규칙입니다.
  * 실제 84초(DEFAULT_STORY_DAY_DURATION_MS)를 게임 속 7시간으로 환산합니다.

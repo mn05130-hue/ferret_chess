@@ -37,7 +37,7 @@ const TUNING = Object.freeze({
   anomalyIntervalMs: [5000, 10000],
 
   // 이상 단계가 1 오를 때마다 발화 빈도 배율에 더하는 값입니다. 현재 값이면 단계마다 2%씩 증가합니다.
-  anomalyLevelFrequencyStep: 0.02,
+  anomalyLevelFrequencyStep: 0.1,
 
   // 이상 채팅 한 건이 전담 유형 대신 GLITCH 난독화 채팅으로 선택될 확률입니다. 0.5는 50%입니다.
   glitchChance: 0.2,
