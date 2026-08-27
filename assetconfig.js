@@ -8,6 +8,7 @@
  * - 폴더 구분자는 Windows에서도 역슬래시(\) 대신 슬래시(/) 사용을 권장합니다.
  * - 빈 문자열("")을 입력하면 해당 이미지 또는 배경을 숨깁니다.
  * - 배경 음악 파일은 bgmconfig.js에서, 짧은 효과음 파일은 soundEffects에서 설정합니다.
+ * - 배경 음악 파일은 bgmconfig.js에서, 짧은 효과음 파일은 soundEffects에서 설정합니다.
  */
 const ASSET_CONFIG = Object.freeze({
   // 닉네임을 입력하는 최초 접속 화면의 상단 로고입니다.
@@ -58,6 +59,7 @@ const ASSET_CONFIG = Object.freeze({
     // 체력 소진 또는 스토리 7일 생존 뒤 표시되는 최종 결과 화면입니다.
     final: Object.freeze({
       waitingBackground: "",
+      revealedBackground: "assets/stage_result_horror_suspense.gif"
       revealedBackground: "assets/stage_result_horror_suspense.gif"
     })
   })
