@@ -62,6 +62,11 @@ const STAGE_GRACE_STEP_MS = 1000;
 const MAX_MESSAGES = 100;
 const MAX_HEALTH = 5;
 
+if(DEFAULT_STORY_DAY_DURATION_MS < MAX_ANOMALIES_PER_STAGE* anomalyArrivalIntervalMs[1])
+{
+  anomalyArrivalIntervalMs[1]=DEFAULT_STORY_DAY_DURATION_MS/MAX_ANOMALIES_PER_STAGE;
+}
+
 /*
  * 스토리 시간 규칙입니다.
  * 실제 84초(DEFAULT_STORY_DAY_DURATION_MS)를 게임 속 7시간으로 환산합니다.
@@ -72,7 +77,7 @@ const STORY_TOTAL_DAYS = 7;
 const STORY_START_MINUTES = 19 * 60;
 const STORY_DURATION_MINUTES = 7 * 60;
 const STORY_CLOCK_STEP_MINUTES = 30;
-const DEFAULT_STORY_DAY_DURATION_MS = 14000;
+const DEFAULT_STORY_DAY_DURATION_MS = 140000;
 
 /*
  * 방송 화면 연결 괴이와 결과 연출 시간입니다.
