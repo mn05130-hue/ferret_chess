@@ -28,7 +28,7 @@ const ASSET_CONFIG = Object.freeze({
     disconnectedBackground: "assets/gameScrenn_abnormal.png",
     character: "assets/beorjji-emotion-gif-pack/beorjji-idle-smooth.gif",
     // 연결이 끊긴 동안 표시할 캐릭터입니다.
-    disconnectedCharacter: "assets/beorjji-emotion-gif-pack/beorjji-surprised.gif"
+    disconnectedCharacter: "assets\\beojji_horror_stage_overlay.gif"
   }),
 
   // 실제 게임 진행 중 무작위로 재생할 짧은 공포 효과음입니다.
