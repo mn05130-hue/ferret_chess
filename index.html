@@ -1,167 +1,377 @@
 <!doctype html>
+<!--
+  Buzzi Live Chat의 전체 화면 구조입니다.
+  JavaScript는 아래 id를 상태 변경 지점으로 사용하므로 id를 바꿀 때 관련 모듈도 함께 수정해야 합니다.
+-->
 <html lang="ko">
 <head>
+  <!-- 모바일 세로 화면과 노치 안전 영역을 기준으로 렌더링합니다. -->
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#25170f">
-  <meta name="description" content="버찌와 쩨비가 펼치는 작은 AI 체스 인형극">
-  <title>버찌 체스</title>
-  <link rel="stylesheet" href="styles.css?v=17">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111214">
+  <meta name="description" content="라이브 방송용 모바일 채팅 인터페이스">
+  <title>Buzzi Live Chat</title>
+  <!-- 기능별 스타일 파일. 아래 순서는 기존 cascade와 반응형 덮어쓰기를 보존합니다. -->
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/entry.css">
+  <link rel="stylesheet" href="styles/title.css">
+  <link rel="stylesheet" href="styles/stream.css">
+  <link rel="stylesheet" href="styles/chat.css">
+  <link rel="stylesheet" href="styles/overlays.css">
+  <link rel="stylesheet" href="styles/animations.css">
+  <link rel="stylesheet" href="styles/viewport.css">
+  <link rel="stylesheet" href="styles/story-results.css">
+  <link rel="stylesheet" href="styles/responsive.css">
 </head>
 <body>
-  <main class="theatre" id="theatre">
-    <div class="frame">
-      <button class="medallion" type="button" aria-label="음악 장식">♪</button>
-      <div class="curtain top" aria-hidden="true"></div>
-      <div class="curtain left" aria-hidden="true"><i></i></div>
-      <div class="curtain right" aria-hidden="true"><i></i></div>
-      <div class="spotlight one" aria-hidden="true"></div>
-      <div class="spotlight two" aria-hidden="true"></div>
+  <!--
+    화면 표시 상태는 세 속성을 목적에 맞게 함께 사용합니다.
+    hidden은 레이아웃에서 제거하고, aria-hidden은 보조 기술에서 숨기며,
+    inert는 게임 화면이 보이지 않을 때 내부 버튼과 입력란의 초점을 막습니다.
+  -->
+  <main class="chat-app" aria-label="라이브 채팅">
+    <!--
+      브라우저의 오디오 자동 재생 제한을 해제하면서 플레이어 닉네임도 확정하는 첫 진입 화면입니다.
+      버튼 클릭이나 입력창의 Enter 제출이 사용자 제스처가 되어 다음 타이틀 화면의 음악을 재생합니다.
+    -->
+    <section class="entry-screen" id="entry-screen" aria-labelledby="entry-title">
+      <!-- 이미지 경로는 assetconfig.js의 entry.logo에서 주입합니다. -->
+      <img class="entry-logo" alt="Buzzi 팔로우해줘 제발 로고">
+      <form class="entry-panel" id="entry-form" novalidate>
+        <p class="entry-alert"><span aria-hidden="true">●</span> UNKNOWN VIEWERS DETECTED</p>
+        <h1 class="entry-title" id="entry-title">방송에 접속할 이름을 입력하세요.</h1>
+        <p class="entry-copy">평범한 심야 방송에 정체불명의 시청자들이 접속했습니다. 입력한 닉네임은 채팅과 시청자 기록에 표시됩니다.</p>
+        <label class="player-nickname-field entry-nickname-field" for="player-nickname">
+          <span>PLAYER NAME</span>
+          <input id="player-nickname" type="text" maxlength="16" autocomplete="nickname" enterkeyhint="go" placeholder="닉네임을 입력하세요" aria-describedby="nickname-error" required>
+        </label>
+        <p class="nickname-error" id="nickname-error" role="status" aria-live="polite" hidden>타이틀로 이동하려면 닉네임을 입력하세요.</p>
+        <!-- app-config.js의 NICKNAME_EASTER_EGGS에 등록된 이름을 입력했을 때만 공개됩니다. -->
+        <p class="entry-easter-egg" id="nickname-easter-egg" role="status" aria-live="polite" hidden></p>
+        <button class="entry-gate" id="entry-gate" type="submit">
+          <span>타이틀 화면으로</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+        </button>
+        <small class="entry-sound-hint">닉네임을 확정하면 소리와 함께 시작합니다.</small>
+      </form>
+    </section>
 
-      <section class="screen title-screen active" id="title-screen" tabindex="-1" aria-label="버찌 체스 타이틀 무대">
-        <div class="title-actor title-zzeebi">
-          <div class="zzeebi-crop" role="img" aria-label="플레이어의 분신 쩨비"></div>
+    <!-- 게임 시작 전 표시되는 타이틀, 닉네임 입력, 모드 선택 영역입니다. -->
+    <section class="title-screen" id="title-screen" aria-labelledby="game-title" aria-hidden="true" hidden>
+      <div class="title-brand" aria-hidden="false">
+        <span class="title-brand-dot"></span>
+        BUZZI · MIDNIGHT ROOM
+      </div>
+      <!-- 자동 재생 제한을 고려해 사용자가 직접 타이틀 음악을 켜고 음량을 정합니다. -->
+      <div class="title-audio-controls" aria-label="타이틀 배경음악 설정">
+        <button class="title-music-button" id="title-music-button" type="button" aria-pressed="true" aria-label="타이틀 배경음악 재생">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 10v4h3l4 3V7L8 10H5Z"/>
+            <path class="music-wave" d="M15 9.2c.8.7 1.2 1.6 1.2 2.8s-.4 2.1-1.2 2.8M17.6 7c1.4 1.3 2.2 3 2.2 5s-.8 3.7-2.2 5"/>
+          </svg>
+          <span id="title-music-label">BGM 끄기</span>
+        </button>
+        <label class="volume-control title-volume-control">
+          <span class="sr-only">타이틀 배경음악 음량</span>
+          <input id="title-volume" type="range" min="0" max="100" step="1" value="15" aria-label="타이틀 배경음악 음량">
+          <output id="title-volume-value" for="title-volume">15%</output>
+        </label>
+      </div>
+      <audio id="title-music" preload="metadata" loop></audio>
+      <!-- 첫 화면에서 확정한 닉네임으로 스토리 또는 무한 모드 진입을 요청하는 핵심 메뉴입니다. -->
+      <div class="title-content">
+        <p class="title-alert"><span aria-hidden="true">●</span> UNKNOWN VIEWERS DETECTED</p>
+        <h1 class="sr-only" id="game-title">구독 방송</h1>
+        <p class="title-copy">평범한 심야 방송에 정체불명의 시청자들이 접속했습니다. 플레이할 모드를 선택하세요.</p>
+        <div class="title-mode-buttons" aria-label="게임 모드 선택">
+          <button class="title-start-button story-start-button" id="story-start" type="button">
+            <span><strong>스토리 모드</strong><small>7일 동안 생존</small></span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+          </button>
+          <button class="title-start-button endless-start-button" id="game-start" type="button">
+            <span><strong>무한 모드</strong><small>최대한 오래 생존하십시오</small></span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+          </button>
         </div>
+        <div class="title-rules" aria-label="게임 목표">
+          <span>기록 확인</span>
+          <i aria-hidden="true"></i>
+          <span>이상 징후 탐색</span>
+          <i aria-hidden="true"></i>
+          <span>강제 퇴장</span>
+        </div>
+      </div>
+      <p class="title-hint">이어폰을 착용하면 더 몰입해서 즐길 수 있습니다.</p>
+    </section>
 
-        <div class="title-center">
-          <div class="logo" aria-label="버찌 체스">
-            <span>버</span><span>찌</span><span class="gap">체</span><span>스</span>
+    <!-- 실제 플레이 화면입니다. 타이틀에서는 inert 상태로 두어 키보드 초점도 차단합니다. -->
+    <div class="game-screen" id="game-screen" aria-hidden="true" inert>
+    <!-- 가상 브라우저 주소창. 접기 버튼은 방송 영역의 사용 가능한 높이도 함께 조정합니다. -->
+    <header class="browser-bar" aria-label="현재 방송 주소">
+      <svg class="pin-icon" aria-hidden="true" viewBox="0 0 24 24">
+        <path d="m15.8 3.2 5 5-2 2-1-.35-3.45 3.45.35 2-1.4 1.4-2.65-2.65-5.3 5.3-1.4-1.4 5.3-5.3L6.6 10l1.4-1.4 2 .35 3.45-3.45-.35-1 2.7-1.3Z"/>
+      </svg>
+      <div class="address" title="https://www.cizzk.never.co/buzzi/live/">
+        <span>https://www.cizzk.never.co/buzzi/live/</span>
+        <button class="address-menu" type="button" aria-label="주소 메뉴">•••</button>
+      </div>
+      <button class="collapse-button" type="button" aria-label="상단 바 접기">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5.5 7.5 4.5 4.5 4.5-4.5"/></svg>
+      </button>
+    </header>
+
+    <!--
+      화면 상단에 항상 보이는 작은 연결 컨트롤입니다.
+      좋음(초록) → 보통(노랑) → 약함(빨강) → 끊김(검정) 순서로 연결 상태가 악화됩니다.
+      괴이가 없을 때 재연결을 누르면 오판으로 체력이 감소합니다.
+    -->
+    <aside class="connection-widget is-good" id="connection-widget" data-connection-stage="good" aria-label="방송 연결 상태: 좋음">
+      <span class="wifi-meter" aria-hidden="true">
+        <i class="wifi-wave wave-outer"></i>
+        <i class="wifi-wave wave-middle"></i>
+        <i class="wifi-dot"></i>
+      </span>
+      <span class="connection-widget-copy">
+        <small>LIVE CONNECTION</small>
+        <strong id="connection-status">좋음</strong>
+      </span>
+      <button class="reconnect-button" id="reconnect-button" type="button">재연결</button>
+    </aside>
+
+    <!-- 방송 영상, 배경음악, 연결 상태, 이상 채팅 제한시간이 겹쳐지는 무대입니다. -->
+    <section class="stream-stage" aria-label="버찌의 실시간 방송 화면">
+      <div class="stream-noise" aria-hidden="true"></div>
+      <!-- 실제 방송 방 이미지 위에 어두운 하단 음영과 얇은 주사선을 더하는 보정 레이어입니다. -->
+      <div class="stream-room" aria-hidden="true"></div>
+      <!-- 캐릭터 경로는 assetconfig.js의 stream.character에서 주입합니다. -->
+      <img class="stream-character" alt="방송을 진행 중인 버찌">
+      <div class="stream-topline">
+        <span class="live-badge"><i aria-hidden="true"></i> LIVE</span>
+        <div class="stream-topline-actions">
+          <div class="game-audio-controls" aria-label="게임 배경음악 설정">
+            <button class="game-music-button" id="game-music-button" type="button" aria-pressed="false" aria-label="게임 배경음악 정지">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 10v4h3l4 3V7L8 10H5Z"/>
+                <path class="music-wave" d="M15 9.2c.8.7 1.2 1.6 1.2 2.8s-.4 2.1-1.2 2.8"/>
+              </svg>
+            </button>
+            <label class="volume-control game-volume-control">
+              <span class="sr-only">게임 배경음악 음량</span>
+              <input id="game-volume" type="range" min="0" max="100" step="1" value="10" aria-label="게임 배경음악 음량">
+              <output id="game-volume-value" for="game-volume">10%</output>
+            </label>
           </div>
-          <p class="tagline">A LITTLE CHESS THEATRE</p>
-          <nav class="menu" aria-label="주 메뉴">
-            <fieldset class="difficulty-picker">
-              <legend>AI 난이도</legend>
-              <label class="difficulty-option">
-                <input type="radio" name="difficulty" value="low">
-                <span>하</span>
-              </label>
-              <label class="difficulty-option">
-                <input type="radio" name="difficulty" value="medium" checked>
-                <span>중</span>
-              </label>
-              <label class="difficulty-option">
-                <input type="radio" name="difficulty" value="high">
-                <span>상</span>
-              </label>
-            </fieldset>
-            <button class="paper-button primary" id="start-game" type="button">AI 대국 시작</button>
-            <button class="paper-button variant-menu-button" id="open-variants" type="button">변형 체스</button>
-            <button class="paper-button" data-modal="how" type="button">게임 방법</button>
-            <button class="paper-button" data-modal="credits" type="button">크레딧</button>
-          </nav>
+          <span class="viewer-count" aria-label="현재 시청자 수">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 10s2.7-4.5 7.5-4.5 7.5 4.5 7.5 4.5-2.7 4.5-7.5 4.5S2.5 10 2.5 10Z"/><circle cx="10" cy="10" r="2.1"/></svg>
+            <span id="stream-viewer-count">124</span>
+          </span>
         </div>
+      </div>
+      <div class="stream-lower-third">
+        <div>
+          <strong>버찌</strong>
+          <span>저쳇 ON 🌙</span>
+        </div>
+        <span class="signal-status" id="stream-signal">연결 안정</span>
+      </div>
+      <div class="threat-timer" id="threat-timer" hidden aria-live="polite">
+        <span>SIGNAL CONTAMINATION</span>
+        <strong><span id="threat-seconds">20.0</span>s</strong>
+      </div>
+      <audio id="game-music" preload="metadata" loop></audio>
+    </section>
 
-        <div class="title-actor title-beorjji">
-          <div class="beorjji-crop" role="img" aria-label="AI 상대 버찌"></div>
+    <!-- 두 모드가 공유하는 체력·진행도·시각·이상 시청자·점수 HUD입니다. -->
+    <section class="game-hud" aria-label="게임 상태">
+      <div class="hud-stat stage-stat">
+        <span id="progress-label">스테이지</span>
+        <strong id="stage-display">1</strong>
+      </div>
+      <div class="hud-stat health-stat">
+        <span>체력</span>
+        <strong id="health-display" aria-label="체력 3">3</strong>
+      </div>
+      <div class="hud-stat time-stat">
+        <span id="time-stat-label">모드</span>
+        <strong id="story-clock">∞</strong>
+      </div>
+      <div class="hud-stat anomaly-stat">
+        <span id="anomaly-label">남은 이상 시청자</span>
+        <strong id="anomaly-display">1</strong>
+      </div>
+      <div class="hud-stat score-stat">
+        <span>점수</span>
+        <strong id="score-display">0000</strong>
+      </div>
+      <button class="help-button" id="help-button" type="button" aria-label="게임 방법">?</button>
+    </section>
+
+    <!-- 채팅 메시지는 동적으로 li 요소로 추가되며 aria-live로 새 메시지를 알립니다. -->
+    <section class="message-region" aria-label="실시간 메시지">
+      <ol class="message-list" id="message-list" aria-live="polite"></ol>
+      <button class="new-message-button" id="new-message-button" type="button" hidden>
+        새 메시지 보기
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg>
+      </button>
+    </section>
+
+    <!-- 보상 버튼, 사용자 채팅 입력기, 이모지 목록, 하단 메뉴를 묶은 조작 영역입니다. -->
+    <section class="chat-controls" aria-label="채팅 작성 도구">
+      <button class="reward-banner" id="reward-button" type="button">
+        <span class="reward-copy">1시간 시청 통나무 파워 배달 완료!</span>
+        <span class="reward-amount"><span class="reward-coin" aria-hidden="true">♧</span><span id="reward-label">100 받기</span></span>
+      </button>
+
+      <div class="composer-wrap">
+        <form class="composer" id="message-form">
+          <span class="my-avatar" aria-hidden="true">🐹</span>
+          <label class="sr-only" for="message-input">채팅 메시지</label>
+          <input id="message-input" name="message" type="text" maxlength="120" autocomplete="off" aria-describedby="composer-hint">
+          <button class="emoji-button" id="emoji-button" type="button" aria-label="이모지 선택" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/>
+              <circle class="eye" cx="9" cy="10" r="1"/>
+              <circle class="eye" cx="15" cy="10" r="1"/>
+              <path d="M8.5 14c.9 1.1 2 1.7 3.5 1.7s2.6-.6 3.5-1.7"/>
+            </svg>
+          </button>
+          <button class="send-button" type="submit" aria-label="메시지 보내기">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 13-7-4 14-2.5-5.5L5 12Z"/></svg>
+          </button>
+        </form>
+
+        <div class="emoji-panel" id="emoji-panel" hidden aria-label="이모지 목록">
+          <button type="button">ㅋㅋㅋ</button>
+          <button type="button">💚</button>
+          <button type="button">🤣</button>
+          <button type="button">👏</button>
+          <button type="button">🔥</button>
+        </div>
+        <p class="sr-only" id="composer-hint">메시지를 입력한 뒤 엔터를 누르면 전송됩니다.</p>
+      </div>
+
+      <nav class="bottom-nav" aria-label="채팅 메뉴">
+        <button class="support-button" id="support-button" type="button">
+          <svg class="ticket-icon" viewBox="0 0 28 21" aria-hidden="true">
+            <path d="M1 5.2 17 1l9.6 6.3-2 10.8-15.5 1.8-8.1-5.7 2.6-3.3L1 8.7V5.2Z"/>
+            <circle cx="18.8" cy="10.3" r="2.4"/>
+          </svg>
+          <span>후원하기</span>
+        </button>
+        <button class="voice-button" id="voice-button" type="button" aria-label="음성 채팅">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8.5"/>
+            <path d="M13.5 7.8c-2.5-.8-4.8.5-4.8 2.2 0 1.4 1.3 1.9 3.3 2.2 2 .3 3.3.8 3.3 2.2 0 1.7-2.2 3-4.8 2.2M12 6v12"/>
+          </svg>
+        </button>
+        <button class="chat-tab active" id="chat-tab" type="button" aria-current="page">채팅</button>
+      </nav>
+    </section>
+
+    <!-- 닉네임 클릭 시 열리는 시청자 기록/강퇴 모달입니다. -->
+    <div class="viewer-backdrop" id="viewer-backdrop" aria-hidden="true">
+      <section class="viewer-panel" role="dialog" aria-modal="true" aria-labelledby="viewer-name">
+        <button class="panel-close" id="panel-close" type="button" aria-label="닫기">×</button>
+        <p class="panel-kicker">VIEWER LOG</p>
+        <h2 id="viewer-name"></h2>
+        <p class="panel-help">최근 채팅 기록을 확인하고 판단하세요.</p>
+        <ol class="viewer-history" id="viewer-history"></ol>
+        <button class="kick-button" id="kick-button" type="button">강제 퇴장</button>
+      </section>
+    </div>
+
+    <!-- 무한 모드의 스테이지 성공·실패 결과 모달입니다. -->
+    <div class="stage-overlay" id="stage-overlay" aria-hidden="true">
+      <section class="stage-card" role="dialog" aria-modal="true" aria-labelledby="stage-result-title">
+        <p class="result-kicker" id="stage-result-kicker">STAGE 01 CLEAR</p>
+        <div class="stage-result-mark" id="stage-result-mark" aria-hidden="true">✓</div>
+        <h2 id="stage-result-title">이상 시청자 차단</h2>
+        <p id="stage-result-copy"></p>
+        <dl class="stage-summary">
+          <div><dt>차단</dt><dd id="stage-caught">0</dd></div>
+          <div><dt>놓침</dt><dd id="stage-missed">0</dd></div>
+          <div><dt>오판</dt><dd id="stage-wrong">0</dd></div>
+          <div><dt>체력</dt><dd id="stage-health">3</dd></div>
+        </dl>
+        <button class="stage-continue-button" id="stage-continue" type="button">다음 스테이지</button>
+      </section>
+    </div>
+
+    <!-- 스토리 모드에서 오전 2시에만 판정을 공개하는 공포 전환 및 결과 모달입니다. -->
+    <div class="story-night-overlay" id="story-night-overlay" aria-hidden="true">
+      <div class="story-night-omen" aria-hidden="true">
+        <span class="story-omen-head">
+          <i class="story-omen-eye eye-left"></i>
+          <i class="story-omen-eye eye-right"></i>
+          <i class="story-omen-mouth"></i>
+        </span>
+        <span class="story-omen-copy">DON'T LOOK AWAY</span>
+      </div>
+      <section class="story-night-card" role="dialog" aria-modal="true" aria-labelledby="story-result-title">
+        <p class="story-night-kicker" id="story-result-kicker">DAY 01 · BROADCAST CLOSED</p>
+        <time class="story-night-time" datetime="02:00">02:00 AM</time>
+        <h2 id="story-result-title">1일차 방송 결과</h2>
+        <p id="story-result-copy"></p>
+        <dl class="story-night-summary">
+          <div><dt>이상 차단</dt><dd id="story-caught">0</dd></div>
+          <div><dt>놓침</dt><dd id="story-missed">0</dd></div>
+          <div><dt>오판</dt><dd id="story-wrong">0</dd></div>
+          <div><dt>연결 실패</dt><dd id="story-apparition-missed">0</dd></div>
+          <div><dt>남은 체력</dt><dd id="story-health">3</dd></div>
+        </dl>
+        <ul class="story-result-details" id="story-result-details" aria-label="오늘의 판정 상세"></ul>
+        <button class="story-continue-button" id="story-continue" type="button">2일차 시작</button>
+      </section>
+    </div>
+
+    <!-- 체력이 소진되거나 7일을 완주했을 때 표시되는 최종 결과입니다. -->
+    <div class="game-overlay" id="game-overlay" aria-hidden="true">
+      <section class="result-card" role="dialog" aria-modal="true" aria-labelledby="result-title">
+        <p class="result-kicker" id="result-kicker">CONNECTION CLOSED</p>
+        <h2 id="result-title">방송 종료</h2>
+        <p id="result-copy"></p>
+        <strong class="final-score" id="final-score">0000점</strong>
+        <p class="final-stage-line"><span id="final-progress-label">도달 스테이지</span> <strong id="final-stage">1</strong></p>
+        <div class="result-actions">
+          <button class="retry-button" id="game-retry" type="button">다시 하기</button>
+          <button class="restart-button" id="game-restart" type="button">타이틀로</button>
         </div>
       </section>
+    </div>
 
-      <section class="screen game-screen" id="game-screen" tabindex="-1" aria-label="쩨비와 버찌의 체스 대국" aria-hidden="true" inert>
-        <div class="game-status paper-card" id="game-status" role="status" aria-live="polite">쩨비의 차례</div>
-
-        <aside class="player-panel zzeebi-panel" aria-label="왼쪽 플레이어 쩨비">
-          <div class="zzeebi-crop game-zzeebi" role="img" aria-label="쩨비"></div>
-          <span class="name-card">쩨비 · 백</span>
-        </aside>
-
-        <div class="board-wrap">
-          <div class="chessboard" id="chessboard" role="grid" aria-label="가로 방향 8×8 체스판"></div>
-          <div class="game-actions" aria-label="대국 메뉴">
-            <button class="paper-button compact" id="hint" type="button">힌트</button>
-            <button class="paper-button compact skill-button" id="skill" type="button" hidden>스킬 · 수호막</button>
-            <button class="paper-button compact" id="restart" type="button">다시 시작</button>
-            <button class="paper-button compact" id="back-title" type="button">타이틀로</button>
-          </div>
-        </div>
-
-        <aside class="player-panel beorjji-panel" aria-label="오른쪽 AI 버찌">
-          <div class="beorjji-crop game-beorjji" role="img" aria-label="버찌"></div>
-          <span class="name-card">버찌 · 흑</span>
-        </aside>
-
-        <aside class="move-history paper-card" aria-labelledby="move-history-title">
-          <div class="move-history-heading">
-            <h2 id="move-history-title">기보</h2>
-            <span id="move-count">0수</span>
-          </div>
-          <p class="opening-name" id="opening-name">오프닝 대기 중</p>
-          <div class="move-list-scroll" id="move-list-scroll" tabindex="0" aria-label="지금까지 둔 수">
-            <table class="move-table">
-              <thead>
-                <tr><th scope="col">#</th><th scope="col">쩨비</th><th scope="col">버찌</th></tr>
-              </thead>
-              <tbody id="move-list" aria-live="polite"></tbody>
-            </table>
-          </div>
-        </aside>
-      </section>
-
-      <div class="floor" aria-hidden="true"></div>
-
-      <div class="cutscene-layer" id="cutscene-layer" role="dialog" aria-modal="true" aria-labelledby="cutscene-title" aria-describedby="cutscene-copy" aria-hidden="true" inert>
-        <div class="cutscene-speedlines" aria-hidden="true"></div>
-        <div class="cutscene-actor" id="cutscene-actor" data-side="w" aria-hidden="true"></div>
-        <div class="cutscene-card">
-          <p class="cutscene-eyebrow" id="cutscene-eyebrow">SPECIAL MOVE</p>
-          <h2 id="cutscene-title">특수 상황!</h2>
-          <p id="cutscene-copy">임시 컷신 장면입니다.</p>
-          <button class="paper-button compact" id="cutscene-skip" type="button">건너뛰기</button>
-        </div>
-      </div>
-
-      <div class="modal-backdrop" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true" inert>
-        <div class="modal">
-          <h2 id="modal-title">게임 방법</h2>
-          <div id="modal-copy"></div>
-          <button class="paper-button primary" id="close-modal" type="button">무대로 돌아가기</button>
-        </div>
-      </div>
-
-      <div class="modal-backdrop" id="variant-modal" role="dialog" aria-modal="true" aria-labelledby="variant-modal-title" aria-describedby="variant-modal-copy" aria-hidden="true" inert>
-        <div class="modal variant-menu-modal">
-          <h2 id="variant-modal-title">변형 체스</h2>
-          <p id="variant-modal-copy">서로 다른 승리 조건과 전술을 가진 모드를 선택하세요.</p>
-          <div class="variant-options">
-            <button class="variant-option" type="button" data-variant="kingOfTheHill">
-              <strong>언덕의 왕</strong>
-              <span>킹을 중앙의 d4, e4, d5, e5 중 한 칸에 먼저 도착시키거나 상대 킹을 잡으면 승리합니다.</span>
-            </button>
-            <button class="variant-option" type="button" data-variant="threeCheck">
-              <strong>3-체크</strong>
-              <span>상대 킹에게 세 번째 체크를 주거나 상대 킹을 잡으면 승리합니다.</span>
-            </button>
-            <button class="variant-option tactical-option" type="button" data-variant="tactical">
-              <strong>냉병기 전술 시작</strong>
-              <span>한 턴에 기물 하나가 이동 또는 공격합니다. 공격 피해는 기본값에서 ±1이며 장군의 HP가 0이 되면 즉시 승리합니다.</span>
-            </button>
-          </div>
-          <h3 class="tactical-rules-title">냉병기 전술 세부 규칙</h3>
-          <div class="tactical-rule-grid" aria-label="냉병기 전술 핵심 규칙">
-            <p class="variant-rule-note"><strong>고정 진군 방향</strong><span>쩨비는 오른쪽, 버찌는 왼쪽으로 진군합니다. 방향 제한 병과는 뒤로 갈 수 없습니다.</span></p>
-            <p class="variant-rule-note"><strong>이동과 공격 분리</strong><span>적을 공격해도 공격자는 원래 칸에 남습니다. 경기병만 이동 후 인접 공격이 가능합니다.</span></p>
-          </div>
-          <div class="unit-roster" aria-label="병과 목록">
-            <p><strong>보</strong><span>보병 · HP 5 / 피해 2<br>앞·좌·우 1칸</span></p>
-            <p><strong>창</strong><span>창병 · HP 5 / 피해 2<br>정면 공격 2칸</span></p>
-            <p><strong>중</strong><span>중보병 · HP 8 / 피해 3<br>전방 세 방향</span></p>
-            <p><strong>궁</strong><span>궁병 · HP 4 / 피해 2<br>전방 사선 4칸</span></p>
-            <p><strong>경</strong><span>경기병 · HP 5 / 피해 2<br>막힘 있는 말 행마</span></p>
-            <p><strong>기</strong><span>중기병 · HP 8 / 피해 3<br>전방 세 방향 2칸</span></p>
-            <p><strong>장</strong><span>장군 · HP 9 / 피해 3<br>이동 직교 4방향 · 공격 주변 8칸</span></p>
-          </div>
-          <div class="skill-guide" aria-label="변형 체스 캐릭터 스킬">
-            <p><strong>쩨비 · 별빛 수호막</strong><span>자기 병력 하나가 버찌의 다음 행동 동안 받는 피해를 막습니다.</span></p>
-            <p><strong>버찌 · 그림자 봉인</strong><span>쩨비의 병력 하나가 다음 차례 동안 이동하지 못합니다. 제자리 공격은 가능합니다.</span></p>
-          </div>
-          <button class="paper-button" id="close-variants" type="button">돌아가기</button>
-        </div>
-      </div>
+    <!-- 짧은 안내와 전 화면 간섭을 다른 레이아웃 위에 독립적으로 표시합니다. -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <div class="screen-interference" id="screen-interference" aria-hidden="true"></div>
     </div>
   </main>
-  <script src="chess-engine.js?v=9"></script>
-  <script src="chess-openings.js?v=1"></script>
-  <script src="chess-ai.js?v=9"></script>
-  <script src="cutscene-manager.js?v=3"></script>
-  <script src="app.js?v=17"></script>
+
+  <!--
+    채팅 엔진은 선언 의존성 순서대로 불러옵니다.
+    설정/대사 → 유틸리티 → 엔진 계층 → 공개 API 순서를 바꾸면 전역 lexical binding을 찾지 못합니다.
+  -->
+  <script src="chat-engine-config.js"></script>
+  <script src="chat-engine-dialogue.js"></script>
+  <script src="chat-engine-anomalies.js"></script>
+  <script src="chat-engine-utils.js"></script>
+  <script src="chat-engine-core.js"></script>
+  <script src="chat-engine-generation.js"></script>
+  <script src="chat-engine-diagnostics.js"></script>
+  <script src="chat-engine.js"></script>
+
+  <!--
+    게임 앱도 공유 상태를 먼저 만든 뒤 기능 모듈을 로드하고 app.js에서 이벤트를 연결합니다.
+    ES module이 아닌 일반 script를 사용해 file://로 index.html을 열어도 실행되도록 유지합니다.
+  -->
+  <!-- 시각 에셋과 음악 경로 설정은 실제 적용 함수와 게임 상태 파일보다 먼저 선언해야 합니다. -->
+  <script src="assetconfig.js"></script>
+  <script src="bgmconfig.js"></script>
+  <script src="app-config.js"></script>
+  <script src="app-assets.js"></script>
+  <script src="app-chat.js"></script>
+  <script src="app-audio.js"></script>
+  <script src="app-survival.js"></script>
+  <script src="app-results.js"></script>
+  <script src="app-game.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

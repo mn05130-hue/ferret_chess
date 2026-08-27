@@ -1,0 +1,333 @@
+/*
+ * 스토리 하루 종료 전용 결과 연출입니다.
+ * .open이 검은 화면과 형상을 시작하고, .is-wrong이 오답용 정전기 효과를 허용하며,
+ * .scare-hit이 순간 충격을, .results-visible이 마지막 결과 카드 공개를 담당합니다.
+ */
+/* 스토리 하루 종료 연출은 검은 화면 → 불길한 형상 → 결과 카드 순으로 공개됩니다. */
+.story-night-overlay {
+  position: absolute;
+  z-index: 39;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: hidden;
+  color: #e8e8e8;
+  background-color: #000;
+  background-image:
+    linear-gradient(#000c, #000c),
+    var(--asset-story-result-waiting, none);
+  background-position: center, center;
+  background-size: cover, cover;
+  background-repeat: no-repeat;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 900ms ease, visibility 900ms ease;
+}
+
+.story-night-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  opacity: .08;
+  background: repeating-linear-gradient(0deg, #fff 0 1px, transparent 1px 5px);
+}
+
+.story-night-overlay::after {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  inset: -12%;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    repeating-linear-gradient(0deg, #fff 0 2px, #000 2px 5px),
+    repeating-linear-gradient(90deg, #00ffd455 0 3px, #ff224455 3px 6px, transparent 6px 9px);
+  background-size: 100% 7px, 13px 100%;
+  mix-blend-mode: screen;
+}
+
+.story-night-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.story-night-omen {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: 190px;
+  height: 230px;
+  display: grid;
+  place-items: center;
+  translate: -50% -44%;
+  opacity: 0;
+  filter: blur(12px);
+  pointer-events: none;
+}
+
+.story-night-overlay.open .story-night-omen {
+  animation: story-omen-emerge 2.2s .35s ease-in-out both;
+}
+
+.story-omen-head {
+  position: relative;
+  width: 138px;
+  height: 172px;
+  display: block;
+  border-radius: 47% 53% 42% 46%;
+  background:
+    radial-gradient(circle at 50% 35%, #232323, #080808 57%, #000 74%);
+  box-shadow: 0 0 55px #ffffff0d, inset 0 -18px 35px #000;
+  clip-path: polygon(13% 2%, 85% 0, 100% 63%, 78% 100%, 52% 89%, 24% 100%, 0 60%);
+}
+
+.story-omen-eye,
+.story-omen-mouth {
+  position: absolute;
+  display: block;
+}
+
+.story-omen-eye {
+  top: 61px;
+  width: 28px;
+  height: 7px;
+  border-radius: 50%;
+  background: #d8d8d8;
+  box-shadow: 0 0 13px #fff6;
+}
+
+.story-omen-eye.eye-left {
+  left: 25px;
+  rotate: 13deg;
+}
+
+.story-omen-eye.eye-right {
+  right: 24px;
+  rotate: -13deg;
+}
+
+.story-omen-mouth {
+  bottom: 34px;
+  left: 50%;
+  width: 48px;
+  height: 38px;
+  translate: -50% 0;
+  border-radius: 8px 8px 50% 50%;
+  background: #000;
+  box-shadow: inset 0 -3px #5c0a16;
+}
+
+.story-omen-copy {
+  position: absolute;
+  bottom: 0;
+  color: #727272;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .3em;
+  white-space: nowrap;
+}
+
+.story-night-overlay.is-wrong .story-omen-eye {
+  background: #ff334e;
+  box-shadow: 0 0 18px #f02, 0 0 35px #a00022;
+}
+
+.story-night-overlay.is-wrong .story-omen-mouth {
+  box-shadow: inset 0 -5px #a30d22, 0 0 24px #6f0018;
+}
+
+.story-night-overlay.is-wrong.scare-hit .story-night-omen {
+  animation: story-omen-jumpscare 520ms steps(4) both;
+}
+
+.story-night-overlay.is-wrong.scare-hit::after {
+  animation: story-static-blast 780ms steps(5) both;
+}
+
+.story-night-card {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 340px);
+  text-align: center;
+  translate: 0 10px;
+  opacity: 0;
+  transition: translate 520ms ease, opacity 520ms ease;
+}
+
+.story-night-overlay.results-visible .story-night-card {
+  translate: 0 0;
+  opacity: 1;
+}
+
+/* 오전 2시 결과 카드가 공개되면 대기 이미지에서 일일 결과용 배경으로 교체합니다. */
+.story-night-overlay.results-visible {
+  background-image:
+    linear-gradient(#000a, #000a),
+    var(--asset-story-result-revealed, none);
+}
+
+.story-night-overlay.is-wrong.results-visible .story-night-card {
+  animation: story-result-glitch 420ms steps(3) both;
+}
+
+.story-night-overlay.results-visible .story-night-omen {
+  display: none;
+}
+
+/* 스토리 오답일 때 형상 접근, 정전기 폭발, 결과 글리치를 단계적으로 재생합니다. */
+@keyframes story-omen-emerge {
+  0% { opacity: 0; scale: .35; filter: blur(22px); }
+  48% { opacity: .45; scale: .72; filter: blur(13px); }
+  78% { opacity: .68; scale: .95; filter: blur(7px); }
+  100% { opacity: 0; scale: 1.04; filter: blur(10px); }
+}
+
+@keyframes story-omen-jumpscare {
+  0% { opacity: .18; scale: .7; filter: blur(8px); translate: -50% -44%; }
+  32% { opacity: 1; scale: 1.9; filter: blur(1px); translate: calc(-50% - 10px) calc(-44% + 5px); }
+  55% { opacity: .42; scale: 2.3; translate: calc(-50% + 13px) calc(-44% - 7px); }
+  78% { opacity: 1; scale: 2.65; filter: contrast(2.4); }
+  100% { opacity: 0; scale: 3.1; filter: blur(5px); }
+}
+
+@keyframes story-static-blast {
+  0% { opacity: 0; translate: 0; }
+  12% { opacity: .95; translate: -12px 4px; }
+  28% { opacity: .22; translate: 18px -7px; }
+  43% { opacity: .88; translate: -5px 12px; }
+  66% { opacity: .35; translate: 11px -3px; }
+  82% { opacity: .92; translate: -15px 6px; }
+  100% { opacity: 0; translate: 0; }
+}
+
+@keyframes story-result-glitch {
+  0% { opacity: 0; translate: -13px 4px; filter: blur(4px); }
+  28% { opacity: 1; translate: 10px -3px; filter: hue-rotate(70deg); }
+  52% { translate: -6px 2px; filter: hue-rotate(-80deg); }
+  75% { translate: 4px -1px; }
+  100% { opacity: 1; translate: 0; filter: none; }
+}
+
+@keyframes result-wait-pulse {
+  from { opacity: .28; letter-spacing: .15em; }
+  to { opacity: .9; letter-spacing: .24em; }
+}
+
+.story-night-kicker {
+  margin: 0 0 8px;
+  color: #777;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .17em;
+}
+
+.story-night-time {
+  display: block;
+  margin: 0 0 14px;
+  color: #fff;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: clamp(38px, 12vw, 54px);
+  font-weight: 200;
+  letter-spacing: -.06em;
+  text-shadow: 0 0 24px #ffffff33;
+}
+
+.story-night-card h2 {
+  margin: 0 0 8px;
+  font-size: 21px;
+}
+
+.story-night-card > p:not(.story-night-kicker) {
+  min-height: 42px;
+  margin: 0;
+  color: #999;
+  font-size: 12px;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+/* 하루 판정 요약과 세부 목록은 정답·오답 색을 분리해 결과를 빠르게 읽게 합니다. */
+.story-night-summary {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  margin: 18px 0 12px;
+  border-block: 1px solid #292929;
+}
+
+.story-night-summary div {
+  display: grid;
+  gap: 5px;
+  padding: 10px 3px;
+}
+
+.story-night-summary div + div {
+  border-left: 1px solid #222;
+}
+
+.story-night-summary dt {
+  color: #666;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.story-night-summary dd {
+  margin: 0;
+  color: #eee;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.story-result-details {
+  min-height: 42px;
+  max-height: 112px;
+  margin: 0 0 16px;
+  padding: 8px 10px;
+  overflow-y: auto;
+  border: 1px solid #222;
+  border-radius: 7px;
+  color: #aaa;
+  background: #090909;
+  font-size: 10px;
+  line-height: 1.65;
+  text-align: left;
+  list-style: none;
+}
+
+.story-result-details li::before {
+  content: "·";
+  margin-right: 6px;
+  color: #666;
+}
+
+.story-result-details .correct {
+  color: #69d8b5;
+}
+
+.story-result-details .danger {
+  color: #f06c78;
+}
+
+.story-continue-button {
+  width: 100%;
+  height: 44px;
+  border: 1px solid #777;
+  border-radius: 7px;
+  color: #eee;
+  background: #181818;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.story-continue-button:hover,
+.story-continue-button:focus-visible {
+  outline: 2px solid #bbb;
+  outline-offset: 2px;
+  background: #242424;
+}
