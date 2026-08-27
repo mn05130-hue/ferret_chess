@@ -60,7 +60,6 @@ const ASSET_CONFIG = Object.freeze({
     final: Object.freeze({
       waitingBackground: "",
       revealedBackground: "assets/stage_result_horror_suspense.gif"
-      revealedBackground: "assets/stage_result_horror_suspense.gif"
     })
   })
 });
