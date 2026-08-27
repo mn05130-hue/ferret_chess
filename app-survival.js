@@ -158,6 +158,7 @@ function setConnectionStage(stage) {
   connectionWidget.classList.remove("is-good", "is-normal", "is-weak", "is-disconnected");
   connectionWidget.classList.add(`is-${stage.key}`);
   connectionWidget.dataset.connectionStage = stage.key;
+  applyStreamCharacterState(stage.key === CONNECTION_STAGES.DISCONNECTED.key);
   connectionWidget.setAttribute("aria-label", `방송 연결 상태: ${stage.label}`);
   connectionStatus.textContent = stage.label;
   reconnectButton.setAttribute("aria-label", `방송 재연결 · 현재 상태 ${stage.label}`);

@@ -26,7 +26,9 @@ const ASSET_CONFIG = Object.freeze({
     background: "assets/gameScrenn.png",
     // 연결이 끊긴 동안 표시할 방송 화면입니다.
     disconnectedBackground: "assets/gameScrenn_abnormal.png",
-    character: "assets/beojji_horror_stage_overlay.gif"
+    character: "assets/beorjji-emotion-gif-pack/beorjji-idle-smooth.gif",
+    // 연결이 끊긴 동안 표시할 캐릭터입니다.
+    disconnectedCharacter: "assets/beorjji-emotion-gif-pack/beorjji-surprised.gif"
   }),
 
   // 실제 게임 진행 중 무작위로 재생할 짧은 공포 효과음입니다.
@@ -52,13 +54,13 @@ const ASSET_CONFIG = Object.freeze({
 
     // 스토리 모드에서 매일 오전 2시에 판정을 공개하는 화면입니다.
     storyDay: Object.freeze({
-      waitingBackground: "assets/gameScrenn_abnormal.png",
+      waitingBackground: "assets/beojji_horror_stage_overlay.gif",
       revealedBackground: "assets/stage_result_horror_suspense.gif"
     }),
 
     // 체력 소진 또는 스토리 7일 생존 뒤 표시되는 최종 결과 화면입니다.
     final: Object.freeze({
-      waitingBackground: "",
+      waitingBackground: "assets\\beojji_horror_stage_overlay.gif",
       revealedBackground: "assets/stage_result_horror_suspense.gif"
     })
   })

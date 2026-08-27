@@ -30,6 +30,18 @@ function applyImageAsset(image, configuredPath) {
 }
 
 /**
+ * 방송 연결 상태에 맞춰 기본 캐릭터와 연결 끊김 캐릭터를 교체합니다.
+ * @param {boolean} disconnected true이면 연결 끊김 전용 캐릭터를 사용함
+ * @returns {boolean} 표시할 유효한 캐릭터 경로가 적용됐는지 여부
+ */
+function applyStreamCharacterState(disconnected = false) {
+  const configuredPath = disconnected
+    ? ASSET_CONFIG.stream?.disconnectedCharacter
+    : ASSET_CONFIG.stream?.character;
+  return applyImageAsset(streamCharacter, configuredPath);
+}
+
+/**
  * 상대 경로를 현재 문서 기준 절대 URL로 바꿔 CSS url() 값으로 안전하게 감쌉니다.
  * @param {unknown} configuredPath assetconfig.js의 배경 이미지 경로
  * @returns {string} CSS 사용자 정의 속성에 넣을 url("...") 또는 none
@@ -54,7 +66,13 @@ function applyVisualAssets() {
     void entryLogo.offsetWidth;
     entryLogo.classList.add("is-asset-ready");
   }
-  applyImageAsset(streamCharacter, ASSET_CONFIG.stream?.character);
+  applyStreamCharacterState(false);
+  const disconnectedCharacterPath = normalizeVisualAssetPath(ASSET_CONFIG.stream?.disconnectedCharacter);
+  if (disconnectedCharacterPath) {
+    // 실제 끊김 순간에 GIF가 늦게 나타나지 않도록 초기화 때 미리 받아 둡니다.
+    const disconnectedCharacterPreload = new Image();
+    disconnectedCharacterPreload.src = disconnectedCharacterPath;
+  }
   const backgroundAssets = [
     ["--asset-title-background", ASSET_CONFIG.title?.background],
     ["--asset-stream-background", ASSET_CONFIG.stream?.background],
