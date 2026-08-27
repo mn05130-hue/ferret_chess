@@ -61,6 +61,7 @@ titleVolume.addEventListener("input", () => {
 });
 gameVolume.addEventListener("input", () => {
   applyVolume(gameMusic, gameVolume, gameVolumeValue, AUDIO_SETTINGS.game, gameVolume.value);
+  syncAmbientHorrorSfxVolume();
 });
 // 입력할 때마다 기존 오류를 지우고, 등록된 특수 닉네임인지 즉시 다시 확인합니다.
 playerNicknameInput.addEventListener("input", () => {

@@ -82,6 +82,7 @@ function startStoryClock() {
  */
 function syncEnginePause() {
   chatEngine?.setPaused(document.hidden || gameOver || stageReviewOpen);
+  syncAmbientHorrorSfx();
   storyLastTick = performance.now();
 }
 

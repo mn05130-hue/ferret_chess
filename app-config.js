@@ -96,6 +96,15 @@ const APPARITION_DELAY_RANGE_MS = Object.freeze([15000, 18000]);
 const ANOMALY_CHAT_EFFECT_CHANCE = 0.3;
 const ANOMALY_CHAT_EFFECT_DURATION_MS = 560;
 
+/*
+ * 게임 플레이 중 간간히 들리는 공포 효과음 규칙입니다.
+ * 첫 효과음은 조금 일찍 분위기를 잡고, 이후 효과음은 더 긴 무작위 간격으로 반복합니다.
+ * 음량은 게임 음량 슬라이더 값에 배율을 적용하되 100%를 넘지 않습니다.
+ */
+const AMBIENT_HORROR_SFX_INITIAL_DELAY_RANGE_MS = Object.freeze([9000, 16000]);
+const AMBIENT_HORROR_SFX_DELAY_RANGE_MS = Object.freeze([18000, 36000]);
+const AMBIENT_HORROR_SFX_VOLUME_SCALE = 1.8;
+
 // 내부 분기와 data-game-mode 속성이 공유하는 고정 모드 식별자입니다.
 const GAME_MODES = Object.freeze({ ENDLESS: "endless", STORY: "story" });
 
@@ -380,3 +389,7 @@ let resultRevealTimer;
 let scareAudioContext;
 let corruptedChatTimer;
 let anomalyChatEffectTimer;
+let ambientHorrorSfxTimer;
+let ambientHorrorSfxPlayers = [];
+let ambientHorrorSfxQueue = [];
+let lastAmbientHorrorSfxPath = "";

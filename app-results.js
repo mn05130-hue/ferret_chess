@@ -175,6 +175,7 @@ function finishStoryDay() {
   settleActiveApparitionAsMissed();
   clearStreamApparition();
   chatEngine?.stop();
+  stopAmbientHorrorSfx();
   closeEmojiPanel();
   closeViewerPanel();
   streamSignal.textContent = "방송 종료 · 판정 중";
