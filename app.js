@@ -1,251 +1,148 @@
-(() => {
-  "use strict";
+"use strict";
 
-  const Engine = window.FerretChessEngine;
-  const ChessAI = window.FerretChessAI;
-  const {
-    FILES,
-    PIECE_NAME,
-    PIECE_SYMBOL,
-    createGame,
-    applyMove,
-    legalMovesFor,
-    isInCheck,
-    getDrawReason
-  } = Engine;
+/*
+ * 모든 기능 모듈이 로드된 뒤 실행되는 최종 진입점입니다.
+ * DOM 이벤트를 기능 함수에 연결하고 저장된 설정을 복원한 다음 최초 진입 화면을 표시합니다.
+ *
+ * 실행 순서는 index.html의 script 순서를 따릅니다.
+ * 1) app-config가 공유 상태와 DOM 참조를 선언합니다.
+ * 2) app-chat/audio/survival/results/game이 기능 함수를 선언합니다.
+ * 3) 이 파일이 사용자 이벤트를 함수에 연결합니다.
+ * 4) 저장된 닉네임·음량을 복원하고 showEntryScreen으로 첫 화면을 엽니다.
+ */
 
-  const theatre = document.querySelector("#theatre");
-  const titleScreen = document.querySelector("#title-screen");
-  const gameScreen = document.querySelector("#game-screen");
-  const boardElement = document.querySelector("#chessboard");
-  const statusElement = document.querySelector("#game-status");
-  const modal = document.querySelector("#modal");
-  const modalTitle = document.querySelector("#modal-title");
-  const modalCopy = document.querySelector("#modal-copy");
-  const closeModalButton = document.querySelector("#close-modal");
-  const hintButton = document.querySelector("#hint");
-  const restartButton = document.querySelector("#restart");
-  const DIFFICULTY_DEPTH = Object.freeze({ low: 1, medium: 2, high: 3 });
+// 닉네임 폼의 버튼 클릭이나 Enter 제출로 오디오 권한을 얻고 타이틀 전환을 시작합니다.
+entryForm.addEventListener("submit", event => {
+  event.preventDefault();
+  enterTitleFromEntry();
+});
 
-  let game = createGame();
-  let selected = null;
-  let selectedMoves = [];
-  let hintSquares = [];
-  let aiTimer = null;
-  let modalReturnFocus = null;
-  let aiDepth = DIFFICULTY_DEPTH.medium;
+// 채팅 닉네임을 클릭하면 해당 시청자의 최근 발화 기록을 엽니다.
+messageList.addEventListener("click", event => {
+  const username = event.target.closest(".username[data-viewer-id]");
+  if (username) openViewerPanel(username.dataset.viewerId);
+});
 
-  function selectedAiDepth() {
-    const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked');
-    return DIFFICULTY_DEPTH[selectedDifficulty?.value] || DIFFICULTY_DEPTH.medium;
+// 사용자가 작성한 채팅은 엔진 시청자와 구분되는 ownMessage로 렌더링합니다.
+messageForm.addEventListener("submit", event => {
+  event.preventDefault();
+  const text = messageInput.value.trim();
+  if (!text || gameOver || stageReviewOpen) return;
+  const myViewer = { id: "player", name: myNickname, badge: "🐹", badgeClass: "robot", color: "#66d5b2", history: [] };
+  const connectionCorrupted = apparitionActive && apparitionExpired;
+  const displayedText = connectionCorrupted ? createUnknownChatText(text, myViewer) : text;
+  appendElement(createMessage(myViewer, displayedText, true, { corrupted: connectionCorrupted }));
+  messageInput.value = "";
+  updateComposerState();
+  closeEmojiPanel();
+});
+
+// 게임 중 자주 쓰는 단일 동작 버튼과 음량 입력을 대응 함수에 연결합니다.
+messageInput.addEventListener("input", updateComposerState);
+newMessageButton.addEventListener("click", () => scrollToLatest("smooth"));
+panelClose.addEventListener("click", closeViewerPanel);
+kickButton.addEventListener("click", kickSelectedViewer);
+reconnectButton.addEventListener("click", reconnectStreamConnection);
+titleMusicButton.addEventListener("click", () => {
+  if (titleMusic.paused) playTitleMusic();
+  else stopTitleMusic(false);
+});
+gameMusicButton.addEventListener("click", () => {
+  if (gameMusic.paused) {
+    gameMusicManuallyPaused = false;
+    playGameMusic();
+  } else {
+    gameMusicManuallyPaused = true;
+    stopGameMusic(false);
   }
+});
+titleVolume.addEventListener("input", () => {
+  applyVolume(titleMusic, titleVolume, titleVolumeValue, AUDIO_SETTINGS.title, titleVolume.value);
+});
+gameVolume.addEventListener("input", () => {
+  applyVolume(gameMusic, gameVolume, gameVolumeValue, AUDIO_SETTINGS.game, gameVolume.value);
+});
+// 입력할 때마다 기존 오류를 지우고, 등록된 특수 닉네임인지 즉시 다시 확인합니다.
+playerNicknameInput.addEventListener("input", () => {
+  setNicknameError();
+  updateNicknameEasterEgg();
+});
+gameStart.addEventListener("click", () => enterGame(GAME_MODES.ENDLESS));
+storyStart.addEventListener("click", () => enterGame(GAME_MODES.STORY));
+gameRetry.addEventListener("click", startGame);
+gameRestart.addEventListener("click", () => showTitle());
+stageContinue.addEventListener("click", continueFromStageResult);
+storyContinue.addEventListener("click", continueFromStoryResult);
 
-  function legalMovesFrom(square) {
-    return legalMovesFor(game, game.turn).filter(move => move.from === square);
+// 모달 바깥 영역을 누르면 시청자 패널만 닫고 게임은 계속 진행합니다.
+viewerBackdrop.addEventListener("click", event => {
+  if (event.target === viewerBackdrop) closeViewerPanel();
+});
+
+// 이모지 패널은 접근성 상태 aria-expanded와 hidden 값을 항상 함께 갱신합니다.
+emojiButton.addEventListener("click", () => {
+  const willOpen = emojiPanel.hidden;
+  emojiPanel.hidden = !willOpen;
+  emojiButton.setAttribute("aria-expanded", String(willOpen));
+  if (willOpen) emojiPanel.querySelector("button")?.focus();
+});
+
+emojiPanel.addEventListener("click", event => {
+  const button = event.target.closest("button");
+  if (!button) return;
+  insertAtCursor(button.textContent);
+  closeEmojiPanel();
+});
+
+// 보상은 한 게임에서 한 번만 수령할 수 있도록 버튼 자체를 비활성화합니다.
+rewardButton.addEventListener("click", () => {
+  if (rewardButton.classList.contains("claimed")) return;
+  rewardButton.classList.add("claimed");
+  rewardButton.disabled = true;
+  rewardLabel.textContent = "받기 완료";
+  showToast("통나무 파워 100개를 받았습니다.");
+});
+
+// 사용자가 최신 메시지 근처로 돌아오면 불필요한 새 메시지 버튼을 숨깁니다.
+messageList.addEventListener("scroll", () => {
+  if (isNearLatest()) newMessageButton.hidden = true;
+}, { passive: true });
+
+// 주소창을 접은 뒤 높이가 바뀌므로 다음 프레임에 채팅 스크롤을 다시 맞춥니다.
+collapseButton.addEventListener("click", () => {
+  browserBar.classList.toggle("collapsed");
+  collapseButton.setAttribute("aria-label", browserBar.classList.contains("collapsed") ? "상단 바 펼치기" : "상단 바 접기");
+  requestAnimationFrame(() => scrollToLatest());
+});
+
+// 아직 별도 화면이 없는 보조 메뉴는 토스트로 현재 동작 결과를 안내합니다.
+document.querySelector(".address-menu").addEventListener("click", () => showToast(`채팅 시드: ${currentSeed}`));
+document.querySelector("#support-button").addEventListener("click", () => showToast("지금은 후원할 수 없습니다."));
+document.querySelector("#voice-button").addEventListener("click", () => showToast("알 수 없는 잡음이 들립니다…"));
+document.querySelector("#chat-tab").addEventListener("click", () => scrollToLatest("smooth"));
+helpButton.addEventListener("click", () => {
+  showToast(gameMode === GAME_MODES.STORY
+    ? "오후 7시부터 오전 2시까지 조사하세요. 모든 판정은 하루가 끝날 때 공개됩니다."
+    : "이상 채팅을 제한시간 안에 처리하세요. 스테이지가 오를수록 시간이 짧아집니다.");
+});
+
+// 패널 외부 클릭과 Escape 키를 공통 닫기 동작으로 처리합니다.
+document.addEventListener("pointerdown", event => {
+  if (!emojiPanel.hidden && !emojiPanel.contains(event.target) && !emojiButton.contains(event.target)) closeEmojiPanel();
+});
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    closeEmojiPanel();
+    closeViewerPanel();
   }
+});
 
-  function renderBoard() {
-    boardElement.replaceChildren();
-    for (let displayRow = 0; displayRow < 8; displayRow += 1) {
-      for (let displayColumn = 0; displayColumn < 8; displayColumn += 1) {
-        // 캐릭터가 서로 마주 보는 좌우 진행 방향을 의도적으로 유지한다.
-        const square = `${FILES[displayRow]}${displayColumn + 1}`;
-        const piece = game.board[square];
-        const cell = document.createElement("button");
-        cell.type = "button";
-        cell.className = `square ${(displayRow + displayColumn) % 2 ? "dark" : "light"}`;
-        cell.dataset.square = square;
-        cell.setAttribute("role", "gridcell");
-        cell.setAttribute("aria-label", square);
+// 백그라운드 탭에서는 채팅 생성과 게임 타이머가 서로 어긋나지 않도록 일시정지합니다.
+document.addEventListener("visibilitychange", syncEnginePause);
 
-        if (game.lastMove && (game.lastMove.from === square || game.lastMove.to === square)) cell.classList.add("last");
-        if (selected === square) cell.classList.add("selected");
-        const legal = selectedMoves.find(move => move.to === square);
-        if (legal) cell.classList.add(legal.capture ? "capture" : "legal");
-        if (hintSquares.includes(square)) cell.classList.add("hint");
-
-        if (piece) {
-          const token = document.createElement("span");
-          token.className = `piece ${piece.color === "w" ? "white" : "black"} ${piece.type === "p" ? "pawn" : "major"}`;
-          token.textContent = PIECE_SYMBOL[piece.color][piece.type];
-          token.setAttribute("aria-hidden", "true");
-          cell.append(token);
-          cell.setAttribute("aria-label", `${piece.color === "w" ? "백" : "흑"} ${PIECE_NAME[piece.type]} ${square}`);
-        }
-
-        cell.addEventListener("click", () => handleSquare(square));
-        boardElement.append(cell);
-      }
-    }
-  }
-
-  function handleSquare(square) {
-    if (game.over || game.thinking || game.turn !== "w") return;
-    const piece = game.board[square];
-    const chosenMove = selectedMoves.find(move => move.to === square);
-    hintSquares = [];
-
-    if (selected && chosenMove) {
-      applyMove(game, chosenMove);
-      selected = null;
-      selectedMoves = [];
-      renderBoard();
-      if (updateStatus()) return;
-      queueAiMove();
-      return;
-    }
-
-    if (piece?.color === "w") {
-      selected = square;
-      selectedMoves = legalMovesFrom(square);
-    } else {
-      selected = null;
-      selectedMoves = [];
-    }
-    renderBoard();
-  }
-
-  function finishAsDraw(reason) {
-    const labels = {
-      fiftyMove: "50수 규칙 · 무승부",
-      threefold: "같은 포지션 3회 반복 · 무승부",
-      insufficientMaterial: "체크메이트 불가능 · 기물 부족 무승부"
-    };
-    game.over = true;
-    hintButton.disabled = true;
-    statusElement.textContent = labels[reason];
-  }
-
-  function updateStatus() {
-    const moves = legalMovesFor(game, game.turn);
-    if (!moves.length) {
-      game.over = true;
-      const checked = isInCheck(game, game.turn);
-      if (checked) statusElement.textContent = game.turn === "w" ? "체크메이트 · 버찌 승리" : "체크메이트 · 쩨비 승리!";
-      else statusElement.textContent = "스테일메이트 · 무승부";
-      hintButton.disabled = true;
-      return true;
-    }
-
-    const drawReason = getDrawReason(game);
-    if (drawReason) {
-      finishAsDraw(drawReason);
-      return true;
-    }
-
-    if (game.thinking) statusElement.textContent = "버찌가 생각 중…";
-    else if (game.turn === "w") statusElement.textContent = isInCheck(game, "w") ? "쩨비 체크!" : "쩨비의 차례";
-    else statusElement.textContent = isInCheck(game, "b") ? "버찌 체크!" : "버찌의 차례";
-    return false;
-  }
-
-  function queueAiMove() {
-    game.thinking = true;
-    hintButton.disabled = true;
-    updateStatus();
-    window.clearTimeout(aiTimer);
-    aiTimer = window.setTimeout(() => {
-      const move = ChessAI.chooseMove(game, "b", aiDepth);
-      if (move) applyMove(game, move);
-      game.thinking = false;
-      hintButton.disabled = false;
-      renderBoard();
-      updateStatus();
-    }, 650);
-  }
-
-  function resetGame() {
-    window.clearTimeout(aiTimer);
-    game = createGame();
-    selected = null;
-    selectedMoves = [];
-    hintSquares = [];
-    hintButton.disabled = false;
-    renderBoard();
-    updateStatus();
-  }
-
-  function focusScreen(screen) {
-    window.requestAnimationFrame(() => screen.focus({ preventScroll: true }));
-  }
-
-  function switchScreen(showGame) {
-    theatre.classList.add("curtain-call");
-    window.setTimeout(() => {
-      titleScreen.classList.toggle("active", !showGame);
-      gameScreen.classList.toggle("active", showGame);
-      titleScreen.setAttribute("aria-hidden", String(showGame));
-      gameScreen.setAttribute("aria-hidden", String(!showGame));
-      titleScreen.inert = showGame;
-      gameScreen.inert = !showGame;
-      if (showGame) {
-        aiDepth = selectedAiDepth();
-        resetGame();
-      }
-      focusScreen(showGame ? gameScreen : titleScreen);
-      window.setTimeout(() => theatre.classList.remove("curtain-call"), 80);
-    }, 520);
-  }
-
-  function showHint() {
-    if (game.over || game.thinking || game.turn !== "w") return;
-    const move = ChessAI.chooseMove(game, "w");
-    if (!move) return;
-    hintSquares = [move.from, move.to];
-    renderBoard();
-    statusElement.textContent = "초록색 두 칸을 살펴봐!";
-    window.setTimeout(() => {
-      hintSquares = [];
-      renderBoard();
-      updateStatus();
-    }, 2200);
-  }
-
-  const modalContent = {
-    how: {
-      title: "게임 방법",
-      html: "<p>쩨비는 왼쪽의 흰색 기물로 먼저 움직입니다. 말을 누른 뒤 초록색으로 표시된 칸을 선택하세요.</p><p>버찌의 킹을 체크메이트하면 공연의 주인공이 됩니다.</p><p>스테일메이트, 같은 포지션 3회 반복, 기물 부족 또는 폰 이동과 잡기 없이 양쪽이 각각 50번 움직이면 무승부입니다.</p>"
-    },
-    credits: {
-      title: "크레딧 · 팬게임 표기",
-      html: "<p>《버찌 체스》는 버찌를 테마로 만든 비공식 팬게임입니다.</p><p>캐릭터와 원작의 권리는 각 권리자에게 있습니다.</p>"
-    }
-  };
-
-  function openModal(kind) {
-    const content = modalContent[kind];
-    if (!content) return;
-    modalReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    modalTitle.textContent = content.title;
-    modalCopy.innerHTML = content.html;
-    modal.inert = false;
-    modal.classList.add("open");
-    modal.setAttribute("aria-hidden", "false");
-    closeModalButton.focus();
-  }
-
-  function closeModal() {
-    if (!modal.classList.contains("open")) return;
-    modal.classList.remove("open");
-    modal.setAttribute("aria-hidden", "true");
-    modal.inert = true;
-    if (modalReturnFocus?.isConnected && !modalReturnFocus.closest("[inert]")) {
-      modalReturnFocus.focus({ preventScroll: true });
-    }
-    modalReturnFocus = null;
-  }
-
-  document.querySelector("#start-game").addEventListener("click", () => switchScreen(true));
-  document.querySelector("#back-title").addEventListener("click", () => switchScreen(false));
-  restartButton.addEventListener("click", resetGame);
-  hintButton.addEventListener("click", showHint);
-  document.querySelectorAll("[data-modal]").forEach(button => {
-    button.addEventListener("click", () => openModal(button.dataset.modal));
-  });
-  closeModalButton.addEventListener("click", closeModal);
-  modal.addEventListener("click", event => { if (event.target === modal) closeModal(); });
-  document.addEventListener("keydown", event => { if (event.key === "Escape") closeModal(); });
-
-  renderBoard();
-  updateStatus();
-})();
+// 시각 에셋 적용 → 저장값 복원 → 음량 적용 → 클릭형 진입 화면 순서로 앱을 초기화합니다.
+applyVisualAssets();
+initializePlayerNickname();
+initializeAudioVolumes();
+showEntryScreen();
