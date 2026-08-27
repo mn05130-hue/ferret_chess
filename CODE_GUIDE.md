@@ -2,6 +2,31 @@
 
 이 문서는 프로젝트가 브라우저에 로드된 뒤 어떤 파일과 함수가 어떤 순서로 실행되는지 설명합니다. 코드 수정 시에는 먼저 이 문서의 **스크립트 로딩 순서**, **게임 시작 순서**, **모드별 판정 흐름**을 확인하는 것이 좋습니다.
 
+## 목차
+
+1. [프로젝트의 기본 구조](#1-프로젝트의-기본-구조)
+2. [전체 로딩 순서](#2-전체-로딩-순서)
+3. [HTML 화면 구조](#3-html-화면-구조)
+4. [CSS가 작동하는 방식](#4-css가-작동하는-방식)
+5. [앱 초기 실행 순서](#5-앱-초기-실행-순서)
+6. [타이틀에서 게임으로 들어가는 순서](#6-타이틀에서-게임으로-들어가는-순서)
+7. [새 게임과 스테이지 시작](#7-새-게임과-스테이지-시작)
+8. [채팅 엔진 파일별 역할](#8-채팅-엔진-파일별-역할)
+9. [채팅 한 줄이 만들어지는 순서](#9-채팅-한-줄이-만들어지는-순서)
+10. [사용자 채팅 순서](#10-사용자-채팅-순서)
+11. [시청자 기록과 강퇴](#11-시청자-기록과-강퇴)
+12. [무한 모드 흐름](#12-무한-모드-흐름)
+13. [스토리 모드 흐름](#13-스토리-모드-흐름)
+14. [방송 연결 괴이](#14-방송-연결-괴이)
+15. [결과 공개 지연](#15-결과-공개-지연)
+16. [오디오 흐름](#16-오디오-흐름)
+17. [앱 파일별 함수 목록](#17-앱-파일별-함수-목록)
+18. [저장값과 URL 테스트 옵션](#18-저장값과-url-테스트-옵션)
+19. [개발용 디버그 API](#19-개발용-디버그-api)
+20. [자주 수정하는 위치](#20-자주-수정하는-위치)
+21. [수정할 때 지켜야 할 사항](#21-수정할-때-지켜야-할-사항)
+22. [빠른 실행 확인 순서](#22-빠른-실행-확인-순서)
+
 ## 1. 프로젝트의 기본 구조
 
 이 프로젝트는 별도의 빌드 도구나 프레임워크가 없는 정적 웹 게임입니다.
@@ -10,7 +35,7 @@
 - `styles/*.css`: 공통 토큰, 진입·타이틀·방송·채팅·결과 화면, 애니메이션, 반응형 레이아웃을 기능별로 담당합니다.
 - `chat-engine-*.js`: 자동 시청자 채팅의 데이터와 생성 엔진입니다.
 - `app-*.js`: 게임 상태, 화면, 오디오, 판정, 이벤트를 담당합니다.
-- `assets/`: 캐릭터 이미지, 첫 진입 로고(`splash-logo.png`), 배경음악 파일을 보관합니다.
+- `assets/`: 방송 배경(`gameScrenn.png`), 캐릭터 이미지, 첫 진입 로고(`splash-logo.png`), 배경음악 파일을 보관합니다.
 - `.vscode/launch.json`: Firefox에서 파일 또는 localhost 방식으로 실행하는 디버그 설정입니다.
 
 JavaScript 파일은 ES module이 아닌 일반 `<script>`입니다. 따라서 `file://`로 `index.html`을 직접 열어도 동작하지만, 각 파일의 최상위 `const`, `let`, `class`, `function`이 같은 전역 lexical 환경을 공유합니다. **`index.html`의 스크립트 순서를 바꾸면 아직 선언되지 않은 값을 참조해 실행이 중단될 수 있습니다.**
@@ -58,7 +83,7 @@ index.html + styles/*.css
 | 실제 게임 | `#game-screen` | 방송, HUD, 채팅, 조작부를 포함 |
 | 연결 상태 | `#connection-widget`, `#reconnect-button` | 화면 상단의 작은 와이파이 상태와 수동 재연결 버튼 |
 | 가상 주소창 | `.browser-bar` | 접기 가능한 방송 페이지 상단 바 |
-| 방송 화면 | `.stream-stage` | 캐릭터, 괴이, 음악, 제한시간 표시 |
+| 방송 화면 | `.stream-stage` | `gameScrenn.png` 배경 위에 캐릭터, 괴이, 음악, 제한시간 표시 |
 | 상태 HUD | `.game-hud` | 스테이지/일차, 체력, 시각, 이상 시청자, 점수 |
 | 메시지 목록 | `#message-list` | 엔진 채팅, 시스템 메시지, 사용자 채팅 |
 | 채팅 입력 | `#message-form` | 사용자 메시지와 이모지 입력 |
@@ -418,7 +443,7 @@ kickSelectedViewer()
 
 ## 13. 스토리 모드 흐름
 
-한 날은 실제 기본값 `DEFAULT_STORY_DAY_DURATION_MS` 동안 진행되며 게임 내 시간은 오후 7시부터 오전 2시까지 흐릅니다.
+한 날은 실제 기본값 `DEFAULT_STORY_DAY_DURATION_MS` 동안 진행되며 게임 내 시간은 오후 7시부터 오전 2시까지 흐릅니다. HUD 시각은 `STORY_CLOCK_STEP_MINUTES`에 따라 30분 단위로만 바뀝니다.
 
 ```text
 startStoryClock()
@@ -656,8 +681,10 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 이상 채팅 제한시간 | `BASE_ANOMALY_GRACE_MS`, `MIN_ANOMALY_GRACE_MS`, `STAGE_GRACE_STEP_MS` |
 | 스토리 총 일수 | `STORY_TOTAL_DAYS`, `STORY_DAY_INTROS` |
 | 스토리 하루 실제 길이 | `DEFAULT_STORY_DAY_DURATION_MS` |
+| 스토리 시계 표시 간격 | `STORY_CLOCK_STEP_MINUTES` |
 | 연결 복구 제한시간 | `APPARITION_LIFETIME_MS` |
 | 끊김 직전 모자이크 시간 | `APPARITION_MOSAIC_DURATION_MS` |
+| 방송 배경 이미지 | `styles/stream.css`의 `.stream-stage`, `assets/gameScrenn.png` |
 | 결과 공개 지연 | `RESULT_REVEAL_DELAY_MS` |
 | 괴이 등장 간격 | `APPARITION_INITIAL_DELAY_RANGE_MS`, `APPARITION_DELAY_RANGE_MS` |
 | 배경음악 파일 | `TITLE_MUSIC_TRACKS`, `GAME_MUSIC_TRACKS` |

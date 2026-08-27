@@ -58,12 +58,14 @@ const MAX_HEALTH = 5;
 
 /*
  * 스토리 시간 규칙입니다.
- * 실제 84초(DEFAULT_STORY_DAY_DURATION_MS)를 게임 속 7시간으로 환산하며,
+ * 실제 84초(DEFAULT_STORY_DAY_DURATION_MS)를 게임 속 7시간으로 환산합니다.
+ * STORY_CLOCK_STEP_MINUTES는 HUD 시각이 한 번에 진행하는 게임 속 시간이며,
  * URL의 storyDayMs 값으로 테스트용 하루 길이만 바꿀 수 있습니다.
  */
 const STORY_TOTAL_DAYS = 7;
 const STORY_START_MINUTES = 19 * 60;
-const STORY_DURATION_MINUTES = 7 * 4;
+const STORY_DURATION_MINUTES = 7 * 60;
+const STORY_CLOCK_STEP_MINUTES = 30;
 const DEFAULT_STORY_DAY_DURATION_MS = 84000;
 
 /*

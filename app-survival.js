@@ -15,13 +15,17 @@ function stopStoryClock() {
 }
 
 /**
- * 실제 경과 시간을 오후 7시부터 오전 2시까지의 게임 내 시각 문자열로 변환합니다.
+ * 실제 경과 시간을 오후 7시부터 오전 2시까지 30분 단위의 게임 내 시각으로 변환합니다.
  * @param {number} elapsedMs 이번 하루가 시작된 뒤 흐른 실제 밀리초
  * @returns {string} 오전/오후와 시:분으로 구성한 게임 시각
  */
 function formatStoryTime(elapsedMs) {
   const progress = Math.min(1, Math.max(0, elapsedMs / storyDayDurationMs));
-  const elapsedMinutes = Math.floor(progress * STORY_DURATION_MINUTES);
+  const rawElapsedMinutes = progress * STORY_DURATION_MINUTES;
+  const elapsedMinutes = Math.min(
+    STORY_DURATION_MINUTES,
+    Math.floor(rawElapsedMinutes / STORY_CLOCK_STEP_MINUTES) * STORY_CLOCK_STEP_MINUTES
+  );
   const totalMinutes = STORY_START_MINUTES + elapsedMinutes;
   const hour24 = Math.floor(totalMinutes / 60) % 24;
   const minute = totalMinutes % 60;
@@ -31,11 +35,13 @@ function formatStoryTime(elapsedMs) {
 }
 
 /**
- * 계산된 게임 시각을 HUD에 쓰고 접근성 라벨도 함께 갱신합니다.
+ * 계산된 게임 시각이 이전 30분 구간과 달라졌을 때만 HUD와 접근성 라벨을 갱신합니다.
  */
 function renderStoryClock() {
-  storyClock.textContent = formatStoryTime(storyElapsedMs);
-  storyClock.setAttribute("aria-label", `현재 방송 시간 ${storyClock.textContent}`);
+  const nextTime = formatStoryTime(storyElapsedMs);
+  if (storyClock.textContent === nextTime) return;
+  storyClock.textContent = nextTime;
+  storyClock.setAttribute("aria-label", `현재 방송 시간 ${nextTime}`);
 }
 
 /**
