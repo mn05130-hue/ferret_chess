@@ -17,7 +17,7 @@ function clearStandardResultReveal() {
 }
 
 /**
- * 어두운 결과 배경을 먼저 연 뒤 4초가 지나면 카드와 조작 버튼을 공개합니다.
+ * 어두운 결과 배경을 먼저 연 뒤 지나면 카드와 조작 버튼을 공개합니다.
  * @param {HTMLElement} overlay open/results-visible 상태를 받을 오버레이
  * @param {HTMLElement} card 지연 공개 중 접근성 트리에서도 숨길 결과 카드
  * @param {HTMLButtonElement[]} controls 공개 전까지 비활성화할 조작 버튼

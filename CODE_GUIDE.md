@@ -34,7 +34,9 @@
 - `index.html`: 화면에 필요한 모든 DOM 요소와 스크립트 로딩 순서를 정의합니다.
 - `styles/*.css`: 공통 토큰, 진입·타이틀·방송·채팅·결과 화면, 애니메이션, 반응형 레이아웃을 기능별로 담당합니다.
 - `chat-engine-*.js`: 자동 시청자 채팅의 데이터와 생성 엔진입니다.
+- `assetconfig.js`: 첫 화면 로고·타이틀 배경·방송 배경·캐릭터 이미지 경로를 정의합니다.
 - `bgmconfig.js`: 타이틀·모드·스토리 일차·결과·괴이 상황별 배경음악 경로를 정의합니다.
+- `app-assets.js`: `assetconfig.js`의 경로를 실제 이미지 요소와 CSS 변수에 적용합니다.
 - `app-*.js`: 게임 상태, 화면, 오디오, 판정, 이벤트를 담당합니다.
 - `assets/`: 방송 배경(`gameScrenn.png`), 캐릭터 이미지, 첫 진입 로고(`splash-logo.png`), 배경음악 파일을 보관합니다.
 - `.vscode/launch.json`: Firefox에서 파일 또는 localhost 방식으로 실행하는 디버그 설정입니다.
@@ -61,14 +63,16 @@ index.html + styles/*.css
         │   8. chat-engine.js
         │
         └─ 게임 앱
-            9.  bgmconfig.js
-            10. app-config.js
-            11. app-chat.js
-            12. app-audio.js
-            13. app-survival.js
-            14. app-results.js
-            15. app-game.js
-            16. app.js
+            9.  assetconfig.js
+            10. bgmconfig.js
+            11. app-config.js
+            12. app-assets.js
+            13. app-chat.js
+            14. app-audio.js
+            15. app-survival.js
+            16. app-results.js
+            17. app-game.js
+            18. app.js
 ```
 
 `chat-engine.js`는 완성된 `HorrorChatEngine` 클래스를 `window.HorrorChatEngine`으로 공개합니다. `app-game.js`의 `startStage()`는 이 공개 클래스로 실제 채팅 엔진 인스턴스를 만듭니다.
@@ -85,7 +89,7 @@ index.html + styles/*.css
 | 실제 게임 | `#game-screen` | 방송, HUD, 채팅, 조작부를 포함 |
 | 연결 상태 | `#connection-widget`, `#reconnect-button` | 화면 상단의 작은 와이파이 상태와 수동 재연결 버튼 |
 | 가상 주소창 | `.browser-bar` | 접기 가능한 방송 페이지 상단 바 |
-| 방송 화면 | `.stream-stage` | `gameScrenn.png` 배경 위에 캐릭터, 괴이, 음악, 제한시간 표시 |
+| 방송 화면 | `.stream-stage` | `ASSET_CONFIG.stream.background` 배경 위에 캐릭터, 괴이, 음악, 제한시간 표시 |
 | 상태 HUD | `.game-hud` | 스테이지/일차, 체력, 시각, 이상 시청자, 점수 |
 | 메시지 목록 | `#message-list` | 엔진 채팅, 시스템 메시지, 사용자 채팅 |
 | 채팅 입력 | `#message-form` | 사용자 메시지와 이모지 입력 |
@@ -151,15 +155,34 @@ CSS는 게임 규칙을 직접 계산하지 않습니다. JavaScript가 상태 �
 
 ## 5. 앱 초기 실행 순서
 
-마지막에 로드되는 `app.js`가 모든 DOM 이벤트를 연결한 뒤 다음 세 함수를 순서대로 호출합니다.
+마지막에 로드되는 `app.js`가 모든 DOM 이벤트를 연결한 뒤 다음 네 함수를 순서대로 호출합니다.
 
 ```text
+applyVisualAssets()
+        ↓
 initializePlayerNickname()
         ↓
 initializeAudioVolumes()
         ↓
 showEntryScreen()
 ```
+
+### `applyVisualAssets()`
+
+1. `assetconfig.js`의 `ASSET_CONFIG`를 읽습니다.
+2. `entry.logo`와 `stream.character`를 각각 첫 화면과 방송 캐릭터의 `<img>`에 적용합니다.
+3. `title.background`와 `stream.background`를 CSS 변수 `--asset-title-background`, `--asset-stream-background`에 적용합니다.
+4. `results.stage`, `results.storyDay`, `results.final`의 대기·공개 배경을 각 결과 오버레이의 CSS 변수에 적용합니다.
+5. 빈 경로의 `<img>`는 깨진 이미지 아이콘 대신 숨기고, 빈 배경 경로는 `none`으로 처리해 기존 연출을 유지합니다.
+
+결과 화면의 각 그룹에는 두 경로가 있습니다.
+
+| 설정 키 | 표시 시점 |
+|---|---|
+| `waitingBackground` | 오버레이가 열린 뒤 판정을 숨기고 기다리는 동안 |
+| `revealedBackground` | `results-visible`이 붙어 결과 카드가 공개된 뒤 |
+
+`results.stage`는 무한 모드 스테이지 결과, `results.storyDay`는 스토리 일일 결과, `results.final`은 게임오버·7일 생존 최종 결과에 대응합니다.
 
 ### `initializePlayerNickname()`
 
@@ -178,7 +201,7 @@ showEntryScreen()
 ### `showEntryScreen()`
 
 1. 타이틀과 게임 화면을 비활성화합니다.
-2. `assets/splash-logo.png`, 경고문, 설명, 닉네임 폼을 표시합니다.
+2. `ASSET_CONFIG.entry.logo`의 로고, 경고문, 설명, 닉네임 폼을 표시합니다.
 3. `#player-nickname`에 키보드 초점을 둡니다.
 4. 타이틀과 게임 음악은 아직 재생하지 않습니다.
 
@@ -599,6 +622,13 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 
 ## 17. 앱 파일별 함수 목록
 
+### `app-assets.js`
+
+- 경로 정리: `normalizeVisualAssetPath`
+- 이미지 적용: `applyImageAsset`
+- CSS 배경 변환: `createCssAssetUrl`
+- 전체 초기화: `applyVisualAssets`
+
 ### `app-config.js`
 
 함수는 없으며 모든 앱 모듈이 사용하는 상수, DOM 참조, 런타임 상태를 선언합니다.
@@ -710,7 +740,8 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 닉네임 이스터 에그 | `NICKNAME_EASTER_EGGS` |
 | 연결 복구 제한시간 | `APPARITION_LIFETIME_MS` |
 | 끊김 직전 모자이크 시간 | `APPARITION_MOSAIC_DURATION_MS` |
-| 방송 배경 이미지 | `styles/stream.css`의 `.stream-stage`, `assets/gameScrenn.png` |
+| 화면 로고·배경·캐릭터 경로 | `assetconfig.js`의 `ASSET_CONFIG` |
+| 스테이지·일일·최종 결과 배경 | `ASSET_CONFIG.results`의 `waitingBackground`, `revealedBackground` |
 | 결과 공개 지연 | `RESULT_REVEAL_DELAY_MS` |
 | 괴이 등장 간격 | `APPARITION_INITIAL_DELAY_RANGE_MS`, `APPARITION_DELAY_RANGE_MS` |
 | 상황별 배경음악 파일 | `bgmconfig.js`의 `BGM_CONFIG` |

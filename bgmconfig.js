@@ -26,13 +26,13 @@ const BGM_CONFIG = Object.freeze({
 
   // 스토리 모드에서는 현재 일차에 해당하는 배열만 사용합니다.
   storyDays: Object.freeze({
-    1: Object.freeze(["assets/After Midnight Buffer.mp3"]),
+    1: Object.freeze(["assets/Open Tab Echo.mp3"]),
     2: Object.freeze(["assets/Open Tab Echo.mp3"]),
-    3: Object.freeze(["assets/Monitor Glow.mp3"]),
+    3: Object.freeze(["assets/Open Tab Echo.mp3"]),
     4: Object.freeze(["assets/Offline Viewer.mp3"]),
-    5: Object.freeze(["assets/After Midnight Buffer (1).mp3"]),
-    6: Object.freeze(["assets/Open Tab Echo (1).mp3"]),
-    7: Object.freeze(["assets/Offline Viewer (1).mp3"])
+    5: Object.freeze(["assets/Offline Viewer.mp3"]),
+    6: Object.freeze(["assets/Offline Viewer.mp3"]),
+    7: Object.freeze(["assets/Monitor Glow.mp3"])
   }),
 
   // 검은 전환 화면이 열리는 순간부터 결과 확인이 끝날 때까지 사용할 음악입니다.
@@ -41,13 +41,13 @@ const BGM_CONFIG = Object.freeze({
     endlessFailed: Object.freeze(["assets/Offline Viewer.mp3"]),
     storyCorrect: Object.freeze(["assets/After Midnight Buffer (1).mp3"]),
     storyWrong: Object.freeze(["assets/Offline Viewer (1).mp3"]),
-    victory: Object.freeze(["assets/title-2.mp3"]),
+    victory: Object.freeze(["assets/Monitor Glow.mp3"]),
     gameOver: Object.freeze(["assets/Offline Viewer.mp3"])
   }),
 
   // 방송 연결 괴이가 시작되거나 완전히 끊겼을 때 기본 플레이 음악을 잠시 대체합니다.
   anomalies: Object.freeze({
     detected: Object.freeze(["assets/After Midnight Buffer (1).mp3"]),
-    disconnected: Object.freeze(["assets/Open Tab Echo (1).mp3"])
+    disconnected: Object.freeze(["assets/Offline Viewer (1).mp3"])
   })
 });

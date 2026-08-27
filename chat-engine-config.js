@@ -28,13 +28,13 @@ const TUNING = Object.freeze({
   requestExpiryMs: 2500,
 
   // 이상 시청자가 가질 수 있는 최대 이상 단계입니다. 단계가 높을수록 이상 발화가 자주 나옵니다.
-  maxAnomalyLevel: 4,
+  maxAnomalyLevel: 3,
 
   // 스테이지 시작 후 이상 시청자의 첫 이상 발화가 도착하는 최소~최대 대기시간(ms)입니다.
-  anomalyArrivalIntervalMs: [8000, 12000],
+  anomalyArrivalIntervalMs: [12000, 20000],
 
   // 첫 발화 이후 이상 시청자가 다음 이상 발화를 만드는 기본 최소~최대 간격(ms)입니다.
-  anomalyIntervalMs: [6000, 6000],
+  anomalyIntervalMs: [5000, 10000],
 
   // 이상 단계가 1 오를 때마다 발화 빈도 배율에 더하는 값입니다. 현재 값이면 단계마다 2%씩 증가합니다.
   anomalyLevelFrequencyStep: 0.02,
@@ -43,7 +43,7 @@ const TUNING = Object.freeze({
   glitchChance: 0.2,
 
   // 단계와 난수 계산으로 간격이 짧아져도 절대 이 값(ms)보다 빠르게 이상 발화를 만들지 않습니다.
-  minimumAnomalyIntervalMs: 2000,
+  minimumAnomalyIntervalMs: 3000,
 
   // 중복·금지 조건으로 문장 생성에 실패했을 때 다른 문장을 다시 뽑는 최대 횟수입니다.
   maxGenerationRetries: 3,
@@ -52,7 +52,7 @@ const TUNING = Object.freeze({
   similarityThreshold: 0.5,
 
   // 같은 발화 의도를 연속 선택할 때 원래 가중치가 완전히 회복되는 데 걸리는 시간(ms)입니다.
-  intentCooldownMs: 5000,
+  intentCooldownMs: 1000,
 
   // 디렉터 상태별 일반 채팅 생성 간격의 [최소, 최대] 값(ms)입니다.
   // AMBIENT=평상시, TENSE=긴장, BURST=폭주, AFTERMATH=사건 직후, LULL=한산함입니다.

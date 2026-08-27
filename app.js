@@ -141,7 +141,8 @@ document.addEventListener("keydown", event => {
 // 백그라운드 탭에서는 채팅 생성과 게임 타이머가 서로 어긋나지 않도록 일시정지합니다.
 document.addEventListener("visibilitychange", syncEnginePause);
 
-// 저장값 복원 → 음량 적용 → 클릭형 진입 화면 순서로 초기화해 자동 재생 정책을 안전하게 통과합니다.
+// 시각 에셋 적용 → 저장값 복원 → 음량 적용 → 클릭형 진입 화면 순서로 앱을 초기화합니다.
+applyVisualAssets();
 initializePlayerNickname();
 initializeAudioVolumes();
 showEntryScreen();

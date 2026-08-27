@@ -53,12 +53,12 @@ const VIEWER_STYLES = [
  * - MAX_MESSAGES: DOM에 남겨 두는 채팅 메시지 최대 개수
  * - MAX_HEALTH: 새 게임 시작 체력
  */
-const BASE_ANOMALIES_PER_STAGE = 10;
-const MAX_ANOMALIES_PER_STAGE = 16;
+const BASE_ANOMALIES_PER_STAGE = 4;
+const MAX_ANOMALIES_PER_STAGE = 10;
 const STAGES_PER_ADDITIONAL_ANOMALY = 1;
 const BASE_ANOMALY_GRACE_MS = 20000;
 const MIN_ANOMALY_GRACE_MS = 6000;
-const STAGE_GRACE_STEP_MS = 0;
+const STAGE_GRACE_STEP_MS = 1000;
 const MAX_MESSAGES = 100;
 const MAX_HEALTH = 5;
 
@@ -72,7 +72,7 @@ const STORY_TOTAL_DAYS = 7;
 const STORY_START_MINUTES = 19 * 60;
 const STORY_DURATION_MINUTES = 7 * 60;
 const STORY_CLOCK_STEP_MINUTES = 30;
-const DEFAULT_STORY_DAY_DURATION_MS = 84000;
+const DEFAULT_STORY_DAY_DURATION_MS = 14000;
 
 /*
  * 방송 화면 연결 괴이와 결과 연출 시간입니다.
@@ -87,7 +87,7 @@ const APPARITION_WEAK_STAGE_RATIO = 0.4;
 const APPARITION_MOSAIC_DURATION_MS = 2000;
 const RESULT_REVEAL_DELAY_MS = 10000;
 const APPARITION_INITIAL_DELAY_RANGE_MS = Object.freeze([6000, 8000]);
-const APPARITION_DELAY_RANGE_MS = Object.freeze([12000, 18000]);
+const APPARITION_DELAY_RANGE_MS = Object.freeze([15000, 18000]);
 
 /*
  * 실제 이상 채팅이 새로 표시될 때 재생할 순간 공포 효과입니다.
@@ -146,6 +146,10 @@ const titleScreen = document.querySelector("#title-screen");
 const gameScreen = document.querySelector("#game-screen");
 const gameStart = document.querySelector("#game-start");
 const storyStart = document.querySelector("#story-start");
+
+// assetconfig.js의 경로를 받을 첫 화면 로고와 방송 캐릭터 이미지입니다.
+const entryLogo = document.querySelector(".entry-logo");
+const streamCharacter = document.querySelector(".stream-character");
 
 // 진입 화면의 플레이어 닉네임 입력·오류 표시 요소입니다.
 const playerNicknameInput = document.querySelector("#player-nickname");

@@ -254,8 +254,8 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
     // 1) 주어구 절단 — 길이를 줄이는 가장 강력한 수단
     let words = text.split(/\s+/).filter(Boolean);
     if (words.length >= 4 && roll(style.trim)) {
-      words = words.slice(1);
-      text = words.join(" ");
+      /*words = words.slice(1);
+      text = words.join(" ");*/
     }
 
     // 2) 조사 생략 — 어절마다 개별 판정

@@ -46,6 +46,10 @@
   object-fit: contain;
   user-select: none;
   -webkit-user-drag: none;
+}
+
+/* assetconfig.js의 로고 경로가 적용된 뒤에만 등장 애니메이션을 시작합니다. */
+.entry-logo.is-asset-ready {
   animation: entry-logo-arrive 900ms cubic-bezier(.2, .8, .2, 1) both;
 }
 

@@ -35,7 +35,8 @@
       버튼 클릭이나 입력창의 Enter 제출이 사용자 제스처가 되어 다음 타이틀 화면의 음악을 재생합니다.
     -->
     <section class="entry-screen" id="entry-screen" aria-labelledby="entry-title">
-      <img class="entry-logo" src="assets/splash-logo.png" alt="Buzzi 팔로우해줘 제발 로고">
+      <!-- 이미지 경로는 assetconfig.js의 entry.logo에서 주입합니다. -->
+      <img class="entry-logo" alt="Buzzi 팔로우해줘 제발 로고">
       <form class="entry-panel" id="entry-form" novalidate>
         <p class="entry-alert"><span aria-hidden="true">●</span> UNKNOWN VIEWERS DETECTED</p>
         <h1 class="entry-title" id="entry-title">방송에 접속할 이름을 입력하세요.</h1>
@@ -142,7 +143,8 @@
       <div class="stream-noise" aria-hidden="true"></div>
       <!-- 실제 방송 방 이미지 위에 어두운 하단 음영과 얇은 주사선을 더하는 보정 레이어입니다. -->
       <div class="stream-room" aria-hidden="true"></div>
-      <img class="stream-character" src="assets\beorjji-emotion-gif-pack\beorjji-idle-smooth.gif" alt="방송을 진행 중인 버찌">
+      <!-- 캐릭터 경로는 assetconfig.js의 stream.character에서 주입합니다. -->
+      <img class="stream-character" alt="방송을 진행 중인 버찌">
       <div class="stream-topline">
         <span class="live-badge"><i aria-hidden="true"></i> LIVE</span>
         <div class="stream-topline-actions">
@@ -360,9 +362,11 @@
     게임 앱도 공유 상태를 먼저 만든 뒤 기능 모듈을 로드하고 app.js에서 이벤트를 연결합니다.
     ES module이 아닌 일반 script를 사용해 file://로 index.html을 열어도 실행되도록 유지합니다.
   -->
-  <!-- 상황별 음악 경로 설정은 실제 오디오 함수와 게임 상태 파일보다 먼저 선언해야 합니다. -->
+  <!-- 시각 에셋과 음악 경로 설정은 실제 적용 함수와 게임 상태 파일보다 먼저 선언해야 합니다. -->
+  <script src="assetconfig.js"></script>
   <script src="bgmconfig.js"></script>
   <script src="app-config.js"></script>
+  <script src="app-assets.js"></script>
   <script src="app-chat.js"></script>
   <script src="app-audio.js"></script>
   <script src="app-survival.js"></script>

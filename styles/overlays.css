@@ -156,7 +156,20 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: #050607e8;
+  background-color: #050607;
+  background-image:
+    linear-gradient(#050607b8, #050607b8),
+    var(--asset-stage-result-waiting, none);
+  background-position: center, center;
+  background-size: cover, cover;
+  background-repeat: no-repeat;
+}
+
+/* results-visible부터는 대기용 이미지 대신 스테이지 결과 공개용 배경을 사용합니다. */
+.stage-overlay.results-visible {
+  background-image:
+    linear-gradient(#050607a8, #050607a8),
+    var(--asset-stage-result-revealed, none);
 }
 
 .stage-overlay::after,
@@ -307,7 +320,20 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background: #050506e8;
+  background-color: #050506;
+  background-image:
+    linear-gradient(#050506b8, #050506b8),
+    var(--asset-final-result-waiting, none);
+  background-position: center, center;
+  background-size: cover, cover;
+  background-repeat: no-repeat;
+}
+
+/* 최종 결과 카드 공개 뒤에는 별도로 지정한 최종 결과 배경으로 교체합니다. */
+.game-overlay.results-visible {
+  background-image:
+    linear-gradient(#050506a8, #050506a8),
+    var(--asset-final-result-revealed, none);
 }
 
 .result-card {

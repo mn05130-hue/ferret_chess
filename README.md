@@ -13,7 +13,7 @@
 - 시청자별 최근 채팅 기록 확인 및 강제 퇴장
 - 이상 채팅의 깨진 문자와 30% 확률의 화면 흔들림·정전기 효과
 - 방송 연결 괴이와 재연결 판정
-- `assets/gameScrenn.png`를 사용한 실제 방송 방 배경
+- `assetconfig.js`에서 교체할 수 있는 로고·타이틀·방송 배경·캐릭터
 - 특정 닉네임 입력 시 첫 화면에 나타나는 설정형 이스터 에그 문구
 - `bgmconfig.js` 기반 타이틀·일차·결과·괴이 상황별 BGM 전환과 개별 음량 저장
 - 시드 기반 재현과 브라우저 콘솔용 디버그 API
@@ -112,6 +112,7 @@ VS Code에서는 `.vscode/launch.json`의 `Launch index.html` 또는 `Launch loc
 ```text
 .
 ├─ index.html                    화면 구조와 스크립트 로딩 순서
+├─ assetconfig.js                화면 이미지 경로 설정
 ├─ bgmconfig.js                  상황별 배경음악 경로 설정
 ├─ styles/
 │  ├─ base.css                 전역 토큰, 초기화, 앱 프레임
@@ -125,6 +126,7 @@ VS Code에서는 `.vscode/launch.json`의 `Launch index.html` 또는 `Launch loc
 │  ├─ story-results.css        스토리 야간 결과 연출
 │  └─ responsive.css           낮은 화면과 모션 감소 대응
 ├─ app-config.js                게임 상수, DOM 참조, 공유 상태
+├─ app-assets.js                화면 이미지와 CSS 배경 경로 적용
 ├─ app-chat.js                  닉네임, 메시지 렌더링, 이상 문자 변환
 ├─ app-audio.js                 음악, 음량 저장, 공포 효과음
 ├─ app-survival.js              스토리 시계, 제한시간, 연결 괴이
@@ -156,8 +158,10 @@ chat-engine-config.js
 → chat-engine-generation.js
 → chat-engine-diagnostics.js
 → chat-engine.js
+→ assetconfig.js
 → bgmconfig.js
 → app-config.js
+→ app-assets.js
 → app-chat.js
 → app-audio.js
 → app-survival.js
@@ -211,7 +215,9 @@ CSS 파일 순서는 기존 cascade를 보존하므로 `index.html`의 `<link>` 
 
 ## 설정과 테스트 파라미터
 
-주요 게임 밸런스 값은 `app-config.js`, 채팅 생성 값은 `chat-engine-config.js`, 상황별 음악 경로는 `bgmconfig.js`에서 조정합니다.
+주요 게임 밸런스 값은 `app-config.js`, 채팅 생성 값은 `chat-engine-config.js`, 화면 이미지 경로는 `assetconfig.js`, 상황별 음악 경로는 `bgmconfig.js`에서 조정합니다.
+
+`assetconfig.js`의 `entry.logo`, `title.background`, `stream.background`, `stream.character`를 바꾸면 HTML이나 CSS를 수정하지 않고 화면 이미지를 교체할 수 있습니다. `results.stage`, `results.storyDay`, `results.final`에는 각각 대기 화면용 `waitingBackground`와 결과 공개용 `revealedBackground`를 지정할 수 있습니다. 경로는 `index.html` 기준으로 작성하며 빈 문자열을 지정하면 해당 이미지 대신 기존 검은색·노이즈 연출을 유지합니다.
 
 `bgmconfig.js`에서는 타이틀, 무한 모드, 스토리 1~7일, 무한 성공/실패, 스토리 정답/오답, 최종 승리/게임오버, 괴이 감지/연결 끊김 음악을 각각 지정할 수 있습니다. 한 상황에 경로를 여러 개 넣으면 진입할 때 무작위로 한 곡을 선택하고, 빈 배열을 지정하면 직전 BGM을 유지합니다.
 

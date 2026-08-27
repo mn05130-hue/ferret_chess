@@ -28,7 +28,7 @@
 }
 
 .title-screen::before {
-  background: url("../assets/gudok-bangsong-cover.png") center top / cover no-repeat;
+  background: var(--asset-title-background, none) center top / cover no-repeat;
   animation: title-breathe 7s ease-in-out infinite alternate;
 }
 

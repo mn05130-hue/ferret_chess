@@ -13,7 +13,13 @@
   padding: 24px;
   overflow: hidden;
   color: #e8e8e8;
-  background: #000;
+  background-color: #000;
+  background-image:
+    linear-gradient(#000c, #000c),
+    var(--asset-story-result-waiting, none);
+  background-position: center, center;
+  background-size: cover, cover;
+  background-repeat: no-repeat;
   opacity: 0;
   visibility: hidden;
   transition: opacity 900ms ease, visibility 900ms ease;
@@ -156,6 +162,13 @@
 .story-night-overlay.results-visible .story-night-card {
   translate: 0 0;
   opacity: 1;
+}
+
+/* 오전 2시 결과 카드가 공개되면 대기 이미지에서 일일 결과용 배경으로 교체합니다. */
+.story-night-overlay.results-visible {
+  background-image:
+    linear-gradient(#000a, #000a),
+    var(--asset-story-result-revealed, none);
 }
 
 .story-night-overlay.is-wrong.results-visible .story-night-card {
