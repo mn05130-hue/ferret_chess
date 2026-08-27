@@ -126,6 +126,23 @@ function setNicknameError(message = "") {
 }
 
 /**
+ * 현재 입력한 닉네임이 설정 목록과 일치하면 첫 화면에 이스터 에그 문구를 표시합니다.
+ * trim·공백 정리 후 영문 대소문자를 무시하지만, 부분 문자열은 일치로 취급하지 않습니다.
+ * @param {unknown} value 입력란 또는 저장소에서 가져온 닉네임
+ * @returns {string} 표시한 이스터 에그 문구. 일치하는 항목이 없으면 빈 문자열
+ */
+function updateNicknameEasterEgg(value = playerNicknameInput.value) {
+  const normalizedNickname = normalizePlayerNickname(value).toLocaleLowerCase("ko-KR");
+  const matchedEntry = Object.entries(NICKNAME_EASTER_EGGS).find(([nickname]) => (
+    normalizePlayerNickname(nickname).toLocaleLowerCase("ko-KR") === normalizedNickname
+  ));
+  const message = matchedEntry?.[1] || "";
+  nicknameEasterEgg.textContent = message;
+  nicknameEasterEgg.hidden = !message;
+  return message;
+}
+
+/**
  * 입력값을 검증한 뒤 현재 플레이어 이름과 localStorage에 확정 저장합니다.
  * @returns {boolean} 이름이 유효해 저장했으면 true, 입력이 비어 있으면 false
  */
@@ -140,6 +157,7 @@ function commitPlayerNickname() {
   myNickname = nickname;
   playerNicknameInput.value = nickname;
   setNicknameError();
+  updateNicknameEasterEgg(nickname);
   try {
     window.localStorage.setItem(PLAYER_NICKNAME_STORAGE_KEY, nickname);
   } catch {
@@ -159,6 +177,7 @@ function initializePlayerNickname() {
     // 저장소를 사용할 수 없는 환경에서는 빈 입력란으로 시작합니다.
   }
   setNicknameError();
+  updateNicknameEasterEgg();
 }
 
 /**

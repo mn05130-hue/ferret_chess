@@ -48,8 +48,13 @@ titleMusicButton.addEventListener("click", () => {
   else stopTitleMusic(false);
 });
 gameMusicButton.addEventListener("click", () => {
-  if (gameMusic.paused) playGameMusic();
-  else stopGameMusic(false);
+  if (gameMusic.paused) {
+    gameMusicManuallyPaused = false;
+    playGameMusic();
+  } else {
+    gameMusicManuallyPaused = true;
+    stopGameMusic(false);
+  }
 });
 titleVolume.addEventListener("input", () => {
   applyVolume(titleMusic, titleVolume, titleVolumeValue, AUDIO_SETTINGS.title, titleVolume.value);
@@ -57,7 +62,11 @@ titleVolume.addEventListener("input", () => {
 gameVolume.addEventListener("input", () => {
   applyVolume(gameMusic, gameVolume, gameVolumeValue, AUDIO_SETTINGS.game, gameVolume.value);
 });
-playerNicknameInput.addEventListener("input", () => setNicknameError());
+// 입력할 때마다 기존 오류를 지우고, 등록된 특수 닉네임인지 즉시 다시 확인합니다.
+playerNicknameInput.addEventListener("input", () => {
+  setNicknameError();
+  updateNicknameEasterEgg();
+});
 gameStart.addEventListener("click", () => enterGame(GAME_MODES.ENDLESS));
 storyStart.addEventListener("click", () => enterGame(GAME_MODES.STORY));
 gameRetry.addEventListener("click", startGame);

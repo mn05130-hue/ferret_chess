@@ -1,11 +1,14 @@
 "use strict";
 
 /*
- * 타이틀·게임 배경음악과 결과 공포 효과음을 담당합니다.
+ * bgmconfig.js의 상황별 경로를 실제 타이틀·게임 audio 요소에 연결하고 결과 공포 효과음을 담당합니다.
  * HTMLAudioElement의 재생 상태, range 입력, localStorage 값을 항상 동기화하고,
  * 브라우저 자동 재생 거부는 예외로 처리해 화면 진행 자체가 막히지 않게 합니다.
  * 정전기 효과는 별도 음원 없이 Web Audio API 노드로 매번 짧게 합성합니다.
  */
+// 상황 전환과 실제 pause 상태를 구분해, 사용자가 직접 끈 BGM만 다음 상황에서도 꺼진 채 유지합니다.
+let gameMusicManuallyPaused = false;
+
 /**
  * 타이틀 음악의 실제 재생 여부를 버튼 클래스, aria-pressed, 라벨에 동기화합니다.
  * @param {boolean} playing audio.play()가 성공해 현재 재생 중인지 여부
@@ -28,11 +31,28 @@ function setGameMusicUi(playing) {
 }
 
 /**
- * 트랙 목록에서 곡을 고르되 가능하면 현재 재생 중인 곡과 다른 항목을 선택합니다.
- * @param {readonly string[]} tracks 선택할 수 있는 오디오 파일 경로
- * @returns {string} 무작위로 선택한 한 트랙 경로
+ * 설정값을 유효한 음악 경로 배열로 정리합니다. 한 문자열도 한 곡짜리 목록으로 사용할 수 있습니다.
+ * @param {string|readonly string[]|undefined|null} setting bgmconfig.js의 한 상황 설정값
+ * @returns {string[]} 공백과 잘못된 값을 제거한 음악 경로 목록
  */
-function chooseMusicTrack(tracks) {
+function normalizeMusicTracks(setting) {
+  const values = Array.isArray(setting) ? setting : [setting];
+  return values
+    .filter(value => typeof value === "string" && value.trim())
+    .map(value => value.trim());
+}
+
+/**
+ * 트랙 목록에서 곡을 고르되 여러 후보가 있으면 현재 곡을 제외해 연속 중복을 줄입니다.
+ * @param {string|readonly string[]} setting 선택할 수 있는 오디오 파일 경로
+ * @param {string} currentTrack 현재 audio의 src 속성에 들어 있는 상대 경로
+ * @returns {string} 무작위로 선택한 한 트랙 경로. 유효한 경로가 없으면 빈 문자열
+ */
+function chooseMusicTrack(setting, currentTrack = "") {
+  const tracks = normalizeMusicTracks(setting);
+  if (!tracks.length) return "";
+  const alternatives = tracks.filter(track => track !== currentTrack);
+  const candidates = alternatives.length ? alternatives : tracks;
   let randomValue;
   if (window.crypto?.getRandomValues) {
     const values = new Uint32Array(1);
@@ -41,7 +61,7 @@ function chooseMusicTrack(tracks) {
   } else {
     randomValue = Math.random();
   }
-  return tracks[Math.floor(randomValue * tracks.length)];
+  return candidates[Math.floor(randomValue * candidates.length)];
 }
 
 /**
@@ -125,7 +145,13 @@ function stopTitleMusic(reset = true) {
  */
 function prepareTitleMusic() {
   stopTitleMusic(false);
-  titleMusic.src = chooseMusicTrack(TITLE_MUSIC_TRACKS);
+  const nextTrack = chooseMusicTrack(BGM_CONFIG.title, titleMusic.getAttribute("src") || "");
+  if (!nextTrack) {
+    titleMusic.removeAttribute("src");
+    titleMusic.load();
+    return;
+  }
+  titleMusic.src = nextTrack;
   titleMusic.load();
   playTitleMusic();
 }
@@ -158,13 +184,91 @@ function stopGameMusic(reset = true) {
 }
 
 /**
- * 게임 진입 시 곡을 준비하고 사용자 상호작용 뒤 자동 재생을 시도합니다.
+ * 게임 audio를 새 상황에 맞는 곡으로 교체합니다.
+ * 빈 배열인 상황은 현재 BGM을 유지하고, 사용자가 BGM을 꺼 둔 상태라면 전환 후에도 재생하지 않습니다.
+ * @param {string} scene 개발자 도구와 중복 전환 방지에 사용할 상황 이름
+ * @param {string|readonly string[]} setting bgmconfig.js에서 읽은 경로 또는 경로 목록
+ * @param {{forcePlay?: boolean, restart?: boolean}} options 강제 재생 및 동일 상황 재시작 여부
+ * @returns {boolean} 유효한 설정을 찾아 상황을 적용했는지 여부
+ */
+function switchGameMusicScene(scene, setting, { forcePlay = false, restart = false } = {}) {
+  const tracks = normalizeMusicTracks(setting);
+  if (!tracks.length) return false;
+
+  const currentTrack = gameMusic.getAttribute("src") || "";
+  const sameScene = gameMusic.dataset.bgmScene === scene && tracks.includes(currentTrack);
+  const shouldPlay = forcePlay || !gameMusicManuallyPaused;
+
+  if (sameScene) {
+    if (restart) {
+      try { gameMusic.currentTime = 0; } catch { /* 아직 메타데이터가 없으면 load 후 0초에서 시작합니다. */ }
+    }
+    if (shouldPlay) playGameMusic();
+    return true;
+  }
+
+  const nextTrack = chooseMusicTrack(tracks, currentTrack);
+  stopGameMusic(false);
+  if (currentTrack !== nextTrack) {
+    gameMusic.src = nextTrack;
+    gameMusic.load();
+  } else {
+    try { gameMusic.currentTime = 0; } catch { /* 동일 파일이면 가능한 경우에만 처음으로 되돌립니다. */ }
+  }
+  gameMusic.dataset.bgmScene = scene;
+  if (shouldPlay) playGameMusic();
+  return true;
+}
+
+/**
+ * 현재 모드와 일차를 기준으로 기본 플레이 상황의 음악 설정을 반환합니다.
+ * 스토리 일차 경로가 비어 있으면 무한 모드 기본 경로를 안전한 대체값으로 사용합니다.
+ * @returns {{scene: string, tracks: string|readonly string[]}} 적용할 상황 이름과 경로 목록
+ */
+function getGameplayMusicScene() {
+  if (gameMode === GAME_MODES.STORY) {
+    const storyTracks = normalizeMusicTracks(BGM_CONFIG.storyDays?.[currentStage]);
+    return {
+      scene: `story-day-${currentStage}`,
+      tracks: storyTracks.length ? storyTracks : BGM_CONFIG.endless
+    };
+  }
+  return { scene: "endless", tracks: BGM_CONFIG.endless };
+}
+
+/**
+ * 현재 무한 모드 또는 스토리 일차의 기본 BGM으로 전환합니다.
+ * @param {{forcePlay?: boolean, restart?: boolean}} options 최초 게임 진입 때 사용할 재생 옵션
+ */
+function prepareGameplayMusicForCurrentStage(options = {}) {
+  const { scene, tracks } = getGameplayMusicScene();
+  switchGameMusicScene(scene, tracks, options);
+}
+
+/**
+ * 게임 진입 버튼의 사용자 제스처 안에서 1일차/무한 모드 BGM을 처음부터 재생합니다.
  */
 function prepareGameMusic() {
-  stopGameMusic();
-  gameMusic.src = chooseMusicTrack(GAME_MUSIC_TRACKS);
-  gameMusic.load();
-  playGameMusic();
+  gameMusicManuallyPaused = false;
+  prepareGameplayMusicForCurrentStage({ forcePlay: true, restart: true });
+}
+
+/**
+ * 결과 종류에 맞는 음악으로 교체합니다. bgmconfig.js의 results 키와 이름이 같아야 합니다.
+ * @param {"endlessClear"|"endlessFailed"|"storyCorrect"|"storyWrong"|"victory"|"gameOver"} resultType 결과 종류
+ */
+function prepareResultMusic(resultType) {
+  switchGameMusicScene(`result-${resultType}`, BGM_CONFIG.results?.[resultType]);
+}
+
+/**
+ * 연결 괴이 감지 또는 완전 끊김 전용 음악으로 교체합니다.
+ * @param {"detected"|"disconnected"} anomalyType 연결 이상 단계
+ */
+function prepareAnomalyMusic(anomalyType) {
+  if(anomalyType === "detected")return;
+  
+  switchGameMusicScene(`anomaly-${anomalyType}`, BGM_CONFIG.anomalies?.[anomalyType]);
 }
 
 /**

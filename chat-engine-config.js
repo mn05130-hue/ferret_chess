@@ -31,10 +31,10 @@ const TUNING = Object.freeze({
   maxAnomalyLevel: 4,
 
   // 스테이지 시작 후 이상 시청자의 첫 이상 발화가 도착하는 최소~최대 대기시간(ms)입니다.
-  anomalyArrivalIntervalMs: [5000, 10000],
+  anomalyArrivalIntervalMs: [8000, 12000],
 
   // 첫 발화 이후 이상 시청자가 다음 이상 발화를 만드는 기본 최소~최대 간격(ms)입니다.
-  anomalyIntervalMs: [5000, 5000],
+  anomalyIntervalMs: [6000, 6000],
 
   // 이상 단계가 1 오를 때마다 발화 빈도 배율에 더하는 값입니다. 현재 값이면 단계마다 2%씩 증가합니다.
   anomalyLevelFrequencyStep: 0.02,
@@ -57,11 +57,11 @@ const TUNING = Object.freeze({
   // 디렉터 상태별 일반 채팅 생성 간격의 [최소, 최대] 값(ms)입니다.
   // AMBIENT=평상시, TENSE=긴장, BURST=폭주, AFTERMATH=사건 직후, LULL=한산함입니다.
   intervals: {
-    AMBIENT: [1800, 4000],
-    TENSE: [700, 1500],
-    BURST: [220, 620],
-    AFTERMATH: [800, 2000],
-    LULL: [2400, 5200]
+    AMBIENT: [3000, 6000],
+    TENSE: [2000, 3000],
+    BURST: [500, 1000],
+    AFTERMATH: [4000, 8000],
+    LULL: [5400, 8200]
   },
 
   /*

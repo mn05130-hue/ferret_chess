@@ -34,7 +34,13 @@ const VIEWER_STYLES = [
   { badge: "💗", badgeClass: "heart", color: "#f24e74" },
   { badge: "🪙", badgeClass: "coin", color: "#a374e8" },
   { badge: "🪙", badgeClass: "coin", color: "#ef6f86" },
-  { badge: "", badgeClass: "empty", color: "#75a7dc" }
+  { badge: "", badgeClass: "empty", color: "#75a7dc" },
+  { badge: "", badgeClass: "empty", color: "#75a7dc" },
+  { badge: "", badgeClass: "empty", color: "#75a7dc" },
+  { badge: "", badgeClass: "empty", color: "#75a7dc" },
+  { badge: "", badgeClass: "empty", color: "#75a7dc" },
+  { badge: "", badgeClass: "empty", color: "#75a7dc" },
+  { badge: "", badgeClass: "empty", color: "#75a7dc" },
 ];
 
 /*
@@ -52,7 +58,7 @@ const MAX_ANOMALIES_PER_STAGE = 16;
 const STAGES_PER_ADDITIONAL_ANOMALY = 1;
 const BASE_ANOMALY_GRACE_MS = 20000;
 const MIN_ANOMALY_GRACE_MS = 6000;
-const STAGE_GRACE_STEP_MS = 900;
+const STAGE_GRACE_STEP_MS = 0;
 const MAX_MESSAGES = 100;
 const MAX_HEALTH = 5;
 
@@ -144,6 +150,7 @@ const storyStart = document.querySelector("#story-start");
 // 진입 화면의 플레이어 닉네임 입력·오류 표시 요소입니다.
 const playerNicknameInput = document.querySelector("#player-nickname");
 const nicknameError = document.querySelector("#nickname-error");
+const nicknameEasterEgg = document.querySelector("#nickname-easter-egg");
 
 // 타이틀/게임 음악의 audio, 재생 버튼, 음량 입력, 퍼센트 출력입니다.
 const titleMusic = document.querySelector("#title-music");
@@ -250,16 +257,6 @@ const STREAM_STATE_LABELS = {
   LULL: "미약한 신호"
 };
 
-// 각 화면에 들어갈 수 있는 음악 파일 후보이며 진입할 때 한 곡을 무작위 선택합니다.
-const TITLE_MUSIC_TRACKS = Object.freeze([
-  "assets/title-1.mp3",
-  "assets/title-2.mp3"
-]);
-const GAME_MUSIC_TRACKS = Object.freeze([
-  "assets/gameplay-1.mp3",
-  "assets/gameplay-2.mp3"
-]);
-
 /*
  * 음량 종류별 저장 규칙입니다.
  * storageKey는 localStorage 키이고 defaultVolume은 저장값이 없을 때의 0~100 값입니다.
@@ -268,6 +265,20 @@ const GAME_MUSIC_TRACKS = Object.freeze([
 const AUDIO_SETTINGS = Object.freeze({
   title: { storageKey: "ferret-chess-title-volume", defaultVolume: 15 },
   game: { storageKey: "ferret-chess-game-volume", defaultVolume: 10 }
+});
+
+/*
+ * 첫 진입 화면의 닉네임 이스터 에그 목록입니다.
+ * 왼쪽 키는 감지할 닉네임, 오른쪽 값은 입력란 아래에 나타낼 특수 문구입니다.
+ * 닉네임은 앞뒤 공백과 영문 대소문자를 무시해 비교하며, 새 항목은 같은 형식으로 추가할 수 있습니다.
+ */
+const NICKNAME_EASTER_EGGS = Object.freeze({
+  "버찌": "그 이름은 이미 방송 안에 있습니다.",
+  "너나비": "왕큰왕왕큰.",
+  "치쿠사마": "선샌니",
+  "모나": "뱀파이어가 입장했습니다.",
+  "시네진": "바보입니다",
+
 });
 
 // 플레이어 닉네임을 다음 방문에도 복원하기 위한 localStorage 키입니다.

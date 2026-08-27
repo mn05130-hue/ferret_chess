@@ -223,6 +223,7 @@ function spawnStreamApparition() {
   connectionFeedbackTimer = undefined;
   connectionWidget.classList.remove("is-false-reconnect");
   setConnectionStage(CONNECTION_STAGES.NORMAL);
+  prepareAnomalyMusic("detected");
   apparitionWeakTimer = window.setTimeout(
     weakenStreamConnection,
     APPARITION_LIFETIME_MS * APPARITION_WEAK_STAGE_RATIO
@@ -290,6 +291,7 @@ function expireStreamApparition() {
   chatApp.classList.add("connection-lost");
   corruptVisibleMessagesForConnectionLoss();
   setConnectionStage(CONNECTION_STAGES.DISCONNECTED);
+  prepareAnomalyMusic("disconnected");
   missedApparitions += 1;
   dayMissedApparitions += 1;
 }
@@ -331,6 +333,7 @@ function reconnectStreamConnection() {
 
   const recoveredInTime = !apparitionExpired;
   resetConnectionWidget();
+  prepareGameplayMusicForCurrentStage();
   if (recoveredInTime) {
     banishedApparitions += 1;
     dayBanishedApparitions += 1;

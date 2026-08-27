@@ -96,8 +96,9 @@ function enterGame(mode = GAME_MODES.ENDLESS) {
   titleScreen.setAttribute("aria-hidden", "true");
   gameScreen.inert = false;
   gameScreen.setAttribute("aria-hidden", "false");
-  prepareGameMusic();
   startGame();
+  // startGame()이 currentStage를 1로 초기화한 뒤 올바른 1일차/무한 모드 곡을 재생합니다.
+  prepareGameMusic();
 }
 
 /**
@@ -175,6 +176,7 @@ function endGame() {
   resetStoryNightReveal();
 
   const storyMode = gameMode === GAME_MODES.STORY;
+  prepareResultMusic(storyMode && storyVictory ? "victory" : "gameOver");
   if (storyMode && storyVictory) {
     resultKicker.textContent = "SEVEN NIGHTS SURVIVED";
     resultTitle.textContent = "7일을 버텨냈습니다";
@@ -350,6 +352,8 @@ function startStage() {
   gameOver = false;
   stageReviewOpen = false;
   gameScreen.inert = false;
+  // 결과·괴이 전용 곡이 재생 중이었다면 현재 모드와 일차의 기본 플레이 곡으로 복귀합니다.
+  prepareGameplayMusicForCurrentStage();
   messageList.replaceChildren();
   stageOverlay.classList.remove("open");
   stageOverlay.setAttribute("aria-hidden", "true");

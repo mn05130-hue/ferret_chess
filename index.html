@@ -45,6 +45,8 @@
           <input id="player-nickname" type="text" maxlength="16" autocomplete="nickname" enterkeyhint="go" placeholder="닉네임을 입력하세요" aria-describedby="nickname-error" required>
         </label>
         <p class="nickname-error" id="nickname-error" role="status" aria-live="polite" hidden>타이틀로 이동하려면 닉네임을 입력하세요.</p>
+        <!-- app-config.js의 NICKNAME_EASTER_EGGS에 등록된 이름을 입력했을 때만 공개됩니다. -->
+        <p class="entry-easter-egg" id="nickname-easter-egg" role="status" aria-live="polite" hidden></p>
         <button class="entry-gate" id="entry-gate" type="submit">
           <span>타이틀 화면으로</span>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
@@ -358,6 +360,8 @@
     게임 앱도 공유 상태를 먼저 만든 뒤 기능 모듈을 로드하고 app.js에서 이벤트를 연결합니다.
     ES module이 아닌 일반 script를 사용해 file://로 index.html을 열어도 실행되도록 유지합니다.
   -->
+  <!-- 상황별 음악 경로 설정은 실제 오디오 함수와 게임 상태 파일보다 먼저 선언해야 합니다. -->
+  <script src="bgmconfig.js"></script>
   <script src="app-config.js"></script>
   <script src="app-chat.js"></script>
   <script src="app-audio.js"></script>

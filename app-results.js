@@ -64,6 +64,7 @@ function finishStage({ success, title, copy }) {
   closeEmojiPanel();
   closeViewerPanel();
   syncEnginePause();
+  prepareResultMusic(success ? "endlessClear" : "endlessFailed");
 
   stageCard.classList.toggle("failed", !success);
   stageResultKicker.textContent = `STAGE ${String(currentStage).padStart(2, "0")} ${success ? "CLEAR" : "FAILED"}`;
@@ -228,6 +229,7 @@ function finishStoryDay() {
   else if (currentStage === STORY_TOTAL_DAYS) storyContinue.textContent = "7일 생존 결과 보기";
   else storyContinue.textContent = `${currentStage + 1}일차 시작`;
 
+  prepareResultMusic(damage > 0 ? "storyWrong" : "storyCorrect");
   beginStoryNightReveal(damage > 0);
 }
 

@@ -34,6 +34,7 @@
 - `index.html`: 화면에 필요한 모든 DOM 요소와 스크립트 로딩 순서를 정의합니다.
 - `styles/*.css`: 공통 토큰, 진입·타이틀·방송·채팅·결과 화면, 애니메이션, 반응형 레이아웃을 기능별로 담당합니다.
 - `chat-engine-*.js`: 자동 시청자 채팅의 데이터와 생성 엔진입니다.
+- `bgmconfig.js`: 타이틀·모드·스토리 일차·결과·괴이 상황별 배경음악 경로를 정의합니다.
 - `app-*.js`: 게임 상태, 화면, 오디오, 판정, 이벤트를 담당합니다.
 - `assets/`: 방송 배경(`gameScrenn.png`), 캐릭터 이미지, 첫 진입 로고(`splash-logo.png`), 배경음악 파일을 보관합니다.
 - `.vscode/launch.json`: Firefox에서 파일 또는 localhost 방식으로 실행하는 디버그 설정입니다.
@@ -60,13 +61,14 @@ index.html + styles/*.css
         │   8. chat-engine.js
         │
         └─ 게임 앱
-            9.  app-config.js
-            10. app-chat.js
-            11. app-audio.js
-            12. app-survival.js
-            13. app-results.js
-            14. app-game.js
-            15. app.js
+            9.  bgmconfig.js
+            10. app-config.js
+            11. app-chat.js
+            12. app-audio.js
+            13. app-survival.js
+            14. app-results.js
+            15. app-game.js
+            16. app.js
 ```
 
 `chat-engine.js`는 완성된 `HorrorChatEngine` 클래스를 `window.HorrorChatEngine`으로 공개합니다. `app-game.js`의 `startStage()`는 이 공개 클래스로 실제 채팅 엔진 인스턴스를 만듭니다.
@@ -180,7 +182,7 @@ showEntryScreen()
 3. `#player-nickname`에 키보드 초점을 둡니다.
 4. 타이틀과 게임 음악은 아직 재생하지 않습니다.
 
-사용자가 닉네임을 입력하고 폼 버튼을 클릭하거나 Enter를 누르면 `enterTitleFromEntry()`가 실행됩니다. 먼저 `commitPlayerNickname()`이 공백과 길이를 정리하고 빈 값을 차단한 뒤 닉네임을 저장합니다. 유효한 경우에만 같은 제출 제스처 안에서 `showTitle(false)`와 `prepareTitleMusic()`을 호출하므로 브라우저가 타이틀 BGM 재생을 허용할 수 있습니다. 진입 화면은 720ms 동안 페이드아웃되고 그 아래에 준비된 타이틀 화면이 자동으로 나타납니다.
+사용자가 닉네임을 입력하면 `updateNicknameEasterEgg()`가 `NICKNAME_EASTER_EGGS`의 이름과 비교해 일치하는 특수 문구를 즉시 표시합니다. 폼 버튼을 클릭하거나 Enter를 누르면 `enterTitleFromEntry()`가 실행됩니다. 먼저 `commitPlayerNickname()`이 공백과 길이를 정리하고 빈 값을 차단한 뒤 닉네임을 저장합니다. 유효한 경우에만 같은 제출 제스처 안에서 `showTitle(false)`와 `prepareTitleMusic()`을 호출하므로 브라우저가 타이틀 BGM 재생을 허용할 수 있습니다. 진입 화면은 720ms 동안 페이드아웃되고 그 아래에 준비된 타이틀 화면이 자동으로 나타납니다.
 
 자동 타이머만으로 화면을 넘기면 사용자 제스처가 없어 자동 재생 제한을 해결할 수 없습니다. 따라서 **닉네임 입력 후 폼을 한 번 제출해야 하며, 제출 뒤의 타이틀 전환은 자동**입니다.
 
@@ -529,7 +531,32 @@ beginStoryNightReveal()
 
 ### 설정 위치
 
-`app-config.js`의 `AUDIO_SETTINGS`가 저장 키와 기본 음량을 정의합니다.
+`bgmconfig.js`의 `BGM_CONFIG`가 상황별 음악 경로를 정의하고, `app-config.js`의 `AUDIO_SETTINGS`가 저장 키와 기본 음량을 정의합니다.
+
+`BGM_CONFIG`의 각 값은 한 곡짜리 배열 또는 여러 곡 배열입니다. 여러 경로를 넣으면 해당 상황에 들어갈 때 한 곡을 무작위 선택합니다. 빈 배열은 현재 재생 중인 곡을 그대로 유지합니다.
+
+```js
+const BGM_CONFIG = Object.freeze({
+  title: Object.freeze(["assets/title.mp3"]),
+  endless: Object.freeze(["assets/endless.mp3"]),
+  storyDays: Object.freeze({
+    1: Object.freeze(["assets/day-1.mp3"]),
+    // 2일차부터 7일차까지 같은 형식으로 지정
+  }),
+  results: Object.freeze({
+    endlessClear: Object.freeze(["assets/clear.mp3"]),
+    endlessFailed: Object.freeze(["assets/failed.mp3"]),
+    storyCorrect: Object.freeze(["assets/story-correct.mp3"]),
+    storyWrong: Object.freeze(["assets/story-wrong.mp3"]),
+    victory: Object.freeze(["assets/victory.mp3"]),
+    gameOver: Object.freeze(["assets/game-over.mp3"])
+  }),
+  anomalies: Object.freeze({
+    detected: Object.freeze(["assets/anomaly.mp3"]),
+    disconnected: Object.freeze(["assets/disconnected.mp3"])
+  })
+});
+```
 
 ```js
 const AUDIO_SETTINGS = Object.freeze({
@@ -537,8 +564,6 @@ const AUDIO_SETTINGS = Object.freeze({
   game: { storageKey: "ferret-chess-game-volume", defaultVolume: 10 }
 });
 ```
-
-트랙 목록은 `TITLE_MUSIC_TRACKS`와 `GAME_MUSIC_TRACKS`에 있습니다.
 
 ### 타이틀 음악
 
@@ -562,7 +587,7 @@ playTitleMusic()
 
 ### 게임 음악
 
-`enterGame()`이 `prepareGameMusic()`을 호출하고 게임 화면 진입 후 재생합니다. 타이틀로 돌아갈 때 `showTitle()`이 `stopGameMusic()`을 호출합니다.
+`enterGame()`이 새 게임의 1일차 또는 무한 모드 상황을 확정한 뒤 `prepareGameMusic()`을 호출합니다. 이후 `startStage()`가 일차마다 `prepareGameplayMusicForCurrentStage()`를 실행합니다. 결과 화면은 `prepareResultMusic()`, 연결 괴이는 `prepareAnomalyMusic()`으로 전환하며 재연결에 성공하면 현재 일차의 기본 음악으로 돌아옵니다. 사용자가 게임 BGM을 꺼 둔 경우에는 상황이 바뀌어도 꺼진 상태를 유지합니다. 타이틀로 돌아갈 때 `showTitle()`이 `stopGameMusic()`을 호출합니다.
 
 ### 음량 저장
 
@@ -581,7 +606,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 ### `app-chat.js`
 
 - 난수/시청자: `createRoundRandom`, `shuffle`, `createNickname`, `createSeed`, `createViewers`
-- 닉네임: `normalizePlayerNickname`, `setNicknameError`, `commitPlayerNickname`, `initializePlayerNickname`
+- 닉네임: `normalizePlayerNickname`, `setNicknameError`, `updateNicknameEasterEgg`, `commitPlayerNickname`, `initializePlayerNickname`
 - 이상 문장: `hashText`, `createUnknownChatText`, `getAnomalyPresentation`, `triggerCorruptedChatPulse`
 - 메시지 DOM: `createMessage`, `createSystemMessage`, `appendElement`
 - 스크롤: `isNearLatest`, `scrollToLatest`
@@ -591,9 +616,9 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 ### `app-audio.js`
 
 - UI 상태: `setTitleMusicUi`, `setGameMusicUi`
-- 공통 설정: `chooseMusicTrack`, `readStoredVolume`, `applyVolume`, `initializeAudioVolumes`
+- 공통 설정: `normalizeMusicTracks`, `chooseMusicTrack`, `readStoredVolume`, `applyVolume`, `initializeAudioVolumes`
 - 타이틀 음악: `playTitleMusic`, `stopTitleMusic`, `prepareTitleMusic`
-- 게임 음악: `playGameMusic`, `stopGameMusic`, `prepareGameMusic`
+- 게임 음악: `playGameMusic`, `stopGameMusic`, `switchGameMusicScene`, `getGameplayMusicScene`, `prepareGameplayMusicForCurrentStage`, `prepareGameMusic`, `prepareResultMusic`, `prepareAnomalyMusic`
 - 공포 소리: `primeScareAudio`, `emitStaticNoise`, `playChatStaticNoise`, `playStaticScare`
 
 ### `app-survival.js`
@@ -682,12 +707,13 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 스토리 총 일수 | `STORY_TOTAL_DAYS`, `STORY_DAY_INTROS` |
 | 스토리 하루 실제 길이 | `DEFAULT_STORY_DAY_DURATION_MS` |
 | 스토리 시계 표시 간격 | `STORY_CLOCK_STEP_MINUTES` |
+| 닉네임 이스터 에그 | `NICKNAME_EASTER_EGGS` |
 | 연결 복구 제한시간 | `APPARITION_LIFETIME_MS` |
 | 끊김 직전 모자이크 시간 | `APPARITION_MOSAIC_DURATION_MS` |
 | 방송 배경 이미지 | `styles/stream.css`의 `.stream-stage`, `assets/gameScrenn.png` |
 | 결과 공개 지연 | `RESULT_REVEAL_DELAY_MS` |
 | 괴이 등장 간격 | `APPARITION_INITIAL_DELAY_RANGE_MS`, `APPARITION_DELAY_RANGE_MS` |
-| 배경음악 파일 | `TITLE_MUSIC_TRACKS`, `GAME_MUSIC_TRACKS` |
+| 상황별 배경음악 파일 | `bgmconfig.js`의 `BGM_CONFIG` |
 | 기본 음량 | `AUDIO_SETTINGS` |
 | 타이틀 자동 재생 | `app-audio.js`의 `prepareTitleMusic()` |
 | 일반 채팅 문장 | `chat-engine-dialogue.js` |
