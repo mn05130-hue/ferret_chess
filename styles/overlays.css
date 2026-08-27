@@ -27,7 +27,7 @@
 .toast.show {
   translate: -50% 0;
   opacity: 1;
-  visibility: visible;
+  visibility: disabled;
 }
 
 .viewer-backdrop,
