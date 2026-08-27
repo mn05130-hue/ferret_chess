@@ -1,0 +1,688 @@
+/*
+ * 게임 상단의 주소창, 방송 무대, 연결 위젯, HUD를 담당합니다.
+ * .collapsed는 주소창 높이, .is-good/.is-normal/.is-weak/.is-disconnected는 연결 단계,
+ * .connection-lost는 방송 전체 오염, data-director-state는 채팅 엔진 분위기를 표현합니다.
+ */
+/* 가상 주소창은 실제 방송 페이지처럼 보이게 하며 collapsed 상태에서 높이가 줄어듭니다. */
+.browser-bar {
+  z-index: 5;
+  height: 52px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 25px;
+  align-items: center;
+  gap: 5px;
+  padding: max(7px, env(safe-area-inset-top)) 6px 6px 7px;
+  background: #101113;
+}
+
+.pin-icon {
+  width: 17px;
+  height: 17px;
+  fill: #9299a5;
+  rotate: -9deg;
+}
+
+.address {
+  height: 38px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 7px 0 9px;
+  overflow: hidden;
+  border-radius: 10px;
+  color: #f3f4f6;
+  background: #1e2024;
+  box-shadow: 0 3px 7px #0008;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.address > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.address-menu,
+.collapse-button {
+  flex: 0 0 auto;
+  border: 0;
+  padding: 0;
+  color: #9ca2ad;
+  background: transparent;
+  cursor: pointer;
+}
+
+.address-menu {
+  width: 29px;
+  height: 29px;
+  font-family: system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: 1px;
+  transform: translateY(-2px);
+}
+
+.collapse-button {
+  width: 25px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+}
+
+.collapse-button svg {
+  width: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: rotate 180ms ease;
+}
+
+.browser-bar.collapsed {
+  height: 12px;
+  padding: 0;
+  background: #111214;
+}
+
+.browser-bar.collapsed > :not(.collapse-button) {
+  display: none;
+}
+
+.browser-bar.collapsed .collapse-button {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  height: 20px;
+}
+
+.browser-bar.collapsed .collapse-button svg {
+  rotate: 180deg;
+}
+
+.game-screen:has(.browser-bar.collapsed) {
+  grid-template-rows: 12px auto 42px minmax(0, 1fr) auto;
+}
+
+/* 방송 무대는 assetconfig.js의 배경, 캐릭터, 괴이, 상태 표시를 겹치는 position 기준 컨테이너입니다. */
+.stream-stage {
+  position: relative;
+  z-index: 2;
+  height: clamp(155px, 23svh, 205px);
+  overflow: hidden;
+  border-block: 1px solid #28322f;
+  background:
+    linear-gradient(180deg, #06100e42, #02040382),
+    var(--asset-stream-background, none) center 55% / cover no-repeat;
+  box-shadow: inset 0 -22px 35px #0009;
+  transition: border-color 180ms, filter 180ms;
+}
+
+/*
+ * 연결 종료 직전에는 방송 무대 위에 큰 사각 픽셀층을 얹어 낮은 해상도로 깨진 신호를 표현합니다.
+ * 위젯과 채팅은 이 레이어 밖에 있으므로 방송 영상만 손상되며, 기본 상태에서는 완전히 숨겨집니다.
+ */
+.stream-stage::after {
+  content: "";
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.chat-app.connection-pixelated .stream-stage {
+  border-color: #8f2933;
+  filter: saturate(.45) contrast(1.42) brightness(.82);
+}
+
+.chat-app.connection-pixelated .stream-stage::after {
+  opacity: .82;
+  background:
+    linear-gradient(90deg, transparent 0 6%, #020505e0 6% 19%, transparent 19% 44%, #9fc8ba2b 44% 61%, #07100ed4 61% 76%, transparent 76%) 0 8% / 100% 18% no-repeat,
+    linear-gradient(90deg, #b9dbd11c 0 12%, transparent 12% 33%, #010303c9 33% 57%, transparent 57% 82%, #718b8329 82%) 0 46% / 100% 16% no-repeat,
+    linear-gradient(90deg, transparent 0 23%, #020505dc 23% 37%, #bcd9d01c 37% 69%, transparent 69% 88%, #000c 88%) 0 82% / 100% 13% no-repeat,
+    repeating-linear-gradient(90deg, transparent 0 17px, #0205056e 17px 31px, #b9d8ce16 31px 39px, transparent 39px 57px),
+    repeating-linear-gradient(0deg, transparent 0 11px, #02050552 11px 17px, transparent 17px 29px);
+  mix-blend-mode: hard-light;
+  backdrop-filter: blur(2px) contrast(1.8) saturate(.3);
+  image-rendering: pixelated;
+  animation: connection-pixel-break 280ms steps(1, end) infinite;
+}
+
+.stream-room,
+.stream-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.stream-room {
+  opacity: .42;
+  background:
+    linear-gradient(180deg, transparent 45%, #01020280),
+    repeating-linear-gradient(0deg, #07110f24 0 1px, transparent 1px 4px);
+  mix-blend-mode: multiply;
+}
+
+.stream-character {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: -8%;
+  height: 105%;
+  translate: -50% 0;
+  filter: drop-shadow(0 7px 9px #000b);
+  user-select: none;
+}
+
+/* 상단 와이파이 위젯은 항상 보이지만 작고 반투명하게 유지해 방송 화면을 가리지 않습니다. */
+.connection-widget {
+  position: absolute;
+  z-index: 18;
+  top: 200px;
+  right: 8px;
+  width: 148px;
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: 23px minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #315047;
+  border-radius: 8px;
+  padding: 4px;
+  color: #69d8b5;
+  background: #07100ee8;
+  box-shadow: 0 7px 18px #0009, inset 0 1px #d8fff20c;
+  opacity: .82;
+  backdrop-filter: blur(7px);
+  transition: border-color 160ms ease, color 160ms ease, opacity 160ms ease, background 160ms ease;
+}
+
+.game-screen:has(.browser-bar.collapsed) .connection-widget {
+  top: 18px;
+}
+
+.wifi-meter {
+  position: relative;
+  width: 23px;
+  height: 23px;
+  display: block;
+  color: currentColor;
+}
+
+.wifi-wave {
+  position: absolute;
+  border: 2px solid currentColor;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  border-radius: 50%;
+  rotate: -45deg;
+  transition: opacity 160ms ease;
+}
+
+.wifi-wave.wave-outer {
+  inset: 0;
+}
+
+.wifi-wave.wave-middle {
+  inset: 6px;
+}
+
+.wifi-dot {
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 5px;
+  height: 5px;
+  translate: -50% 0;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 7px currentColor;
+}
+
+.connection-widget-copy {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.connection-widget-copy small {
+  overflow: hidden;
+  color: #668078;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 4.5px;
+  font-weight: 900;
+  letter-spacing: .09em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.connection-widget-copy strong {
+  overflow: hidden;
+  color: #d4e8e1;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reconnect-button {
+  width: 42px;
+  height: 25px;
+  border: 1px solid #3a5e53;
+  border-radius: 5px;
+  padding: 0;
+  color: #b9d9cf;
+  background: #0e1c18;
+  font-size: 7px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.reconnect-button:hover,
+.reconnect-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  filter: brightness(1.18);
+}
+
+/* 1단계 좋음: 평상시 연결이며 위젯 전체를 초록색으로 표시합니다. */
+.connection-widget.is-good {
+  border-color: #315047;
+  color: #69d8b5;
+  background: #07100ee8;
+}
+
+.connection-widget.is-good .connection-widget-copy strong {
+  color: #8ef1d2;
+}
+
+/* 2단계 보통: 괴이가 시작된 직후 노란색으로 바뀌어 조용히 재연결을 유도합니다. */
+.connection-widget.is-normal {
+  border-color: #ad7524;
+  color: #f0c94f;
+  background: #1b1708f2;
+  opacity: 1;
+  animation: connection-widget-normal 1.2s ease-in-out infinite alternate;
+}
+
+.connection-widget.is-normal .connection-widget-copy strong {
+  color: #ffe17a;
+}
+
+.connection-widget.is-normal .wifi-wave.wave-outer {
+  opacity: .52;
+}
+
+/* 3단계 약함: 대응 시간이 절반 지나면 빨간색과 줄어든 와이파이 막대로 경고합니다. */
+.connection-widget.is-weak {
+  border-color: #a6303c;
+  color: #ef4d5e;
+  background: #1d070aef;
+  opacity: 1;
+  animation: connection-widget-weak 720ms ease-in-out infinite alternate;
+}
+
+.connection-widget.is-weak .connection-widget-copy strong {
+  color: #ff7a87;
+}
+
+.connection-widget.is-weak .wifi-wave.wave-outer {
+  opacity: .06;
+}
+
+.connection-widget.is-weak .wifi-wave.wave-middle {
+  opacity: .2;
+}
+
+/* 4단계 끊김: 위젯을 검게 잠그고 와이파이 파형을 꺼 재연결 전까지 단절을 유지합니다. */
+.connection-widget.is-disconnected {
+  border-color: #000;
+  color: #303030;
+  background: #000;
+  box-shadow: 0 7px 18px #000d, inset 0 0 0 1px #151515;
+  opacity: 1;
+  animation: connection-widget-disconnected 900ms steps(2) infinite;
+}
+
+.connection-widget.is-disconnected .connection-widget-copy small {
+  color: #4e4e4e;
+}
+
+.connection-widget.is-disconnected .connection-widget-copy strong {
+  color: #8b8b8b;
+}
+
+.connection-widget.is-disconnected .wifi-wave {
+  opacity: 0;
+}
+
+.connection-widget.is-disconnected .wifi-dot {
+  background: #303030;
+  box-shadow: none;
+}
+
+.connection-widget.is-disconnected .reconnect-button {
+  border-color: #282828;
+  color: #929292;
+  background: #090909;
+}
+
+/* 정상 연결에서 재연결한 경우 단계 색보다 붉은 오판 피드백을 잠깐 우선합니다. */
+.connection-widget.is-false-reconnect {
+  border-color: #a6303c;
+  color: #ef4d5e;
+  background: #1d070aef;
+  opacity: 1;
+  animation: connection-widget-wrong 320ms linear;
+}
+
+.stream-noise {
+  z-index: 2;
+  opacity: .07;
+  background:
+    repeating-linear-gradient(0deg, #fff 0 1px, transparent 1px 4px),
+    linear-gradient(90deg, transparent, #76ffd41b, transparent);
+  mix-blend-mode: screen;
+}
+
+.stream-topline,
+.stream-lower-third {
+  position: absolute;
+  z-index: 3;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* 방송 상단에는 LIVE 상태, 음악 조작, 시청자 수를 겹치지 않게 좌우 배치합니다. */
+.stream-topline {
+  top: 8px;
+}
+
+.stream-topline-actions,
+.game-audio-controls {
+  display: flex;
+  align-items: center;
+}
+
+.stream-topline-actions {
+  gap: 5px;
+}
+
+.game-audio-controls {
+  position: absolute;
+  top: 31px;
+  right: 0;
+  height: 25px;
+  gap: 3px;
+  border: 1px solid #ffffff1f;
+  border-radius: 5px;
+  padding: 0 5px 0 3px;
+  background: #090b0cc9;
+  backdrop-filter: blur(6px);
+}
+
+.game-music-button {
+  width: 21px;
+  height: 21px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  color: #87938f;
+  background: transparent;
+  cursor: pointer;
+}
+
+.game-music-button:hover,
+.game-music-button:focus-visible,
+.game-music-button.is-playing {
+  outline: none;
+  color: #73e5c3;
+}
+
+.game-music-button svg {
+  width: 16px;
+  fill: currentColor;
+}
+
+.game-music-button .music-wave {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  opacity: .3;
+}
+
+.game-music-button.is-playing .music-wave {
+  opacity: 1;
+  animation: music-wave 900ms ease-in-out infinite alternate;
+}
+
+.game-volume-control {
+  height: auto;
+  gap: 3px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.game-volume-control input[type="range"] {
+  width: 48px;
+}
+
+.game-volume-control output {
+  width: 22px;
+  color: #bfc9c6;
+  font-size: 7px;
+}
+
+.live-badge,
+.viewer-count,
+.signal-status {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #ffffff1f;
+  border-radius: 5px;
+  background: #090b0cc9;
+  backdrop-filter: blur(6px);
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.live-badge {
+  gap: 5px;
+  padding: 5px 7px;
+  color: #fff;
+  background: #db2638e8;
+}
+
+.live-badge i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+  animation: live-pulse 1.15s steps(2) infinite;
+}
+
+.viewer-count {
+  gap: 4px;
+  padding: 5px 7px;
+  color: #d7dddc;
+}
+
+.viewer-count svg {
+  width: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.stream-lower-third {
+  bottom: 7px;
+  align-items: flex-end;
+}
+
+.stream-lower-third > div {
+  display: grid;
+  gap: 1px;
+  padding: 5px 8px;
+  border-left: 2px solid var(--green);
+  background: linear-gradient(90deg, #050707dc, transparent);
+  text-shadow: 0 1px 3px #000;
+}
+
+.stream-lower-third strong {
+  font-size: 12px;
+}
+
+.stream-lower-third div span {
+  color: #b7bfbd;
+  font-size: 9px;
+}
+
+.signal-status {
+  padding: 4px 6px;
+  color: #7de5c5;
+  font-size: 8px;
+}
+
+/* 무한 모드의 오염 제한시간은 중앙 상단에서 점멸해 즉각적인 행동을 유도합니다. */
+.threat-timer {
+  position: absolute;
+  z-index: 5;
+  top: 8px;
+  left: 50%;
+  min-width: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  translate: -50% 0;
+  border: 1px solid #ff4c5c;
+  border-radius: 5px;
+  padding: 4px 7px;
+  color: #ff8993;
+  background: #21080de8;
+  box-shadow: 0 0 16px #e3263947;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: .05em;
+  animation: threat-pulse 900ms steps(2) infinite;
+}
+
+.threat-timer[hidden] {
+  display: none;
+}
+
+.threat-timer strong {
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.chat-app[data-director-state="TENSE"] .stream-stage,
+/* 채팅 엔진의 director 상태를 방송 화면 밝기·노이즈·캐릭터 흔들림으로 시각화합니다. */
+.chat-app[data-director-state="AFTERMATH"] .stream-stage {
+  border-color: #76543c;
+}
+
+.chat-app[data-director-state="BURST"] .stream-stage {
+  border-color: #a72835;
+  filter: saturate(.72) contrast(1.15);
+}
+
+.chat-app[data-director-state="BURST"] .stream-noise {
+  opacity: .28;
+  animation: signal-noise 160ms steps(2) infinite;
+}
+
+.chat-app[data-director-state="BURST"] .stream-character {
+  animation: signal-jump 220ms steps(2) infinite;
+}
+
+/* HUD는 좁은 폭에서도 다섯 지표와 도움말 버튼을 같은 행에 유지합니다. */
+.game-hud {
+  position: relative;
+  z-index: 4;
+  height: 42px;
+  display: grid;
+  grid-template-columns: .7fr .7fr 1.05fr 1.3fr .8fr 26px;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 7px;
+  border-block: 1px solid #292b30;
+  background: linear-gradient(180deg, #17171a, #111214);
+  box-shadow: 0 4px 12px #0005;
+}
+
+.hud-stat {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+}
+
+.hud-stat > span {
+  overflow: hidden;
+  color: #747a84;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hud-stat strong {
+  color: #e7e9ed;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.stage-stat strong {
+  color: #7be2c2;
+  font-size: 12px;
+}
+
+.health-stat strong {
+  color: #ffb65d;
+}
+
+.time-stat strong {
+  color: #87d9ff;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.anomaly-stat strong {
+  color: #ff5d68;
+}
+
+.score-stat strong {
+  color: #69d8b5;
+  font-size: 12px;
+}
+
+.help-button {
+  width: 25px;
+  height: 25px;
+  border: 1px solid #4c5058;
+  border-radius: 50%;
+  padding: 0;
+  color: #9da3ad;
+  background: #202227;
+  font-family: Georgia, serif;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}

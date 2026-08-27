@@ -1,0 +1,169 @@
+/*
+ * 여러 화면에서 공유하는 키프레임 모음입니다.
+ * 실제 적용 대상과 재생 조건은 각 기능 CSS의 animation 선언 및 JavaScript 상태 클래스가
+ * 결정하며, 여기서는 시작·중간·종료 프레임만 정의합니다.
+ */
+/* 새 채팅을 아래에서 짧게 올려 자연스럽게 목록에 합류시킵니다. */
+@keyframes message-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 난독화된 괴이 글자를 대부분 정지시키고 드물게 1px만 흔듭니다. */
+@keyframes corrupted-glyph-jitter {
+  0%, 88%, 100% { transform: translate(0); }
+  91% { transform: translate(1px, 0); }
+  94% { transform: translate(-1px, 1px); }
+  97% { transform: translate(0, -1px); }
+}
+
+/* 연결이 끊기는 순간 채팅 영역 전체를 짧게 좌우로 충돌시킵니다. */
+@keyframes corrupted-region-hit {
+  0%, 100% { transform: translate(0); filter: none; }
+  25% { transform: translate(-2px, 1px); filter: contrast(1.12); }
+  50% { transform: translate(2px, 0); filter: contrast(1.22); }
+  75% { transform: translate(-1px, -1px); filter: contrast(1.08); }
+}
+
+/* 입력 안내용 가상 커서를 절반 주기로 숨겨 점멸시킵니다. */
+@keyframes caret-blink {
+  50% { opacity: 0; }
+}
+
+/* 정상 시청자 오판 시 앱을 빠르게 좌우로 흔들어 피해를 전달합니다. */
+@keyframes wrong-kick {
+  20% { translate: -5px 0; filter: saturate(1.5); }
+  40% { translate: 5px 0; }
+  60% { translate: -3px 0; }
+  80% { translate: 3px 0; }
+}
+
+/* 타이틀 배경을 천천히 확대·증감해 정지 이미지의 미세한 움직임을 만듭니다. */
+@keyframes title-breathe {
+  from { scale: 1.01; filter: brightness(.88); }
+  to { scale: 1.055; filter: brightness(1); }
+}
+
+/* 타이틀 메뉴 카드를 아래에서 서서히 등장시킵니다. */
+@keyframes title-content-in {
+  from { opacity: 0; translate: 0 16px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+/* LIVE 점과 경고 점의 밝기를 두 단계로 반복합니다. */
+@keyframes live-pulse {
+  50% { opacity: .38; }
+}
+
+/* 음악 재생 중 스피커 파형을 밝고 어둡게 왕복시킵니다. */
+@keyframes music-wave {
+  from { opacity: .45; }
+  to { opacity: 1; }
+}
+
+/* 2단계 보통 연결의 노란 외곽광을 서서히 키웁니다. */
+@keyframes connection-widget-normal {
+  from { box-shadow: 0 7px 18px #0009, 0 0 3px #f0c94f2e; }
+  to { box-shadow: 0 7px 18px #0009, 0 0 12px #f0c94f59; }
+}
+
+/* 3단계 약한 연결의 빨간 외곽광을 빠르게 맥동시킵니다. */
+@keyframes connection-widget-weak {
+  from { box-shadow: 0 7px 18px #0009, 0 0 3px #ef4d5e35; }
+  to { box-shadow: 0 7px 18px #0009, 0 0 13px #ef4d5e70; }
+}
+
+/* 4단계 끊김 위젯은 검은 상태를 유지하며 내용만 희미하게 점멸합니다. */
+@keyframes connection-widget-disconnected {
+  50% { opacity: .72; filter: brightness(.72); }
+}
+
+/* 약함 단계의 마지막 2초 동안 큰 픽셀 블록 위치와 명암을 불규칙하게 바꿉니다. */
+@keyframes connection-pixel-break {
+  0% {
+    opacity: .78;
+    background-position: 0 8%, 0 46%, 0 82%, 0 0, 0 0;
+    transform: translate(0);
+  }
+  25% {
+    opacity: .9;
+    background-position: 21px 14%, -38px 51%, 13px 77%, 11px -7px, 0 9px;
+    transform: translate(-2px, 1px) scaleX(1.015);
+  }
+  50% {
+    opacity: .68;
+    background-position: -17px 4%, 26px 39%, -11px 86%, -13px 5px, 0 -8px;
+    transform: translate(3px, -1px) scaleY(1.025);
+  }
+  75% {
+    opacity: .86;
+    background-position: 9px 11%, -12px 48%, 18px 80%, 19px 12px, 0 6px;
+    transform: translate(-1px, 2px) scaleX(.99);
+  }
+}
+
+/* 정상 상태에서 재연결한 오판을 작은 좌우 흔들림으로 알립니다. */
+@keyframes connection-widget-wrong {
+  20% { translate: -4px 0; }
+  40% { translate: 4px 0; }
+  60% { translate: -2px 0; }
+  80% { translate: 2px 0; }
+}
+
+/* 무한 모드 대응 제한시간의 붉은 테두리를 맥동시킵니다. */
+@keyframes threat-pulse {
+  50% { border-color: #7b232d; box-shadow: 0 0 5px #e3263922; }
+}
+
+/* 정상 시청자 강퇴 때 불규칙 모자이크가 번쩍인 뒤 완전히 사라집니다. */
+@keyframes mosaic-interference {
+  0% { opacity: 0; background-position: 0 0; }
+  14% { opacity: .88; }
+  35% { opacity: .28; background-position: 31px -18px; }
+  58% { opacity: .92; background-position: -17px 26px; }
+  82% { opacity: .35; }
+  100% { opacity: 0; background-position: 8px -9px; }
+}
+
+/* 이상 신호 침투 때 색 분리 레이어를 좌우로 어긋나게 합니다. */
+@keyframes color-interference {
+  0% { opacity: 0; translate: 0; }
+  18% { opacity: .95; translate: -4px 0; }
+  44% { opacity: .45; translate: 5px 0; }
+  70% { opacity: .82; translate: -2px 0; }
+  100% { opacity: 0; translate: 0; }
+}
+
+/* 이상 채팅 순간 효과 중 하나로 게임 화면을 짧고 불규칙하게 흔듭니다. */
+@keyframes anomaly-chat-shake {
+  0%, 100% { translate: 0 0; filter: none; }
+  14% { translate: -3px 1px; filter: contrast(1.12); }
+  31% { translate: 4px -1px; }
+  48% { translate: -2px -2px; filter: contrast(1.22); }
+  66% { translate: 3px 1px; }
+  84% { translate: -1px 0; filter: none; }
+}
+
+/* 이상 채팅 순간 효과 중 하나로 흑백 정전기 레이어를 여러 번 끊어 표시합니다. */
+@keyframes anomaly-chat-static {
+  0%, 100% { opacity: 0; background-position: 0 0, 0 0; }
+  12% { opacity: .8; background-position: 9px -13px, -6px 0; }
+  27% { opacity: .18; }
+  43% { opacity: .72; background-position: -17px 8px, 11px 0; }
+  61% { opacity: .3; }
+  78% { opacity: .88; background-position: 5px 19px, -14px 0; }
+}
+
+/* 방송 노이즈 레이어를 매 프레임 다른 방향으로 이동시킵니다. */
+@keyframes signal-noise {
+  0% { translate: -3px 0; }
+  50% { translate: 4px 1px; }
+  100% { translate: -1px -1px; }
+}
+
+/* 제한시간 경고 표시를 중심축 주변에서 짧게 튀게 합니다. */
+@keyframes signal-jump {
+  0% { translate: calc(-50% - 2px) 0; }
+  50% { translate: calc(-50% + 3px) -1px; }
+  100% { translate: -50% 1px; }
+}

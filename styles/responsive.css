@@ -1,0 +1,56 @@
+/*
+ * 화면 높이와 사용자의 모션 접근성 설정을 기준으로 하는 최종 보정입니다.
+ * 모든 기능 CSS 뒤에서 로드되므로 같은 명시도의 크기·애니메이션 값을 안전하게 덮어씁니다.
+ */
+/* 높이가 낮은 화면에서는 방송·입력 영역을 압축해 결과와 조작부가 잘리지 않게 합니다. */
+@media (max-height: 680px) {
+  .stream-stage {
+    height: 132px;
+  }
+
+  .message {
+    min-height: 29px;
+    padding-block: 1px;
+    font-size: 14px;
+  }
+
+  .reward-banner {
+    margin-top: 6px;
+  }
+
+  .composer {
+    height: 48px;
+  }
+
+  .bottom-nav {
+    min-height: 42px;
+  }
+
+  .title-screen {
+    padding-inline: 16px;
+  }
+
+  .title-copy {
+    margin-bottom: 11px;
+    font-size: 12px;
+  }
+
+  .title-content {
+    padding: 14px;
+  }
+
+  .title-hint {
+    margin-top: 9px;
+  }
+}
+
+/* 운영체제의 모션 감소 설정을 존중해 모든 전환 시간을 사실상 즉시 완료합니다. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
