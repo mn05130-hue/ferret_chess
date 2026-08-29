@@ -1,5 +1,8 @@
 "use strict";
 
+// 재시작 회귀 테스트와 디버그 화면에서 실제로 실행 중인 엔진이 하나인지 확인합니다.
+const ACTIVE_CHAT_ENGINE_INSTANCES = new Set();
+
 /*
  * 채팅 생성 속도와 시청자 성격 모델을 정의합니다.
  * 수치를 조정하면 모든 스테이지의 발화 빈도·중복 허용·말투 강도가 함께 바뀝니다.
@@ -28,7 +31,7 @@ const TUNING = Object.freeze({
   requestExpiryMs: 2500,
 
   // 이상 시청자가 가질 수 있는 최대 이상 단계입니다. 단계가 높을수록 이상 발화가 자주 나옵니다.
-  maxAnomalyLevel: 3,
+  maxAnomalyLevel: 5,
 
   // 스테이지 시작 후 이상 시청자의 첫 이상 발화가 도착하는 최소~최대 대기시간(ms)입니다.
   anomalyArrivalIntervalMs: [12000, 20000],

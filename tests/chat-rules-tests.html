@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ferret Chat 규칙 테스트</title>
+  <style>
+    :root { color-scheme: dark; font-family: ui-monospace, Consolas, monospace; }
+    body { max-width: 760px; margin: 32px auto; padding: 0 18px; background: #090b0a; color: #dce7e3; }
+    h1 { font-size: 22px; }
+    #summary { border: 1px solid #45645a; border-radius: 8px; padding: 12px; }
+    #summary.passed { border-color: #45c99f; color: #71e8c3; }
+    #summary.failed { border-color: #dc5361; color: #ff7d88; }
+    li { margin: 8px 0; line-height: 1.5; }
+    .pass { color: #71e8c3; }
+    .fail { color: #ff7d88; }
+  </style>
+</head>
+<body>
+  <h1>채팅 게임 규칙 테스트</h1>
+  <p id="summary">실행 중…</p>
+  <ol id="results"></ol>
+  <script src="../game-rules.js"></script>
+  <script src="../chat-engine-anomalies.js"></script>
+  <script src="chat-rules-tests.js"></script>
+</body>
+</html>

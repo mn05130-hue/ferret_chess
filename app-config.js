@@ -45,17 +45,12 @@ const VIEWER_STYLES = [
 
 /*
  * 게임 규칙 상수입니다. 시간 값의 단위는 이름이 MS로 끝나면 밀리초입니다.
- * - BASE_ANOMALIES_PER_STAGE: 1스테이지에 배치하는 기본 이상 시청자 수
- * - MAX_ANOMALIES_PER_STAGE: 난이도가 올라도 넘지 않는 이상 시청자 상한
- * - STAGES_PER_ADDITIONAL_ANOMALY: 이상 시청자가 한 명씩 늘어나는 스테이지 간격
+ * - 이상 시청자 수와 모드별 난이도 단계는 game-rules.js에서 관리합니다.
  * - BASE/MIN_ANOMALY_GRACE_MS: 무한 모드 이상 채팅의 최초/최소 대응 시간
  * - STAGE_GRACE_STEP_MS: 스테이지마다 대응 시간에서 차감하는 값
  * - MAX_MESSAGES: DOM에 남겨 두는 채팅 메시지 최대 개수
  * - MAX_HEALTH: 새 게임 시작 체력
  */
-const BASE_ANOMALIES_PER_STAGE = 6;
-const MAX_ANOMALIES_PER_STAGE = 12;
-const STAGES_PER_ADDITIONAL_ANOMALY = 2;
 const BASE_ANOMALY_GRACE_MS = 20000;
 const MIN_ANOMALY_GRACE_MS = 6000;
 const STAGE_GRACE_STEP_MS = 1000;
@@ -64,7 +59,7 @@ const MAX_HEALTH = 5;
 
 /*
  * 스토리 시간 규칙입니다.
- * 실제 84초(DEFAULT_STORY_DAY_DURATION_MS)를 게임 속 7시간으로 환산합니다.
+ * 실제 140초(DEFAULT_STORY_DAY_DURATION_MS)를 게임 속 7시간으로 환산합니다.
  * STORY_CLOCK_STEP_MINUTES는 HUD 시각이 한 번에 진행하는 게임 속 시간이며,
  * URL의 storyDayMs 값으로 테스트용 하루 길이만 바꿀 수 있습니다.
  */
@@ -155,6 +150,7 @@ const entryGate = document.querySelector("#entry-gate");
 const titleScreen = document.querySelector("#title-screen");
 const gameScreen = document.querySelector("#game-screen");
 const gameStart = document.querySelector("#game-start");
+const dailyStart = document.querySelector("#daily-start");
 const storyStart = document.querySelector("#story-start");
 
 // assetconfig.js의 경로를 받을 첫 화면 로고와 방송 캐릭터 이미지입니다.
@@ -202,12 +198,31 @@ const timeStatLabel = document.querySelector("#time-stat-label");
 const storyClock = document.querySelector("#story-clock");
 const helpButton = document.querySelector("#help-button");
 
+// 타이틀 화면에 표시하는 영구 플레이 기록입니다.
+const recordBestScore = document.querySelector("#record-best-score");
+const recordBestStage = document.querySelector("#record-best-stage");
+const recordStoryClears = document.querySelector("#record-story-clears");
+const recordDiscoveredTypes = document.querySelector("#record-discovered-types");
+
 // 닉네임 클릭으로 여는 시청자 기록 및 강퇴 모달입니다.
 const viewerBackdrop = document.querySelector("#viewer-backdrop");
 const viewerName = document.querySelector("#viewer-name");
 const viewerHistory = document.querySelector("#viewer-history");
 const panelClose = document.querySelector("#panel-close");
+const suspectButton = document.querySelector("#suspect-button");
 const kickButton = document.querySelector("#kick-button");
+
+// 최초 스토리 진입과 도움말 버튼에서 공유하는 단계형 튜토리얼입니다.
+const tutorialBackdrop = document.querySelector("#tutorial-backdrop");
+const tutorialProgress = document.querySelector("#tutorial-progress");
+const tutorialTitle = document.querySelector("#tutorial-title");
+const tutorialCopy = document.querySelector("#tutorial-copy");
+const tutorialExample = document.querySelector("#tutorial-example");
+const tutorialSkip = document.querySelector("#tutorial-skip");
+const tutorialNext = document.querySelector("#tutorial-next");
+const tutorialObjective = document.querySelector("#tutorial-objective");
+const tutorialObjectiveProgress = document.querySelector("#tutorial-objective-progress");
+const tutorialObjectiveCopy = document.querySelector("#tutorial-objective-copy");
 
 // 체력 소진 또는 7일 생존 뒤 표시하는 최종 결과 모달입니다.
 const gameOverlay = document.querySelector("#game-overlay");
@@ -228,6 +243,7 @@ const stageResultKicker = document.querySelector("#stage-result-kicker");
 const stageResultMark = document.querySelector("#stage-result-mark");
 const stageResultTitle = document.querySelector("#stage-result-title");
 const stageResultCopy = document.querySelector("#stage-result-copy");
+const stageResultEvidence = document.querySelector("#stage-result-evidence");
 const stageCaught = document.querySelector("#stage-caught");
 const stageMissed = document.querySelector("#stage-missed");
 const stageWrong = document.querySelector("#stage-wrong");
@@ -301,6 +317,8 @@ const PLAYER_NICKNAME_STORAGE_KEY = "ferret-chess-player-nickname";
 // URL 파라미터는 재현 가능한 테스트(seed)와 빠른 스토리 테스트(storyDayMs)를 지원합니다.
 const seedParameter = new URLSearchParams(window.location.search).get("seed");
 const fixedSeed = seedParameter !== null && /^\d+$/.test(seedParameter) ? Number(seedParameter) >>> 0 : null;
+let activeSeedOverride = fixedSeed;
+let dailyChallengeActive = false;
 const storyDayDurationParameter = new URLSearchParams(window.location.search).get("storyDayMs");
 const parsedStoryDayDuration = Number(storyDayDurationParameter);
 const storyDayDurationMs = storyDayDurationParameter !== null
@@ -312,7 +330,7 @@ const storyDayDurationMs = storyDayDurationParameter !== null
 
 // 하루의 90% 안에 모든 이상 시청자가 등장하도록 여유를 둡니다.
 const anomalyArrivalMaxMs = Math.floor(
-  storyDayDurationMs * 0.9 / MAX_ANOMALIES_PER_STAGE
+  storyDayDurationMs * 0.9 / FERRET_CHAT_RULES.MAX_STORY_ANOMALIES
 );
 
 TUNING.anomalyArrivalIntervalMs[0] = Math.min(
@@ -335,7 +353,7 @@ TUNING.anomalyArrivalIntervalMs[1] = Math.min(
 let viewers = [];
 let myNickname = "";
 let health = MAX_HEALTH;
-let remainingAnomalies = BASE_ANOMALIES_PER_STAGE;
+let remainingAnomalies = FERRET_CHAT_RULES.ENDLESS_ANOMALIES_PER_STAGE;
 let score = 0;
 let currentStage = 1;
 let caughtAnomalies = 0;
@@ -345,6 +363,13 @@ let selectedViewerId = null;
 let gameMode = GAME_MODES.ENDLESS;
 let gameOver = false;
 let stageReviewOpen = false;
+let tutorialOpen = false;
+let tutorialStepIndex = 0;
+let tutorialReturnFocus = null;
+let tutorialOpenedAutomatically = false;
+let tutorialPracticeActive = false;
+let tutorialPracticeNormalViewerId = null;
+let tutorialPracticeProgress = { normalLog: false, anomalyCatches: 0, reconnect: false };
 /*
  * 무한 모드 제한시간 및 공통 실행 자원입니다.
  * pendingThreat는 현재 추적 중인 시청자이고, 나머지 Timer/Interval 값은

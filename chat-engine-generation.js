@@ -166,10 +166,20 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
      * 따라서 배열에 대사가 몇 개씩 들어 있더라도 GLITCH 비율은 후보 개수가 아니라
      * 설정한 확률을 따릅니다. 한쪽 후보가 비어 있으면 사용 가능한 쪽으로 안전하게 대체합니다.
      */
-    const isAvailable = entry => !entry.needs || entry.needs(ctx);
-    const permissionCandidates = (ANOMALY_LINES[viewer.anomalyPermission] || []).filter(isAvailable);
-    const glitchCandidates = ANOMALY_LINES.GLITCH.filter(isAvailable);
-    const glitchChance = Math.min(1, Math.max(0, Number(TUNING.glitchChance) || 0));
+    const viewerLevel = Math.max(1, Math.min(TUNING.maxAnomalyLevel, viewer.anomalyLevel || 1));
+    const isAvailable = entry => (entry.level || 1) <= viewerLevel && (!entry.needs || entry.needs(ctx));
+    const selectCurrentTier = entries => {
+      const available = entries.filter(isAvailable);
+      if (!available.length) return [];
+      const highestAvailableLevel = Math.max(...available.map(entry => entry.level || 1));
+      return available.filter(entry => (entry.level || 1) === highestAvailableLevel);
+    };
+    const permissionCandidates = selectCurrentTier(ANOMALY_LINES[viewer.anomalyPermission] || []);
+    const glitchCandidates = selectCurrentTier(ANOMALY_LINES.GLITCH);
+    // 후반으로 갈수록 깨진 글자보다 문맥을 비교해야 하는 전담 단서가 더 자주 나오게 합니다.
+    const glitchChance = Math.min(1, Math.max(0,
+      (Number(TUNING.glitchChance) || 0) * Math.max(.15, 1 - (viewerLevel - 1) * .2)
+    ));
     const useGlitch = glitchCandidates.length > 0
       && (!permissionCandidates.length || this.random.next() < glitchChance);
     const candidates = useGlitch ? glitchCandidates : permissionCandidates;
@@ -181,8 +191,7 @@ HorrorChatEngine = class HorrorChatEngineGeneration extends HorrorChatEngine {
     if (!standardText) return null;
 
     // --- 표기 모드 적용 ---
-    // casual은 이상도와 무관하게 변형기를 100% 강도로 통과시킵니다.
-    // 이상도 4짜리가 가장 평범한 말투로 말하는 순간을 만들기 위한 장치입니다.
+    // casual은 평범한 말투로 위장해야 하는 후반 단서도 자연스럽게 보이도록 변형기를 통과시킵니다.
     const text = entry.mode === "casual"
       ? this.transformStyle(standardText, viewer, 1)
       : standardText;

@@ -52,9 +52,9 @@ function triggerScreenInterference(type) {
 
 /**
  * 무한 모드 한 스테이지를 정지하고 성공/실패 요약을 결과 카드에 채웁니다.
- * @param {{success: boolean, title: string, copy: string}} result 카드에 표시할 판정
+ * @param {{success: boolean, title: string, copy: string, evidence?: string}} result 카드에 표시할 판정
  */
-function finishStage({ success, title, copy }) {
+function finishStage({ success, title, copy, evidence = "" }) {
   if (stageReviewOpen || gameOver) return;
   stageReviewOpen = true;
   clearAnomalyChatEffect();
@@ -71,10 +71,12 @@ function finishStage({ success, title, copy }) {
   stageResultMark.textContent = success ? "✓" : "!";
   stageResultTitle.textContent = title;
   stageResultCopy.textContent = copy;
+  stageResultEvidence.textContent = evidence;
   stageCaught.textContent = String(caughtAnomalies);
   stageMissed.textContent = String(missedAnomalies);
   stageWrong.textContent = String(wrongKicks);
   stageHealth.textContent = String(health);
+  recordEndlessProgress(score, currentStage);
 
   const gameEnded = health === 0;
   stageContinue.textContent = gameEnded ? "최종 결과 보기" : "다음 스테이지";
@@ -96,28 +98,78 @@ function expireThreat() {
   viewer.active = false;
   remainingAnomalies -= 1;
   missedAnomalies += 1;
-  health = Math.max(0, health - 1);
+  const outcome = FERRET_CHAT_RULES.getMissedAnomalyOutcome();
+  health = Math.max(0, health + outcome.healthDelta);
   lastDamageReason = "missed";
-  score = Math.max(0, score - 100);
+  score = Math.max(0, score + outcome.scoreDelta);
   markViewerAsKicked(viewer, "이상 신호에 잠식되어 연결이 끊겼습니다.");
   updateHud();
   triggerScreenInterference("color");
   finishStage({
     success: false,
     title: "이상 신호 추적 실패",
-    copy: `${viewer.name}의 이상 채팅을 제한시간 안에 처리하지 못해 체력이 1 감소했습니다.`
+    copy: `${viewer.name}의 이상 채팅을 제한시간 안에 처리하지 못해 체력이 1 감소했습니다.`,
+    evidence: getViewerEvidenceSummary(viewer)
   });
+}
+
+const ANOMALY_EVIDENCE_EXPLANATIONS = Object.freeze({
+  PROPHECY: "아직 일어나지 않은 일을 알고 있었습니다.",
+  OBSERVER: "방송에서 공개하지 않은 공간 정보를 언급했습니다.",
+  MEMORY: "이전 방송 기록과 맞지 않는 기억을 말했습니다.",
+  MIMIC: "정상 시청자의 말투나 발화를 흉내 냈습니다.",
+  INTRUDER: "시스템 알림처럼 위장해 방송에 개입했습니다.",
+  GLITCH: "문자와 신호가 비정상적으로 붕괴했습니다."
+});
+
+function truncateEvidenceText(text, maximum = 54) {
+  const normalized = String(text || "").replace(/\s+/g, " ").trim();
+  return normalized.length > maximum ? `${normalized.slice(0, maximum - 1)}…` : normalized;
+}
+
+/**
+ * 판정 대상의 실제 엔진 메타데이터를 사람이 이해할 수 있는 한 줄 근거로 바꿉니다.
+ * 연결 끊김으로 화면에서만 오염된 문장은 이상 판정 근거에서 제외합니다.
+ */
+function getViewerEvidenceSummary(viewer) {
+  const evidence = Array.isArray(viewer?.evidenceHistory) ? viewer.evidenceHistory : [];
+  const connectionCorrupted = Boolean(viewer?.connectionHistoryCorrupted)
+    || evidence.some(entry => entry.connectionCorrupted);
+  if (viewer?.anomalous) {
+    const type = viewer.anomalyPermission || evidence.find(entry => entry.actualAnomaly)?.anomalyType || "GLITCH";
+    const label = FERRET_CHAT_RULES.ANOMALY_TYPE_LABELS[type] || "이상 연결";
+    const decisive = [...evidence].reverse().find(entry => entry.actualAnomaly && !entry.connectionCorrupted);
+    const quote = truncateEvidenceText(decisive?.originalText || decisive?.text);
+    const explanation = ANOMALY_EVIDENCE_EXPLANATIONS[type] || "정상 기록과 다른 신호가 확인됐습니다.";
+    const core = quote ? `${label} · “${quote}” · ${explanation}` : `${label} · ${explanation}`;
+    return connectionCorrupted ? `${core} (연결 끊김 오염 문장은 판정에서 제외)` : core;
+  }
+
+  const normalRecord = [...evidence].reverse().find(entry => !entry.actualAnomaly && !entry.connectionCorrupted);
+  const quote = truncateEvidenceText(normalRecord?.originalText || normalRecord?.text);
+  const core = quote
+    ? `정상 기록 · “${quote}” · 이상 메타데이터가 없는 이전 발화였습니다.`
+    : "정상 기록 · 확인된 발화에서 이상 메타데이터가 발견되지 않았습니다.";
+  return connectionCorrupted ? `${core} (깨져 보인 문장은 연결 끊김에 의한 화면 오염)` : core;
 }
 
 /**
  * 스토리 하루 결과의 세부 판정 한 줄을 상태 클래스와 함께 추가합니다.
  * @param {string} text 이상 차단·놓침·오판 등의 상세 문장
  * @param {string} className correct 또는 danger 같은 표시 클래스
+ * @param {string} evidence 판정을 뒷받침하는 발화·유형 설명
  */
-function appendStoryResultDetail(text, className = "") {
+function appendStoryResultDetail(text, className = "", evidence = "") {
   const item = document.createElement("li");
   item.className = className;
-  item.textContent = text;
+  const label = document.createElement("span");
+  label.textContent = text;
+  item.append(label);
+  if (evidence) {
+    const detail = document.createElement("small");
+    detail.textContent = evidence;
+    item.append(detail);
+  }
   storyResultDetails.append(item);
 }
 
@@ -169,6 +221,7 @@ function beginStoryNightReveal(hasWrongAnswer) {
 function finishStoryDay() {
   if (gameMode !== GAME_MODES.STORY || stageReviewOpen || gameOver) return;
   stageReviewOpen = true;
+  stopGuidedTutorialPractice();
   clearAnomalyChatEffect();
   stopStoryClock();
   clearThreatCountdown(false);
@@ -184,17 +237,21 @@ function finishStoryDay() {
   const caughtToday = kickedViewers.filter(viewer => viewer.anomalous);
   const wrongToday = kickedViewers.filter(viewer => !viewer.anomalous);
   const missedToday = viewers.filter(viewer => viewer.anomalous && !viewer.kickedByPlayer);
-  const damage = wrongToday.length + missedToday.length;
-  const appliedDamage = Math.min(health, damage);
+  const outcome = FERRET_CHAT_RULES.calculateStoryDayOutcome({
+    caught: caughtToday.length,
+    missed: missedToday.length,
+    wrong: wrongToday.length,
+    health,
+    score
+  });
+  const { damage, appliedDamage } = outcome;
 
   caughtAnomalies += caughtToday.length;
   missedAnomalies += missedToday.length;
   wrongKicks += wrongToday.length;
   remainingAnomalies = 0;
-  health = Math.max(0, health - appliedDamage);
-  score = Math.max(0, score + caughtToday.length * 150
-    - missedToday.length * 100
-    - wrongToday.length * 75);
+  health = outcome.health;
+  score = outcome.score;
   if (damage > 0) {
     lastDamageReason = missedToday.length > 0 ? "missed" : "wrong-kick";
   }
@@ -219,9 +276,24 @@ function finishStoryDay() {
   storyApparitionMissed.textContent = String(dayMissedApparitions);
   storyHealth.textContent = String(health);
   storyResultDetails.replaceChildren();
-  caughtToday.forEach(viewer => appendStoryResultDetail(`이상 연결 차단 성공 · ${viewer.name}`, "correct"));
-  missedToday.forEach(viewer => appendStoryResultDetail(`놓친 이상 시청자 · ${viewer.name}`, "danger"));
-  wrongToday.forEach(viewer => appendStoryResultDetail(`정상 시청자 오판 · ${viewer.name}`, "danger"));
+  caughtToday.forEach(viewer => {
+    recordDiscoveredAnomaly(viewer.anomalyPermission);
+    appendStoryResultDetail(
+      `이상 연결 차단 성공 · ${viewer.name}`,
+      "correct",
+      getViewerEvidenceSummary(viewer)
+    );
+  });
+  missedToday.forEach(viewer => appendStoryResultDetail(
+    `놓친 이상 시청자 · ${viewer.name}`,
+    "danger",
+    getViewerEvidenceSummary(viewer)
+  ));
+  wrongToday.forEach(viewer => appendStoryResultDetail(
+    `정상 시청자 오판 · ${viewer.name}`,
+    "danger",
+    getViewerEvidenceSummary(viewer)
+  ));
   if (dayBanishedApparitions) appendStoryResultDetail(`방송 연결 복구 성공 · ${dayBanishedApparitions}회`, "correct");
   if (dayMissedApparitions) appendStoryResultDetail(`연결 끊김 발생 · 채팅 오염 ${dayMissedApparitions}회`, "danger");
   if (!storyResultDetails.childElementCount) appendStoryResultDetail("오늘 기록에는 판정할 연결이 없습니다.");
@@ -248,6 +320,7 @@ function continueFromStoryResult() {
 
   if (currentStage === STORY_TOTAL_DAYS) {
     storyVictory = true;
+    recordStoryClear();
     stageReviewOpen = false;
     endGame();
     return;

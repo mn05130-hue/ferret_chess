@@ -46,6 +46,62 @@
   animation: message-in 180ms ease-out both;
 }
 
+.tutorial-objective {
+  position: absolute;
+  z-index: 6;
+  top: 7px;
+  left: 8px;
+  right: 8px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #987c2c;
+  border-radius: 7px;
+  padding: 7px 9px;
+  color: #e9dfb7;
+  background: #171407f0;
+  box-shadow: 0 7px 18px #000a;
+  pointer-events: none;
+}
+
+.tutorial-objective[hidden] {
+  display: none;
+}
+
+.tutorial-objective span {
+  color: #d7b84d;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 8px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.tutorial-objective strong {
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.tutorial-objective:not([hidden]) + .message-list {
+  padding-top: 52px;
+}
+
+.message.suspected-message {
+  border-left: 2px solid #d9b84b;
+  background: linear-gradient(90deg, #5a481f38, transparent 68%);
+}
+
+.message.suspected-message .username::after {
+  content: "의심";
+  margin-left: 5px;
+  border: 1px solid #9b812e;
+  border-radius: 3px;
+  padding: 1px 3px;
+  color: #e8c95c;
+  font-size: 6px;
+  vertical-align: 2px;
+}
+
 .badge {
   width: 20px;
   height: 22px;

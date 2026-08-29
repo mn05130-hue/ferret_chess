@@ -337,6 +337,48 @@
   background: #53635f;
 }
 
+.daily-start-button {
+  grid-column: 1 / -1;
+  min-height: 44px;
+  border-color: #917936;
+  color: #f3e7b9;
+  background: linear-gradient(180deg, #3d351c, #211c0e);
+  box-shadow: inset 0 1px #fff4ba18;
+}
+
+.title-records {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 13px 0 0;
+  border-block: 1px solid #26322f;
+  background: #07100d80;
+}
+
+.title-records div {
+  display: grid;
+  gap: 3px;
+  padding: 7px 2px;
+  text-align: center;
+}
+
+.title-records div + div {
+  border-left: 1px solid #26322f;
+}
+
+.title-records dt {
+  color: #61736d;
+  font-size: 6px;
+  font-weight: 850;
+}
+
+.title-records dd {
+  margin: 0;
+  color: #afd8cb;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 11px;
+  font-weight: 900;
+}
+
 .title-hint {
   margin: 14px 0 0;
   color: #66716e;

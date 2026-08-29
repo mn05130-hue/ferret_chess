@@ -171,7 +171,7 @@ function takeNextAmbientHorrorSfx() {
  * @returns {boolean} 효과음 재생 가능 여부
  */
 function canPlayAmbientHorrorSfx() {
-  return !document.hidden && !gameOver && !stageReviewOpen
+  return !document.hidden && !gameOver && !stageReviewOpen && !tutorialOpen
     && !gameScreen.inert && gameScreen.getAttribute("aria-hidden") === "false";
 }
 

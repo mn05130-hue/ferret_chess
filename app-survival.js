@@ -49,7 +49,7 @@ function renderStoryClock() {
  */
 function updateStoryClock() {
   const now = performance.now();
-  if (document.hidden || gameOver || stageReviewOpen || gameMode !== GAME_MODES.STORY) {
+  if (document.hidden || gameOver || stageReviewOpen || tutorialOpen || gameMode !== GAME_MODES.STORY) {
     storyLastTick = now;
     return;
   }
@@ -81,7 +81,7 @@ function startStoryClock() {
  * 문서 표시 여부와 모달 상태를 기준으로 채팅 엔진과 스토리 시계의 진행을 맞춥니다.
  */
 function syncEnginePause() {
-  chatEngine?.setPaused(document.hidden || gameOver || stageReviewOpen);
+  chatEngine?.setPaused(document.hidden || gameOver || stageReviewOpen || tutorialOpen);
   syncAmbientHorrorSfx();
   storyLastTick = performance.now();
 }
@@ -103,7 +103,7 @@ function clearThreatCountdown(restoreSignal = true) {
  */
 function updateThreatCountdown() {
   const now = performance.now();
-  if (document.hidden || gameOver || stageReviewOpen) {
+  if (document.hidden || gameOver || stageReviewOpen || tutorialOpen) {
     threatLastTick = now;
     return;
   }
@@ -130,7 +130,7 @@ function getStageGraceMs() {
  * @param {object} viewer 이번 제한시간 안에 차단해야 하는 활성 시청자
  */
 function startThreatCountdown(viewer) {
-  if (gameMode === GAME_MODES.STORY || pendingThreat || gameOver || stageReviewOpen || !viewer.active) return;
+  if (gameMode === GAME_MODES.STORY || pendingThreat || gameOver || stageReviewOpen || tutorialOpen || !viewer.active) return;
   const graceMs = getStageGraceMs();
   pendingThreat = viewer;
   threatRemainingMs = graceMs;
@@ -158,7 +158,7 @@ function setConnectionStage(stage) {
   connectionWidget.classList.remove("is-good", "is-normal", "is-weak", "is-disconnected");
   connectionWidget.classList.add(`is-${stage.key}`);
   connectionWidget.dataset.connectionStage = stage.key;
-  applyStreamCharacterState(stage.key === CONNECTION_STAGES.DISCONNECTED.key);
+  applyStreamCharacterState(FERRET_CHAT_RULES.isDisconnectedConnectionStage(stage.key));
   connectionWidget.setAttribute("aria-label", `방송 연결 상태: ${stage.label}`);
   connectionStatus.textContent = stage.label;
   reconnectButton.setAttribute("aria-label", `방송 재연결 · 현재 상태 ${stage.label}`);
@@ -203,7 +203,7 @@ function scheduleStreamApparition(initial = false) {
   const range = initial ? APPARITION_INITIAL_DELAY_RANGE_MS : APPARITION_DELAY_RANGE_MS;
   apparitionSpawnTimer = window.setTimeout(() => {
     apparitionSpawnTimer = undefined;
-    if (document.hidden) {
+    if (document.hidden || tutorialOpen) {
       scheduleStreamApparition(true);
       return;
     }
@@ -216,7 +216,7 @@ function scheduleStreamApparition(initial = false) {
  * @returns {boolean} 새 괴이를 실제로 시작했으면 true, 진행 불가 상태면 false
  */
 function spawnStreamApparition() {
-  if (apparitionActive || gameOver || stageReviewOpen || titleScreen.hidden === false) return false;
+  if (apparitionActive || gameOver || stageReviewOpen || tutorialOpen || titleScreen.hidden === false) return false;
   window.clearTimeout(apparitionSpawnTimer);
   apparitionSpawnTimer = undefined;
   apparitionActive = true;
@@ -244,7 +244,7 @@ function spawnStreamApparition() {
  */
 function weakenStreamConnection() {
   if (!apparitionActive || apparitionExpired) return;
-  if (document.hidden) {
+  if (document.hidden || tutorialOpen) {
     apparitionWeakTimer = window.setTimeout(weakenStreamConnection, 500);
     return;
   }
@@ -258,7 +258,7 @@ function weakenStreamConnection() {
  */
 function startConnectionMosaic() {
   if (!apparitionActive || apparitionExpired) return;
-  if (document.hidden) {
+  if (document.hidden || tutorialOpen) {
     apparitionMosaicTimer = window.setTimeout(startConnectionMosaic, 500);
     return;
   }
@@ -276,7 +276,7 @@ function startConnectionMosaic() {
  */
 function expireStreamApparition() {
   if (!apparitionActive || apparitionExpired) return;
-  if (document.hidden) {
+  if (document.hidden || tutorialOpen) {
     apparitionExpireTimer = window.setTimeout(expireStreamApparition, 1000);
     return;
   }
@@ -302,9 +302,10 @@ function expireStreamApparition() {
  * 재연결 버튼은 실제 괴이 연결이면 복구하고, 정상 연결에서 누르면 오판으로 체력을 감소시킵니다.
  */
 function reconnectStreamConnection() {
-  if (gameOver || stageReviewOpen) return;
+  if (gameOver || stageReviewOpen || tutorialOpen) return;
   if (!apparitionActive) {
-    health = Math.max(0, health - 1);
+    const outcome = FERRET_CHAT_RULES.getFalseReconnectOutcome();
+    health = Math.max(0, health + outcome.healthDelta);
     falseReconnects += 1;
     lastDamageReason = "false-reconnect";
     updateHud();
@@ -339,8 +340,9 @@ function reconnectStreamConnection() {
   if (recoveredInTime) {
     banishedApparitions += 1;
     dayBanishedApparitions += 1;
-    score += 100;
+    score += FERRET_CHAT_RULES.SCORE.connectionRecovered;
     updateHud();
+    notifyTutorialConnectionRecovered();
   }
   scheduleStreamApparition();
 }

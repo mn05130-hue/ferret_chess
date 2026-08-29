@@ -27,7 +27,7 @@ messageList.addEventListener("click", event => {
 messageForm.addEventListener("submit", event => {
   event.preventDefault();
   const text = messageInput.value.trim();
-  if (!text || gameOver || stageReviewOpen) return;
+  if (!text || gameOver || stageReviewOpen || tutorialOpen) return;
   const myViewer = { id: "player", name: myNickname, badge: "🐹", badgeClass: "robot", color: "#66d5b2", history: [] };
   const connectionCorrupted = apparitionActive && apparitionExpired;
   const displayedText = connectionCorrupted ? createUnknownChatText(text, myViewer) : text;
@@ -41,6 +41,7 @@ messageForm.addEventListener("submit", event => {
 messageInput.addEventListener("input", updateComposerState);
 newMessageButton.addEventListener("click", () => scrollToLatest("smooth"));
 panelClose.addEventListener("click", closeViewerPanel);
+suspectButton.addEventListener("click", toggleSelectedViewerSuspect);
 kickButton.addEventListener("click", kickSelectedViewer);
 reconnectButton.addEventListener("click", reconnectStreamConnection);
 titleMusicButton.addEventListener("click", () => {
@@ -69,6 +70,14 @@ playerNicknameInput.addEventListener("input", () => {
   updateNicknameEasterEgg();
 });
 gameStart.addEventListener("click", () => enterGame(GAME_MODES.ENDLESS));
+dailyStart.addEventListener("click", () => {
+  const now = new Date();
+  const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  enterGame(GAME_MODES.ENDLESS, {
+    dailyChallenge: true,
+    seed: FERRET_CHAT_RULES.getDailyChallengeSeed(dateKey)
+  });
+});
 storyStart.addEventListener("click", () => enterGame(GAME_MODES.STORY));
 gameRetry.addEventListener("click", startGame);
 gameRestart.addEventListener("click", () => showTitle());
@@ -122,10 +131,10 @@ document.querySelector("#support-button").addEventListener("click", () => showTo
 document.querySelector("#voice-button").addEventListener("click", () => showToast("알 수 없는 잡음이 들립니다…"));
 document.querySelector("#chat-tab").addEventListener("click", () => scrollToLatest("smooth"));
 helpButton.addEventListener("click", () => {
-  showToast(gameMode === GAME_MODES.STORY
-    ? "오후 7시부터 오전 2시까지 조사하세요. 모든 판정은 하루가 끝날 때 공개됩니다."
-    : "이상 채팅을 제한시간 안에 처리하세요. 스테이지가 오를수록 시간이 짧아집니다.");
+  openTutorial();
 });
+tutorialNext.addEventListener("click", advanceTutorial);
+tutorialSkip.addEventListener("click", () => closeTutorial());
 
 // 패널 외부 클릭과 Escape 키를 공통 닫기 동작으로 처리합니다.
 document.addEventListener("pointerdown", event => {
@@ -134,6 +143,10 @@ document.addEventListener("pointerdown", event => {
 
 document.addEventListener("keydown", event => {
   if (event.key === "Escape") {
+    if (tutorialOpen) {
+      closeTutorial();
+      return;
+    }
     closeEmojiPanel();
     closeViewerPanel();
   }
@@ -144,6 +157,7 @@ document.addEventListener("visibilitychange", syncEnginePause);
 
 // 시각 에셋 적용 → 저장값 복원 → 음량 적용 → 클릭형 진입 화면 순서로 앱을 초기화합니다.
 applyVisualAssets();
+initializePlayerProgress();
 initializePlayerNickname();
 initializeAudioVolumes();
 showEntryScreen();

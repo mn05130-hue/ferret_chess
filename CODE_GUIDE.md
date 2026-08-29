@@ -65,14 +65,17 @@ index.html + styles/*.css
         └─ 게임 앱
             9.  assetconfig.js
             10. bgmconfig.js
-            11. app-config.js
-            12. app-assets.js
-            13. app-chat.js
-            14. app-audio.js
-            15. app-survival.js
-            16. app-results.js
-            17. app-game.js
-            18. app.js
+            11. game-rules.js
+            12. app-config.js
+            13. app-progress.js
+            14. app-assets.js
+            15. app-chat.js
+            16. app-audio.js
+            17. app-survival.js
+            18. app-tutorial.js
+            19. app-results.js
+            20. app-game.js
+            21. app.js
 ```
 
 `chat-engine.js`는 완성된 `HorrorChatEngine` 클래스를 `window.HorrorChatEngine`으로 공개합니다. `app-game.js`의 `startStage()`는 이 공개 클래스로 실제 채팅 엔진 인스턴스를 만듭니다.
@@ -736,7 +739,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 | 바꾸려는 항목 | 파일과 상수/함수 |
 |---|---|
 | 기본 체력 | `app-config.js`의 `MAX_HEALTH` |
-| 스테이지 이상 시청자 수 | `BASE_ANOMALIES_PER_STAGE`, `MAX_ANOMALIES_PER_STAGE`, `STAGES_PER_ADDITIONAL_ANOMALY` |
+| 모드·일차별 이상 시청자 수 | `game-rules.js`의 `STORY_ANOMALIES_BY_DAY`, `ENDLESS_ANOMALIES_PER_STAGE` |
 | 이상 채팅 제한시간 | `BASE_ANOMALY_GRACE_MS`, `MIN_ANOMALY_GRACE_MS`, `STAGE_GRACE_STEP_MS` |
 | 스토리 총 일수 | `STORY_TOTAL_DAYS`, `STORY_DAY_INTROS` |
 | 스토리 하루 실제 길이 | `DEFAULT_STORY_DAY_DURATION_MS` |

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ferret Chat 앱 수명 주기 테스트</title>
+  <style>
+    :root { color-scheme: dark; font-family: ui-monospace, Consolas, monospace; }
+    body { max-width: 760px; margin: 24px auto; padding: 0 18px; background: #090b0a; color: #dce7e3; }
+    iframe { position: fixed; width: 430px; height: 760px; right: 8px; bottom: 8px; border: 1px solid #334; opacity: .08; pointer-events: none; }
+    #summary { border: 1px solid #45645a; border-radius: 8px; padding: 12px; }
+    .passed, .pass { color: #71e8c3; }
+    .failed, .fail { color: #ff7d88; }
+    li { margin: 8px 0; }
+  </style>
+</head>
+<body>
+  <h1>앱 수명 주기 테스트</h1>
+  <p id="summary">실행 중…</p>
+  <ol id="results"></ol>
+  <iframe id="app-frame" title="테스트용 게임" src="../index.html?seed=20260829"></iframe>
+  <script src="app-lifecycle-tests.js"></script>
+</body>
+</html>

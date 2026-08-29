@@ -31,6 +31,7 @@
 }
 
 .viewer-backdrop,
+.tutorial-backdrop,
 .stage-overlay,
 /* 공통 backdrop은 viewer/result 모달이 게임 화면 위에서 입력을 독점하도록 합니다. */
 .game-overlay {
@@ -44,6 +45,7 @@
 }
 
 .viewer-backdrop.open,
+.tutorial-backdrop.open,
 .stage-overlay.open,
 .game-overlay.open {
   opacity: 1;
@@ -128,7 +130,14 @@
   font-size: 10px;
 }
 
+.viewer-actions {
+  display: grid;
+  grid-template-columns: .85fr 1.15fr;
+  gap: 8px;
+}
+
 .kick-button,
+.suspect-button,
 .restart-button {
   width: 100%;
   height: 45px;
@@ -141,6 +150,18 @@
   cursor: pointer;
 }
 
+.suspect-button {
+  border-color: #8b742f;
+  color: #fff4ba;
+  background: linear-gradient(#51451d, #342b12);
+}
+
+.suspect-button[aria-pressed="true"] {
+  border-color: #e1bb43;
+  color: #161000;
+  background: linear-gradient(#f1ce59, #b78c20);
+}
+
 .kick-button:hover,
 .kick-button:focus-visible,
 .restart-button:hover,
@@ -148,6 +169,128 @@
   outline: 2px solid #f06a76;
   outline-offset: 2px;
   background: linear-gradient(#a52d3a, #791e29);
+}
+
+.suspect-button:hover,
+.suspect-button:focus-visible {
+  outline: 2px solid #f1ce59;
+  outline-offset: 2px;
+  filter: brightness(1.12);
+}
+
+/* 도움말은 게임을 일시정지한 채 핵심 행동을 한 단계씩 설명합니다. */
+.tutorial-backdrop {
+  z-index: 46;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: #020504e8;
+}
+
+.tutorial-card {
+  position: relative;
+  width: min(100%, 355px);
+  border: 1px solid #39715f;
+  border-radius: 14px;
+  padding: 24px 20px 20px;
+  color: #e8f4f0;
+  background:
+    linear-gradient(135deg, #18302833, transparent 55%),
+    #101614;
+  box-shadow: 0 20px 55px #000d, inset 0 1px #d9fff412;
+  translate: 0 14px;
+  transition: translate 180ms ease;
+}
+
+.tutorial-backdrop.open .tutorial-card {
+  translate: 0 0;
+}
+
+.tutorial-kicker,
+.tutorial-progress {
+  margin: 0;
+  color: #69d8b5;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.tutorial-progress {
+  position: absolute;
+  top: 24px;
+  right: 20px;
+  color: #72837d;
+}
+
+.tutorial-card h2 {
+  margin: 15px 0 9px;
+  font-size: 22px;
+}
+
+.tutorial-card > p:not(.tutorial-kicker, .tutorial-progress) {
+  min-height: 76px;
+  margin: 0;
+  color: #aebdb8;
+  font-size: 13px;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.tutorial-example {
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  margin: 16px 0;
+  border: 1px solid #29473e;
+  border-radius: 8px;
+  padding: 9px 11px;
+  color: #bce9da;
+  background: #07100d;
+  font-size: 11px;
+  text-align: center;
+}
+
+.tutorial-actions {
+  display: grid;
+  grid-template-columns: .8fr 1.2fr;
+  gap: 8px;
+}
+
+.tutorial-skip,
+.tutorial-next {
+  height: 42px;
+  border: 1px solid #40524c;
+  border-radius: 7px;
+  color: #b8c5c1;
+  background: #18211e;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.tutorial-next {
+  border-color: #53cda8;
+  color: #06110e;
+  background: #69d8b5;
+}
+
+.tutorial-skip:focus-visible,
+.tutorial-next:focus-visible {
+  outline: 2px solid #d5fff3;
+  outline-offset: 2px;
+}
+
+.stage-result-evidence {
+  margin: 8px 0 0;
+  border-left: 2px solid #63897d;
+  padding: 5px 0 5px 9px;
+  color: #a9c1ba;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.stage-result-evidence:empty {
+  display: none;
 }
 
 /* 무한 모드 스테이지 결과는 성공/실패 클래스에 따라 색상과 다음 행동을 바꿉니다. */

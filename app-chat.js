@@ -61,7 +61,7 @@ function createNickname(usedNicknames, random) {
  * @returns {number} 이번 게임 또는 스테이지를 재현할 32비트 정수
  */
 function createSeed() {
-  if (fixedSeed !== null) return fixedSeed;
+  if (activeSeedOverride !== null) return activeSeedOverride;
   if (window.crypto?.getRandomValues) {
     const values = new Uint32Array(1);
     window.crypto.getRandomValues(values);
@@ -76,10 +76,7 @@ function createSeed() {
  * @returns {number} 상한을 적용한 이상 시청자 수
  */
 function getAnomalyCountForStage(stage) {
-  return Math.min(
-    MAX_ANOMALIES_PER_STAGE,
-    BASE_ANOMALIES_PER_STAGE + Math.floor((stage - 1) / STAGES_PER_ADDITIONAL_ANOMALY)
-  );
+  return FERRET_CHAT_RULES.getAnomalyCount(gameMode, stage);
 }
 
 /**
@@ -97,6 +94,9 @@ function createViewers(seed, anomalyCount) {
     name: createNickname(usedNicknames, random),
     anomalous: anomalySlots.has(index),
     history: [],
+    evidenceHistory: [],
+    connectionHistoryCorrupted: false,
+    suspected: false,
     active: !anomalySlots.has(index),
     pendingArrival: anomalySlots.has(index),
     kickedByPlayer: false,
@@ -269,6 +269,7 @@ function corruptVisibleMessagesForConnectionLoss() {
     if (!messageText) return;
     const viewer = viewers.find(candidate => candidate.id === item.dataset.viewerId)
       || { id: `connection-${index}`, history: [] };
+    viewer.connectionHistoryCorrupted = true;
     const displayedText = createUnknownChatText(messageText.textContent, viewer);
     messageText.textContent = displayedText;
     item.classList.add("corrupted-message", "ciphered-message");
@@ -288,6 +289,7 @@ function corruptVisibleMessagesForConnectionLoss() {
 function createMessage(viewer, text, ownMessage = false, metadata = {}) {
   const item = document.createElement("li");
   item.className = "message";
+  if (viewer?.suspected) item.classList.add("suspected-message");
   if (metadata.corrupted) item.classList.add("corrupted-message");
   if (metadata.ciphered) item.classList.add("ciphered-message");
   if (metadata.anomalyType) {
@@ -422,6 +424,15 @@ function handleEngineMessage(message) {
   const displayedText = usesCipherText ? createUnknownChatText(text, viewer) : text;
   viewer.history.push(displayedText);
   if (viewer.history.length > 10) viewer.history.shift();
+  viewer.evidenceHistory ??= [];
+  viewer.evidenceHistory.push({
+    text: displayedText,
+    originalText: text,
+    actualAnomaly: isActualAnomaly,
+    connectionCorrupted: isConnectionCorruption,
+    anomalyType: anomalyPresentation.type || viewer.anomalyPermission || ""
+  });
+  if (viewer.evidenceHistory.length > 10) viewer.evidenceHistory.shift();
   if (historyOnly) return;
   appendElement(createMessage(viewer, displayedText, false, {
     ...message,
@@ -459,7 +470,7 @@ function updateHud() {
   stageDisplay.textContent = String(currentStage);
   healthDisplay.textContent = String(health);
   healthDisplay.setAttribute("aria-label", `체력 ${health}`);
-  if (!storyMode) storyClock.textContent = "∞";
+  if (!storyMode) storyClock.textContent = dailyChallengeActive ? "오늘" : "∞";
 }
 
 /**

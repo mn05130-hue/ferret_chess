@@ -19,6 +19,16 @@ class HorrorChatEngine {
     this.seed = Number(options.seed) >>> 0;
     this.random = new SeededRandom(this.seed);
     this.difficulty = Math.min(3, Math.max(1, Number(options.difficulty) || 1));
+    this.anomalyLevel = Math.min(
+      TUNING.maxAnomalyLevel,
+      Math.max(1, Math.floor(Number(options.anomalyLevel) || 1))
+    );
+    const configuredPermissions = Array.isArray(options.anomalyPermissions)
+      ? options.anomalyPermissions.filter(permission => ANOMALY_PERMISSIONS.includes(permission))
+      : [];
+    this.anomalyPermissions = configuredPermissions.length
+      ? configuredPermissions
+      : [...ANOMALY_PERMISSIONS];
     this.syntheticEvents = options.syntheticEvents !== false;
     this.externalContext = options.externalContext || {
       startedAt: Date.now(),
@@ -74,7 +84,7 @@ class HorrorChatEngine {
    */
   assignViewerModels() {
     const personaKeys = this.random.shuffle(Object.keys(PERSONAS));
-    const permissions = this.random.shuffle([...ANOMALY_PERMISSIONS]);
+    const permissions = this.random.shuffle([...this.anomalyPermissions]);
     let anomalyIndex = 0;
     this.viewers.forEach((viewer, index) => {
       viewer.personaKey = personaKeys[index % personaKeys.length];
@@ -82,7 +92,7 @@ class HorrorChatEngine {
       viewer.lastSpokeAt = -60000 - index * 1000;
       viewer.lastObservedAt = -60000;
       viewer.engineSpeechCount = 0;
-      viewer.anomalyLevel = viewer.anomalous ? 1 : 0;
+      viewer.anomalyLevel = viewer.anomalous ? this.anomalyLevel : 0;
       viewer.anomalyPermission = viewer.anomalous
         ? permissions[anomalyIndex++ % permissions.length]
         : null;
@@ -97,6 +107,7 @@ class HorrorChatEngine {
   start() {
     if (this.running) return;
     this.running = true;
+    ACTIVE_CHAT_ENGINE_INSTANCES.add(this);
     this.planFutureEvent();
     this.bootstrapMessages();
     this.enqueueAmbient(900);
@@ -110,6 +121,7 @@ class HorrorChatEngine {
    */
   stop() {
     this.running = false;
+    ACTIVE_CHAT_ENGINE_INSTANCES.delete(this);
     window.clearInterval(this.timer);
     this.timer = null;
     this.queue.length = 0;

@@ -151,7 +151,7 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
     if (!viewer?.anomalous || this.state === "BURST" || this.paused) return;
     if (this.simTime - viewer.lastObservedAt < 5000) return;
     viewer.lastObservedAt = this.simTime;
-    viewer.anomalyLevel = Math.min(TUNING.maxAnomalyLevel, viewer.anomalyLevel + 1);
+    viewer.observationCount = (viewer.observationCount || 0) + 1;
   }
 
   /* ---------- 디버그 ---------- */
@@ -165,6 +165,8 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
     return {
       seed: this.seed,
       difficulty: Number(this.difficulty.toFixed(2)),
+      anomalyLevel: this.anomalyLevel,
+      anomalyPermissions: [...this.anomalyPermissions],
       simTime: this.simTime,
       tension: Number(this.tension.toFixed(4)),
       state: this.state,
