@@ -301,7 +301,7 @@ function createPostRow(post) {
 
   const metadata = document.createElement("span");
   metadata.className = "post-metadata";
-  metadata.textContent = formatPostMetadata(post);
+  metadata.textContent = `${formatPostMetadata(post)} · 댓글 ${post.comments.length}`;
   const status = document.createElement("span");
   status.className = "post-status";
 
@@ -398,22 +398,17 @@ function maybeTriggerAnomalyChatEffect(random = Math.random) {
  * @param {object} message 엔진이 전달한 화자·본문·상태·괴이 메타데이터
  */
 function handleEngineMessage(message) {
-  const { viewer, text, historyOnly, behavior } = message;
-  const candidate = viewer.anomalous && (message.anomalyEvidence || message.anomalyMode);
-  const recordOnly = historyOnly || (candidate && publishedAnomalyAuthors.has(viewer.id));
-  const postId = recordOnly ? null : String(boardPosts.size + 1);
+  const { viewer, historyOnly, behavior } = message;
+  if (historyOnly || publishedAnomalyAuthors.has(viewer.id)) return;
+  const postId = String(boardPosts.size + 1);
   const random = createRoundRandom(hashText(`${currentSeed}:post:${postId}`));
-  const evidence = recordOnly ? null : createBoardEvidence(message, random);
-  const body = evidence?.body || text;
+  const evidence = createBoardEvidence(message, random);
+  const thread = evidence || selectNormalBoardThread(currentSeed, boardPosts.size - publishedAnomalyAuthors.size);
+  const { body } = thread;
   viewer.history.push({ body, postId });
   if (viewer.history.length > 10) viewer.history.shift();
 
   const selectedPost = boardPosts.get(selectedPostId);
-  if (recordOnly) {
-    if (selectedPost?.author === viewer) renderPostDetail(selectedPost);
-    return;
-  }
-
   const story = gameMode === GAME_MODES.STORY;
   const now = new Date();
   const date = story
@@ -421,7 +416,7 @@ function handleEngineMessage(message) {
       .toISOString().slice(0, 10)
     : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const header = createBoardHeader({
-    title: evidence?.title || getPostTitle(text),
+    title: thread.title,
     nickname: viewer.name,
     date,
     number: String(2000 + (currentStage - 1) * 1000 + Number(postId)).padStart(5, "0")
@@ -432,6 +427,7 @@ function handleEngineMessage(message) {
     header,
     body,
     originalBody: body,
+    comments: createBoardComments(thread.comments, header.nickname, random),
     time: story ? formatStoryTime(storyElapsedMs)
       : now.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
     anomalous: Boolean(evidence),

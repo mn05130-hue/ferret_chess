@@ -244,3 +244,46 @@
   opacity: .5;
   cursor: default;
 }
+
+.board-discussion {
+  margin: 10px 0 14px;
+  color: #d4e3dd;
+  font-size: .85rem;
+  line-height: 1.5;
+}
+
+.board-discussion h3 {
+  margin: 0 0 4px;
+  font-size: .9rem;
+}
+
+.board-discussion summary { cursor: pointer; }
+
+.board-comments {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid #36473f;
+  overflow-wrap: anywhere;
+}
+
+.board-comments li {
+  padding: 6px 0;
+  border-bottom: 1px solid #36473f;
+}
+
+.board-comments .board-comment-reply {
+  margin-inline-start: .9rem;
+  padding-inline-start: .65rem;
+  border-inline-start: 2px solid #526755;
+}
+
+.board-comments strong {
+  color: #aac6b8;
+  font-size: .75rem;
+}
+
+.board-comments p {
+  margin: 2px 0 0;
+  white-space: pre-wrap;
+}

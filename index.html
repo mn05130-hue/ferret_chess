@@ -219,6 +219,10 @@
         <h2 id="viewer-name"></h2>
         <p class="post-body" id="post-body"></p>
         <p class="post-threat" id="post-sync-warning" role="status" hidden>본문을 확인하려면 창을 닫고 게시판 동기화를 복구하세요.</p>
+        <section class="board-discussion" aria-labelledby="post-comments-heading">
+          <h3 id="post-comments-heading">댓글</h3>
+          <ol class="board-comments" id="post-comments"></ol>
+        </section>
         <details class="board-rules">
           <summary>운영 규정과 대조 자료</summary>
           <p>제목·닉네임·날짜·생성번호는 의심 단서입니다. 삭제 여부는 동기화를 복구한 뒤 글 본문으로 결정하세요.</p>
@@ -299,6 +303,10 @@
             <h4 id="story-review-post-title"></h4>
             <p class="story-review-meta" id="story-review-author"></p>
             <p class="story-review-body" id="story-review-body"></p>
+            <details class="board-discussion" id="story-review-discussion">
+              <summary id="story-review-comments-heading">댓글 보기</summary>
+              <ol class="board-comments" id="story-review-comments"></ol>
+            </details>
             <dl class="story-review-decisions">
               <div><dt>내 처리</dt><dd id="story-review-action"></dd></div>
               <div><dt>정답</dt><dd id="story-review-answer"></dd></div>
@@ -362,6 +370,7 @@
   <script src="app-progress.js"></script>
   <script src="app-assets.js"></script>
   <script src="board-evidence.js"></script>
+  <script src="board-threads.js"></script>
   <script src="app-chat.js"></script>
   <script src="app-audio.js"></script>
   <script src="app-survival.js"></script>

@@ -113,6 +113,8 @@ function renderPostDetail(post) {
   postAuthor.textContent = formatPostMetadata(post);
   kickButton.disabled = apparitionActive && apparitionExpired;
   postSyncWarning.hidden = !kickButton.disabled;
+  postCommentsHeading.textContent = `댓글 ${post.comments.length}`;
+  renderBoardComments(postComments, post, kickButton.disabled);
   viewerHistory.replaceChildren();
   const records = post.author.history.filter(record => record.postId !== post.id
     && !boardPosts.get(record.postId)?.deleted);

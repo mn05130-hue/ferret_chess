@@ -165,6 +165,9 @@ function renderStoryReview() {
   storyReviewPostTitle.textContent = post.header.title;
   storyReviewAuthor.textContent = formatPostMetadata(post);
   storyReviewBody.textContent = post.originalBody;
+  storyReviewDiscussion.open = false;
+  storyReviewCommentsHeading.textContent = `댓글 ${post.comments.length}개 보기`;
+  renderBoardComments(storyReviewComments, post);
   storyReviewAction.textContent = post.deleted ? "삭제" : post.kept ? "유지" : "처리 안 함";
   storyReviewAnswer.textContent = post.anomalous ? "삭제" : "유지";
   storyReviewVerdict.textContent = mistake
