@@ -199,6 +199,7 @@ const viewerBackdrop = document.querySelector("#viewer-backdrop");
 const viewerName = document.querySelector("#viewer-name");
 const postAuthor = document.querySelector("#post-author");
 const postBody = document.querySelector("#post-body");
+const postSyncWarning = document.querySelector("#post-sync-warning");
 const postThreat = document.querySelector("#post-threat");
 const postThreatSeconds = document.querySelector("#post-threat-seconds");
 const postHistoryEmpty = document.querySelector("#post-history-empty");

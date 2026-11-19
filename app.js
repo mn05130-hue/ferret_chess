@@ -97,7 +97,7 @@ tutorialSkip.addEventListener("click", () => closeTutorial());
 document.addEventListener("keydown", event => {
   if (event.key === "Tab" && selectedPostId !== null && !tutorialOpen) {
     const first = panelClose;
-    const last = kickButton;
+    const last = !kickButton.disabled ? kickButton : keepPostButton.hidden ? suspectButton : keepPostButton;
     const focusOutside = !viewerBackdrop.contains(document.activeElement);
     if (focusOutside || document.activeElement === (event.shiftKey ? first : last)) {
       event.preventDefault();
@@ -118,6 +118,7 @@ document.addEventListener("visibilitychange", syncEnginePause);
 
 // 시각 에셋 적용 → 저장값 복원 → 음량 적용 → 클릭형 진입 화면 순서로 앱을 초기화합니다.
 applyVisualAssets();
+renderBoardRules(document.querySelector("#board-rules-list"));
 initializePlayerProgress();
 initializePlayerNickname();
 initializeAudioVolumes();

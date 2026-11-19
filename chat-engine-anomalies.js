@@ -32,7 +32,7 @@ const ANOMALY_LINES = Object.freeze({
     { id: "pro-seen",   level: 2, mode: "formal", needs: c => c.omen != null,
       make: c => `화면에 니 뒤에 서있는거 나만보임?? 어깨위에 손올라가있는데 왜 가만히있어 ${c.omen} ` },
     { id: "pro-tick",   level: 1, mode: "raw", needs: c => c.seconds != null && c.seconds >= 3,
-      make: c => `$너 지금 혼자 산다고했지 근데 왜 세명이 앉아있어 {c.seconds}... ${c.seconds - 1}... ${c.seconds - 2}...` },
+      make: c => `너 지금 혼자 산다고했지 근데 왜 세명이 앉아있어 ${c.seconds}... ${c.seconds - 1}... ${c.seconds - 2}...` },
     { id: "pro-know",   level: 3, mode: "formal",
       make: () => `네가 입력창에 쓰다 지운 문장, 임시 저장 목록에서 읽었어.` },
     { id: "pro-repeat", level: 2, mode: "raw", needs: c => c.seconds != null,

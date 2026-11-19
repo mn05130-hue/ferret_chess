@@ -218,6 +218,12 @@
         <p class="post-threat" id="post-threat" hidden>삭제 제한 시간 <strong id="post-threat-seconds"></strong></p>
         <h2 id="viewer-name"></h2>
         <p class="post-body" id="post-body"></p>
+        <p class="post-threat" id="post-sync-warning" role="status" hidden>본문을 확인하려면 창을 닫고 게시판 동기화를 복구하세요.</p>
+        <details class="board-rules">
+          <summary>운영 규정과 대조 자료</summary>
+          <p>제목·닉네임·날짜·생성번호는 의심 단서입니다. 삭제 여부는 동기화를 복구한 뒤 글 본문으로 결정하세요.</p>
+          <ol id="board-rules-list"></ol>
+        </details>
         <h3 class="panel-help">작성자 최근 기록</h3>
         <p class="panel-help" id="post-history-empty" hidden>표시할 다른 기록이 없습니다.</p>
         <ol class="viewer-history" id="viewer-history"></ol>
@@ -355,6 +361,7 @@
   <script src="app-config.js"></script>
   <script src="app-progress.js"></script>
   <script src="app-assets.js"></script>
+  <script src="board-evidence.js"></script>
   <script src="app-chat.js"></script>
   <script src="app-audio.js"></script>
   <script src="app-survival.js"></script>

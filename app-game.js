@@ -108,9 +108,11 @@ function enterGame(mode = GAME_MODES.ENDLESS, options = {}) {
 
 function renderPostDetail(post) {
   const body = getPostBody(post);
-  viewerName.textContent = getPostTitle(body);
+  viewerName.textContent = getDisplayedPostTitle(post);
   postBody.textContent = body;
-  postAuthor.textContent = `${post.author.name} · ${post.time}`;
+  postAuthor.textContent = formatPostMetadata(post);
+  kickButton.disabled = apparitionActive && apparitionExpired;
+  postSyncWarning.hidden = !kickButton.disabled;
   viewerHistory.replaceChildren();
   const records = post.author.history.filter(record => record.postId !== post.id
     && !boardPosts.get(record.postId)?.deleted);
@@ -208,7 +210,7 @@ function endGame() {
       resultCopy.textContent = `게시판 동기화를 잘못 조작해 체력을 모두 잃었습니다. 총 ${missedApparitions}회 실패했습니다.`;
     } else {
       resultTitle.textContent = "이상 게시글을 놓쳤습니다";
-      resultCopy.textContent = `이상 게시글 ${missedAnomalies}건를 놓쳐 체력을 모두 잃었습니다.`;
+      resultCopy.textContent = `이상 게시글 ${missedAnomalies}건을 놓쳐 체력을 모두 잃었습니다.`;
     }
   }
   finalScore.textContent = `${String(score).padStart(4, "0")}점`;
@@ -231,7 +233,7 @@ function toggleKeepSelectedPost() {
 }
 
 function deleteSelectedPost() {
-  if (gameOver || stageReviewOpen || tutorialOpen) return;
+  if (gameOver || stageReviewOpen || tutorialOpen || (apparitionActive && apparitionExpired)) return;
   const post = boardPosts.get(selectedPostId);
   if (!post || post.deleted) return;
   post.deleted = true;

@@ -110,15 +110,6 @@ function expireThreat() {
   });
 }
 
-const ANOMALY_EVIDENCE_EXPLANATIONS = Object.freeze({
-  PROPHECY: "아직 일어나지 않은 일을 알고 있었습니다.",
-  OBSERVER: "게시판에서 공개하지 않은 공간 정보를 언급했습니다.",
-  MEMORY: "이전 게시판 기록과 맞지 않는 기억을 말했습니다.",
-  MIMIC: "다른 작성자의 말투나 글을 흉내 냈습니다.",
-  INTRUDER: "운영진 알림으로 위장했습니다.",
-  GLITCH: "문자와 신호가 비정상적으로 붕괴했습니다."
-});
-
 function truncateEvidenceText(text, maximum = 54) {
   const normalized = String(text || "").replace(/\s+/g, " ").trim();
   return normalized.length > maximum ? `${normalized.slice(0, maximum - 1)}…` : normalized;
@@ -126,9 +117,8 @@ function truncateEvidenceText(text, maximum = 54) {
 
 function getPostEvidenceSummary(post) {
   const quote = truncateEvidenceText(post.originalBody);
-  const type = post.anomalyType;
   const result = post.anomalous
-    ? `${FERRET_CHAT_RULES.ANOMALY_TYPE_LABELS[type] || "이상 게시글"} · “${quote}” · ${ANOMALY_EVIDENCE_EXPLANATIONS[type] || "비정상적인 내용이 확인됐습니다."}`
+    ? `“${quote}” · ${post.bodyEvidence}`
     : `정상 게시글 · “${quote}”`;
   return post.corruptedDuringPlay
     ? `${result} (동기화 오류로 깨진 화면은 판정에서 제외)` : result;
@@ -171,10 +161,9 @@ function renderStoryReview() {
   }
 
   const mistake = isStoryPostMistake(post);
-  const type = post.anomalyType;
   storyReviewProgress.textContent = `${storyReviewErrorsOnly ? "오답" : "전체 · 오답 먼저"} ${storyReviewIndex + 1} / ${posts.length}`;
-  storyReviewPostTitle.textContent = getPostTitle(post.originalBody);
-  storyReviewAuthor.textContent = `${post.author.name} · ${post.time}`;
+  storyReviewPostTitle.textContent = post.header.title;
+  storyReviewAuthor.textContent = formatPostMetadata(post);
   storyReviewBody.textContent = post.originalBody;
   storyReviewAction.textContent = post.deleted ? "삭제" : post.kept ? "유지" : "처리 안 함";
   storyReviewAnswer.textContent = post.anomalous ? "삭제" : "유지";
@@ -182,9 +171,8 @@ function renderStoryReview() {
     ? (post.anomalous ? "놓친 이상 글" : "정상 글 오삭제")
     : (post.anomalous ? "이상 글 삭제 성공" : "정상 글 유지");
   storyReviewVerdict.classList.toggle("is-mistake", mistake);
-  storyReviewReason.textContent = post.anomalous
-    ? `${FERRET_CHAT_RULES.ANOMALY_TYPE_LABELS[type] || "이상 게시글"} · ${ANOMALY_EVIDENCE_EXPLANATIONS[type] || "비정상적인 내용이 확인됐습니다."}`
-    : "원문에 삭제할 만한 이상 징후가 없었습니다.";
+  storyReviewReason.textContent = post.bodyEvidence
+    || "본문에서 삭제 규정에 해당하는 근거를 찾을 수 없습니다. 제목·닉네임·날짜·생성번호의 이상만으로는 삭제하지 않습니다.";
   storyReviewSync.hidden = !post.corruptedDuringPlay;
 }
 

@@ -1,10 +1,10 @@
 "use strict";
 
 const TUTORIAL_STEPS = Object.freeze([
-  { title: "게시글 읽기", copy: "제목을 눌러 본문과 작성자의 최근 기록을 확인하세요.",
-    example: "제목 선택 → 본문과 작성자 기록 비교" },
-  { title: "이상한 단서 찾기", copy: "아직 올라오지 않은 공지를 인용하거나, 공개한 적 없는 정보를 아는 글을 찾아보세요.",
-    example: "“곧 공지 제목이 ‘문을 열어’로 바뀔 거야.”" },
+  { title: "게시글 읽기", copy: "제목·닉네임·날짜·생성번호를 훑고, 수상한 글은 열어서 본문을 읽으세요.",
+    example: "예 · 제목이 없거나, 날짜가 00일이거나, 생성번호가 00000인 글" },
+  { title: "이상한 단서 찾기", copy: "상세 화면의 운영 규정과 대조 자료를 열어 본문의 문구를 비교하세요. 겉정보가 이상해도 본문에 위반 근거가 없으면 유지하세요.",
+    example: "예 · 본문이 아직 공개되지 않은 공지 문구를 그대로 인용하면 삭제" },
   { title: "의심 표시와 글 삭제", copy: "애매한 글은 의심 표시를 남겨 두세요. 정상으로 판단한 글은 유지 표시를, 이상하다고 판단한 글은 삭제를 선택하세요.",
     example: "의심 표시 → 기록 확인 → 글 삭제" },
   { title: "게시판 복구", copy: "상태가 보통 또는 약함으로 떨어지면 복구하세요. 끊긴 뒤에는 정상 글도 깨져 보입니다.",
@@ -77,7 +77,7 @@ function renderGuidedTutorialObjective() {
     copy = `${normalViewer?.name || "표시된 정상 계정"}의 게시글을 열어 작성자 기록을 확인하세요.`;
   } else if (tutorialPracticeProgress.anomalyCatches < 1) {
     step = 2;
-    copy = "공개되지 않은 정보를 아는 첫 이상 게시글을 찾아 삭제하세요.";
+    copy = "본문과 운영 규정을 대조해 첫 이상 글을 찾아 삭제하세요.";
   } else if (!tutorialPracticeProgress.reconnect) {
     step = 3;
     copy = "연결 상태가 ‘보통’ 또는 ‘약함’일 때 복구 버튼을 누르세요.";

@@ -206,3 +206,41 @@
   color: #ffabb3;
   font-size: .83rem;
 }
+
+.board-rules {
+  margin: 0 0 14px;
+  padding: 8px 10px;
+  border: 1px solid #45574f;
+  border-radius: 6px;
+  background: #15211d;
+  color: #d5e4dd;
+  font-size: .8rem;
+  line-height: 1.5;
+}
+
+.board-rules summary {
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.board-rules ol {
+  margin: 8px 0 0;
+  padding-inline-start: 18px;
+}
+
+.board-rules li + li {
+  margin-top: 10px;
+}
+
+.board-rules p {
+  margin: 4px 0;
+}
+
+.board-post .post-metadata, #post-author {
+  overflow-wrap: anywhere;
+}
+
+.kick-button:disabled {
+  opacity: .5;
+  cursor: default;
+}

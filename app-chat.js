@@ -224,27 +224,6 @@ function createUnknownChatText(text, viewer) {
 }
 
 /**
- * 엔진 메타데이터를 화면용 이상 유형으로 정리합니다. GLITCH 계열만 난독화 문장을 사용합니다.
- * @param {object} message HorrorChatEngine의 onMessage 콜백 데이터
- * @returns {{isActualAnomaly: boolean, type: string|null, usesCipherText: boolean}} 표시 규칙
- */
-function getAnomalyPresentation(message) {
-  const isActualAnomaly = Boolean(
-    message.viewer?.anomalous && (message.anomalyEvidence || message.anomalyMode)
-  );
-  if (!isActualAnomaly) {
-    return { isActualAnomaly: false, type: null, usesCipherText: false };
-  }
-
-  const isGlitch = String(message.anomalyLineId || "").startsWith("gli-");
-  return {
-    isActualAnomaly: true,
-    type: isGlitch ? "glitch" : String(message.anomalyEvidence || "unknown").toLowerCase(),
-    usesCipherText: isGlitch
-  };
-}
-
-/**
  * 연결이 끊겨 채팅 화면이 오염되는 순간에만 짧은 흔들림 애니메이션을 다시 시작합니다.
  */
 function triggerCorruptedChatPulse() {
@@ -262,15 +241,15 @@ function refreshPostPresentation() {
   const disconnected = apparitionActive && apparitionExpired;
   for (const row of messageList.querySelectorAll("[data-post-id]")) {
     const post = boardPosts.get(row.dataset.postId);
-    row.classList.toggle("corrupted-message", disconnected || post.ciphered);
-    row.querySelector(".post-title").textContent = getPostTitle(getPostBody(post));
+    row.classList.toggle("corrupted-message", disconnected);
+    row.querySelector(".post-title").textContent = getDisplayedPostTitle(post);
   }
   const post = boardPosts.get(selectedPostId);
   if (post) renderPostDetail(post);
 }
 
 function getPostBody(post) {
-  if (!(apparitionActive && apparitionExpired) || post.ciphered) return post.body;
+  if (!(apparitionActive && apparitionExpired)) return post.body;
   post.corruptedDuringPlay = true;
   post.corruptedBody ??= createUnknownChatText(post.body, post.author);
   return post.corruptedBody;
@@ -279,6 +258,18 @@ function getPostBody(post) {
 function getPostTitle(body) {
   const firstSentence = body.trim().split(/(?<=[.!?])\s+|\n/, 1)[0];
   return firstSentence.length > 34 ? firstSentence.slice(0, 33) + "…" : firstSentence;
+}
+
+function getDisplayedPostTitle(post) {
+  if (!(apparitionActive && apparitionExpired)) return post.header.title;
+  post.corruptedDuringPlay = true;
+  post.corruptedTitle ??= getPostTitle(createUnknownChatText(post.header.title, post.author));
+  return post.corruptedTitle;
+}
+
+function formatPostMetadata(post) {
+  const { nickname, date, number } = post.header;
+  return `${nickname} · ${date} ${post.time} · #${number}`;
 }
 
 function updatePostRowStatus(row, post) {
@@ -294,23 +285,23 @@ function updatePostRowStatus(row, post) {
 function createPostRow(post) {
   const row = document.createElement("li");
   row.className = "message board-post";
-  row.classList.toggle("corrupted-message", post.ciphered || (apparitionActive && apparitionExpired));
+  row.classList.toggle("corrupted-message", apparitionActive && apparitionExpired);
   row.dataset.postId = post.id;
 
   const avatar = document.createElement("span");
   avatar.className = "post-avatar";
   avatar.setAttribute("aria-hidden", "true");
-  avatar.textContent = Array.from(post.author.name)[0] || "·";
+  avatar.textContent = Array.from(post.header.nickname)[0] || "·";
   avatar.style.color = post.author.color;
 
   const title = document.createElement("button");
   title.className = "post-title";
   title.type = "button";
-  title.textContent = getPostTitle(getPostBody(post));
+  title.textContent = getDisplayedPostTitle(post);
 
   const metadata = document.createElement("span");
   metadata.className = "post-metadata";
-  metadata.textContent = `${post.author.name} · ${post.time}`;
+  metadata.textContent = formatPostMetadata(post);
   const status = document.createElement("span");
   status.className = "post-status";
 
@@ -408,11 +399,12 @@ function maybeTriggerAnomalyChatEffect(random = Math.random) {
  */
 function handleEngineMessage(message) {
   const { viewer, text, historyOnly, behavior } = message;
-  const presentation = getAnomalyPresentation(message);
-  const body = presentation.usesCipherText ? createUnknownChatText(text, viewer) : text;
-  // Repeat anomaly messages add clues to the author history. Only the first is a target post.
-  const recordOnly = historyOnly || (presentation.isActualAnomaly && publishedAnomalyAuthors.has(viewer.id));
+  const candidate = viewer.anomalous && (message.anomalyEvidence || message.anomalyMode);
+  const recordOnly = historyOnly || (candidate && publishedAnomalyAuthors.has(viewer.id));
   const postId = recordOnly ? null : String(boardPosts.size + 1);
+  const random = createRoundRandom(hashText(`${currentSeed}:post:${postId}`));
+  const evidence = recordOnly ? null : createBoardEvidence(message, random);
+  const body = evidence?.body || text;
   viewer.history.push({ body, postId });
   if (viewer.history.length > 10) viewer.history.shift();
 
@@ -422,17 +414,28 @@ function handleEngineMessage(message) {
     return;
   }
 
+  const story = gameMode === GAME_MODES.STORY;
+  const now = new Date();
+  const date = story
+    ? new Date(Date.UTC(2026, 10, currentStage + Math.floor(getStoryClockMinutes(storyElapsedMs) / 1440)))
+      .toISOString().slice(0, 10)
+    : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const header = createBoardHeader({
+    title: evidence?.title || getPostTitle(text),
+    nickname: viewer.name,
+    date,
+    number: String(2000 + (currentStage - 1) * 1000 + Number(postId)).padStart(5, "0")
+  }, random, Boolean(evidence));
   const post = {
     id: postId,
     author: viewer,
+    header,
     body,
-    originalBody: text,
-    time: gameMode === GAME_MODES.STORY
-      ? formatStoryTime(storyElapsedMs)
-      : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
-    anomalous: presentation.isActualAnomaly,
-    anomalyType: presentation.type?.toUpperCase(),
-    ciphered: presentation.usesCipherText,
+    originalBody: body,
+    time: story ? formatStoryTime(storyElapsedMs)
+      : now.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
+    anomalous: Boolean(evidence),
+    bodyEvidence: evidence?.reason,
     suspected: false,
     kept: false,
     deleted: false

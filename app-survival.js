@@ -19,14 +19,18 @@ function stopStoryClock() {
  * @param {number} elapsedMs 이번 하루가 시작된 뒤 흐른 실제 밀리초
  * @returns {string} 오전/오후와 시:분으로 구성한 게임 시각
  */
-function formatStoryTime(elapsedMs) {
+function getStoryClockMinutes(elapsedMs) {
   const progress = Math.min(1, Math.max(0, elapsedMs / storyDayDurationMs));
   const rawElapsedMinutes = progress * STORY_DURATION_MINUTES;
   const elapsedMinutes = Math.min(
     STORY_DURATION_MINUTES,
     Math.floor(rawElapsedMinutes / STORY_CLOCK_STEP_MINUTES) * STORY_CLOCK_STEP_MINUTES
   );
-  const totalMinutes = STORY_START_MINUTES + elapsedMinutes;
+  return STORY_START_MINUTES + elapsedMinutes;
+}
+
+function formatStoryTime(elapsedMs) {
+  const totalMinutes = getStoryClockMinutes(elapsedMs);
   const hour24 = Math.floor(totalMinutes / 60) % 24;
   const minute = totalMinutes % 60;
   const period = hour24 < 12 ? "오전" : "오후";
