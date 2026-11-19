@@ -49,6 +49,7 @@ function createCssAssetUrl(configuredPath) {
  */
 function applyVisualAssets() {
   const backgroundAssets = [
+    ["--asset-title-background", ASSET_CONFIG.titleBackground],
     ["--asset-stage-result-waiting", ASSET_CONFIG.results?.stage?.waitingBackground],
     ["--asset-stage-result-revealed", ASSET_CONFIG.results?.stage?.revealedBackground],
     ["--asset-story-result-waiting", ASSET_CONFIG.results?.storyDay?.waitingBackground],

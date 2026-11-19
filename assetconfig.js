@@ -10,7 +10,11 @@
  * - 배경 음악 파일은 bgmconfig.js에서, 짧은 효과음 파일은 soundEffects에서 설정합니다.
  * - 배경 음악 파일은 bgmconfig.js에서, 짧은 효과음 파일은 soundEffects에서 설정합니다.
  */
+const FORUM_ARCHIVE_BACKGROUND = "assets/community/forum-archive.webp";
+
 const ASSET_CONFIG = Object.freeze({
+  titleBackground: "assets/community/forum-cover.webp",
+
   // 실제 게임 진행 중 무작위로 재생할 짧은 공포 효과음입니다.
   soundEffects: Object.freeze({
     ambientHorror: Object.freeze([
@@ -28,20 +32,20 @@ const ASSET_CONFIG = Object.freeze({
   results: Object.freeze({
     // 무한 모드에서 한 스테이지의 성공 또는 실패를 정산하는 화면입니다.
     stage: Object.freeze({
-      waitingBackground: "",
-      revealedBackground: ""
+      waitingBackground: FORUM_ARCHIVE_BACKGROUND,
+      revealedBackground: FORUM_ARCHIVE_BACKGROUND
     }),
 
     // 스토리 모드에서 매일 오전 2시에 판정을 공개하는 화면입니다.
     storyDay: Object.freeze({
-      waitingBackground: "assets/beojji_horror_stage_overlay.gif",
-      revealedBackground: "assets/stage_result_horror_suspense.gif"
+      waitingBackground: FORUM_ARCHIVE_BACKGROUND,
+      revealedBackground: FORUM_ARCHIVE_BACKGROUND
     }),
 
     // 체력 소진 또는 스토리 7일 생존 뒤 표시되는 최종 결과 화면입니다.
     final: Object.freeze({
-      waitingBackground: "assets\\beojji_horror_stage_overlay.gif",
-      revealedBackground: "assets/stage_result_horror_suspense.gif"
+      waitingBackground: FORUM_ARCHIVE_BACKGROUND,
+      revealedBackground: FORUM_ARCHIVE_BACKGROUND
     })
   })
 });

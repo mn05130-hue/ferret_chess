@@ -35,14 +35,13 @@
       버튼 클릭이나 입력창의 Enter 제출이 사용자 제스처가 되어 다음 타이틀 화면의 음악을 재생합니다.
     -->
     <section class="entry-screen" id="entry-screen" aria-labelledby="entry-title">
-      <!-- 이미지 경로는 assetconfig.js의 entry.logo에서 주입합니다. -->
-      <p class="board-wordmark">심야 게시판</p>
+      <p class="board-wordmark"><span class="forum-mark" aria-hidden="true"></span>심야 게시판</p>
       <form class="entry-panel" id="entry-form" novalidate>
         <p class="entry-alert"><span aria-hidden="true">●</span> 야간 운영자 접속</p>
         <h1 class="entry-title" id="entry-title">운영자 닉네임을 입력하세요.</h1>
         <p class="entry-copy">새벽 두 시까지 자유게시판을 관리하세요. 이상한 글이 올라오고 있습니다.</p>
         <label class="player-nickname-field entry-nickname-field" for="player-nickname">
-          <span>PLAYER NAME</span>
+          <span>운영자 닉네임</span>
           <input id="player-nickname" type="text" maxlength="16" autocomplete="nickname" enterkeyhint="go" placeholder="닉네임을 입력하세요" aria-describedby="nickname-error" required>
         </label>
         <p class="nickname-error" id="nickname-error" role="status" aria-live="polite" hidden>타이틀로 이동하려면 닉네임을 입력하세요.</p>
@@ -58,9 +57,9 @@
 
     <!-- 게임 시작 전 표시되는 타이틀, 닉네임 입력, 모드 선택 영역입니다. -->
     <section class="title-screen" id="title-screen" aria-labelledby="game-title" aria-hidden="true" hidden>
-      <div class="title-brand" aria-hidden="false">
-        <span class="title-brand-dot"></span>
-        BUZZI · MIDNIGHT ROOM
+      <div class="title-brand">
+        <span class="forum-mark" aria-hidden="true"></span>
+        운영자 센터
       </div>
       <!-- 자동 재생 제한을 고려해 사용자가 직접 타이틀 음악을 켜고 음량을 정합니다. -->
       <div class="title-audio-controls" aria-label="타이틀 배경음악 설정">
@@ -143,7 +142,7 @@
         <button class="reconnect-button" id="reconnect-button" type="button">복구</button>
       </aside>
       <div class="stream-topline">
-        <h2 class="board-heading">자유게시판</h2>
+        <h2 class="board-heading"><span class="forum-mark" aria-hidden="true"></span>자유게시판</h2>
         <div class="stream-topline-actions">
           <div class="game-audio-controls" aria-label="게임 배경음악 설정">
             <button class="game-music-button" id="game-music-button" type="button" aria-pressed="false" aria-label="게임 배경음악 정지">
@@ -196,7 +195,11 @@
     </section>
 
     <!-- 게시글은 동적으로 추가되며 aria-live로 새 글을 알립니다. -->
-    <section class="message-region" aria-label="게시글 목록">
+    <section class="message-region" aria-labelledby="board-list-heading">
+      <div class="forum-list-heading">
+        <h3 id="board-list-heading">전체 글</h3>
+        <span>등록순</span>
+      </div>
       <aside class="tutorial-objective" id="tutorial-objective" aria-live="polite" hidden>
         <span id="tutorial-objective-progress">실습 1/4</span>
         <strong id="tutorial-objective-copy"></strong>
@@ -262,12 +265,10 @@
     <!-- 스토리 모드에서 오전 2시에만 판정을 공개하는 공포 전환 및 결과 모달입니다. -->
     <div class="story-night-overlay" id="story-night-overlay" aria-hidden="true">
       <div class="story-night-omen" aria-hidden="true">
-        <span class="story-omen-head">
-          <i class="story-omen-eye eye-left"></i>
-          <i class="story-omen-eye eye-right"></i>
-          <i class="story-omen-mouth"></i>
+        <span class="story-archive-mark">
+          <i></i><i></i><i></i>
         </span>
-        <span class="story-omen-copy">DON'T LOOK AWAY</span>
+        <span class="story-omen-copy">검토 기록 불러오는 중</span>
       </div>
       <section class="story-night-card" role="dialog" aria-modal="true" aria-labelledby="story-result-title">
         <p class="story-night-kicker" id="story-result-kicker">DAY 01 · MODERATION LOG</p>

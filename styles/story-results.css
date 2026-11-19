@@ -74,53 +74,33 @@
   animation: story-omen-emerge 2.2s .35s ease-in-out both;
 }
 
-.story-omen-head {
-  position: relative;
-  width: 138px;
-  height: 172px;
-  display: block;
-  border-radius: 47% 53% 42% 46%;
-  background:
-    radial-gradient(circle at 50% 35%, #000000, #000000 57%, #000 74%);
-  box-shadow: 0 0 55px #000, inset 0 -18px 35px #000;
-  clip-path: polygon(13% 2%, 85% 0, 100% 63%, 78% 100%, 52% 89%, 24% 100%, 0 60%);
+.story-archive-mark {
+  display: grid;
+  gap: 9px;
+  width: 126px;
+  padding: 18px 14px;
+  color: #a8d6c4;
+  background: #0c1915;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  box-shadow: 0 0 28px #64cba03d;
 }
 
-.story-omen-eye,
-.story-omen-mouth {
-  position: absolute;
-  display: block;
+.story-archive-mark i {
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  gap: 7px;
+  align-items: center;
 }
 
-.story-omen-eye {
-  top: 61px;
-  width: 28px;
-  height: 7px;
-  border-radius: 50%;
-  background: #000;
-  box-shadow: 0 0 13px #000;
+.story-archive-mark i::before, .story-archive-mark i::after {
+  content: "";
+  border: 1px solid currentColor;
 }
 
-.story-omen-eye.eye-left {
-  left: 25px;
-  rotate: 13deg;
-}
-
-.story-omen-eye.eye-right {
-  right: 24px;
-  rotate: -13deg;
-}
-
-.story-omen-mouth {
-  bottom: 34px;
-  left: 50%;
-  width: 48px;
-  height: 38px;
-  translate: -50% 0;
-  border-radius: 8px 8px 50% 50%;
-  background: #000;
-  box-shadow: inset 0 -3px #000;
-}
+.story-archive-mark i::before { height: 10px; }
+.story-archive-mark i::after { border-width: 1px 0 0; }
+.story-archive-mark i:nth-child(2)::after { width: 70%; }
 
 .story-omen-copy {
   position: absolute;
@@ -133,13 +113,9 @@
   white-space: nowrap;
 }
 
-.story-night-overlay.is-wrong .story-omen-eye {
-  background: #000;
-  box-shadow: 0 0 18px #000, 0 0 35px #000;
-}
-
-.story-night-overlay.is-wrong .story-omen-mouth {
-  box-shadow: inset 0 -5px #000, 0 0 24px #000;
+.story-night-overlay.is-wrong.scare-hit .story-archive-mark {
+  color: #ffa293;
+  box-shadow: 0 0 36px #e9493c77;
 }
 
 .story-night-overlay.is-wrong.scare-hit .story-night-omen {

@@ -281,8 +281,14 @@ function getPostTitle(body) {
   return firstSentence.length > 34 ? firstSentence.slice(0, 33) + "…" : firstSentence;
 }
 
-function getPostMetadata(post) {
-  return `${post.author.name} · ${post.time}${post.kept ? " · 유지 표시" : ""}`;
+function updatePostRowStatus(row, post) {
+  row.classList.toggle("suspected-message", post.suspected);
+  const status = row.querySelector(".post-status");
+  const labels = [];
+  if (post.suspected) labels.push("의심");
+  if (post.kept) labels.push("유지");
+  status.textContent = labels.join(" · ");
+  status.hidden = labels.length === 0;
 }
 
 function createPostRow(post) {
@@ -291,6 +297,12 @@ function createPostRow(post) {
   row.classList.toggle("corrupted-message", post.ciphered || (apparitionActive && apparitionExpired));
   row.dataset.postId = post.id;
 
+  const avatar = document.createElement("span");
+  avatar.className = "post-avatar";
+  avatar.setAttribute("aria-hidden", "true");
+  avatar.textContent = Array.from(post.author.name)[0] || "·";
+  avatar.style.color = post.author.color;
+
   const title = document.createElement("button");
   title.className = "post-title";
   title.type = "button";
@@ -298,9 +310,12 @@ function createPostRow(post) {
 
   const metadata = document.createElement("span");
   metadata.className = "post-metadata";
-  metadata.textContent = getPostMetadata(post);
+  metadata.textContent = `${post.author.name} · ${post.time}`;
+  const status = document.createElement("span");
+  status.className = "post-status";
 
-  row.append(title, metadata);
+  row.append(avatar, title, metadata, status);
+  updatePostRowStatus(row, post);
   return row;
 }
 

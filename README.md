@@ -29,7 +29,7 @@
 - `app-chat.js`, `app-game.js`: 게시글 등록, 화면 표시, 의심 표시 및 글 삭제
 - `app-survival.js`, `app-results.js`: 순찰 시계, 삭제 제한시간, 동기화 오류, 결과 판정
 - `game-rules.js`: 난이도와 점수 계산
-- `assetconfig.js`, `bgmconfig.js`: 결과 화면 이미지와 소리 설정
+- `assetconfig.js`, `bgmconfig.js`: 타이틀·결과 화면 이미지와 소리 설정. 게시판 테마 배경은 `assets/community/`에 있습니다.
 
 `?seed=2026`으로 게시글 생성을 재현할 수 있습니다. 스토리 모드에서 `?seed=2026&storyDayMs=5000`을 사용하면 하루를 5초로 줄일 수 있습니다. 게임 중 브라우저 콘솔의 `window.horrorChatGame`으로 상태를 살펴볼 수 있습니다.
 
