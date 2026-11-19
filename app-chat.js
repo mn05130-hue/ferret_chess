@@ -281,6 +281,10 @@ function getPostTitle(body) {
   return firstSentence.length > 34 ? firstSentence.slice(0, 33) + "…" : firstSentence;
 }
 
+function getPostMetadata(post) {
+  return `${post.author.name} · ${post.time}${post.kept ? " · 유지 표시" : ""}`;
+}
+
 function createPostRow(post) {
   const row = document.createElement("li");
   row.className = "message board-post";
@@ -294,7 +298,7 @@ function createPostRow(post) {
 
   const metadata = document.createElement("span");
   metadata.className = "post-metadata";
-  metadata.textContent = `${post.author.name} · ${post.time}`;
+  metadata.textContent = getPostMetadata(post);
 
   row.append(title, metadata);
   return row;
@@ -415,6 +419,7 @@ function handleEngineMessage(message) {
     anomalyType: presentation.type?.toUpperCase(),
     ciphered: presentation.usesCipherText,
     suspected: false,
+    kept: false,
     deleted: false
   };
   boardPosts.set(post.id, post);

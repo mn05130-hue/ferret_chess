@@ -220,6 +220,7 @@
         <ol class="viewer-history" id="viewer-history"></ol>
         <div class="viewer-actions">
           <button class="suspect-button" id="suspect-button" type="button" aria-pressed="false">의심 표시</button>
+          <button class="suspect-button" id="keep-post" type="button" aria-pressed="false" hidden>유지</button>
           <button class="kick-button" id="kick-button" type="button">글 삭제</button>
         </div>
       </section>
@@ -280,7 +281,30 @@
           <div><dt>동기화 오류</dt><dd id="story-apparition-missed">0</dd></div>
           <div><dt>남은 체력</dt><dd id="story-health">3</dd></div>
         </dl>
-        <ul class="story-result-details" id="story-result-details" aria-label="오늘의 판정 상세"></ul>
+        <section class="story-post-review" id="story-post-review" aria-labelledby="story-review-title">
+          <div class="story-review-header">
+            <h3 id="story-review-title" tabindex="-1">게시글 복기</h3>
+            <button id="story-review-filter" type="button" aria-pressed="false">오답만 보기</button>
+          </div>
+          <p id="story-review-empty" hidden></p>
+          <article id="story-review-post" aria-live="polite" aria-atomic="true">
+            <p class="story-review-meta" id="story-review-progress"></p>
+            <h4 id="story-review-post-title"></h4>
+            <p class="story-review-meta" id="story-review-author"></p>
+            <p class="story-review-body" id="story-review-body"></p>
+            <dl class="story-review-decisions">
+              <div><dt>내 처리</dt><dd id="story-review-action"></dd></div>
+              <div><dt>정답</dt><dd id="story-review-answer"></dd></div>
+            </dl>
+            <p class="story-review-verdict" id="story-review-verdict"></p>
+            <p id="story-review-reason"></p>
+            <p class="story-review-meta" id="story-review-sync" hidden>이 글은 동기화 오류로 깨져 보인 적이 있습니다. 위 본문은 원문입니다.</p>
+          </article>
+          <div class="story-review-nav">
+            <button id="story-review-prev" type="button">이전 글</button>
+            <button id="story-review-next" type="button">다음 글</button>
+          </div>
+        </section>
         <button class="story-continue-button" id="story-continue" type="button">2일차 시작</button>
       </section>
     </div>

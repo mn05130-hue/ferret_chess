@@ -137,6 +137,8 @@ function openPostPanel(postId, trigger) {
   suspectButton.setAttribute("aria-pressed", String(post.suspected));
   suspectButton.textContent = post.suspected ? "의심 해제" : "의심 표시";
   viewerBackdrop.querySelector(".viewer-panel").scrollTop = 0;
+  keepPostButton.hidden = gameMode !== GAME_MODES.STORY;
+  keepPostButton.setAttribute("aria-pressed", String(post.kept));
   panelClose.focus({ preventScroll: true });
 }
 
@@ -216,11 +218,23 @@ function endGame() {
   beginStandardResultReveal(gameOverlay, resultCard, [gameRetry, gameRestart], gameRestart);
 }
 
+function toggleKeepSelectedPost() {
+  if (gameMode !== GAME_MODES.STORY || gameOver || stageReviewOpen || tutorialOpen) return;
+  const post = boardPosts.get(selectedPostId);
+  if (!post || post.deleted) return;
+  post.kept = !post.kept;
+  const row = messageList.querySelector(`[data-post-id="${post.id}"]`);
+  if (row) row.querySelector(".post-metadata").textContent = getPostMetadata(post);
+  keepPostButton.setAttribute("aria-pressed", String(post.kept));
+  if (post.kept) closeViewerPanel();
+}
+
 function deleteSelectedPost() {
   if (gameOver || stageReviewOpen || tutorialOpen) return;
   const post = boardPosts.get(selectedPostId);
   if (!post || post.deleted) return;
   post.deleted = true;
+  post.kept = false;
   messageList.querySelector(`[data-post-id="${post.id}"]`)?.remove();
   closeViewerPanel();
 

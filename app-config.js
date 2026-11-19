@@ -205,6 +205,7 @@ const postHistoryEmpty = document.querySelector("#post-history-empty");
 const viewerHistory = document.querySelector("#viewer-history");
 const panelClose = document.querySelector("#panel-close");
 const suspectButton = document.querySelector("#suspect-button");
+const keepPostButton = document.querySelector("#keep-post");
 const kickButton = document.querySelector("#kick-button");
 
 // 최초 스토리 진입과 도움말 버튼에서 공유하는 단계형 튜토리얼입니다.
@@ -248,6 +249,7 @@ const stageContinue = document.querySelector("#stage-continue");
 // 스토리 모드 오전 2시 판정의 공포 연출, 요약, 상세 결과입니다.
 const storyNightOverlay = document.querySelector("#story-night-overlay");
 const storyNightCard = document.querySelector(".story-night-card");
+const storyReviewBackground = document.querySelectorAll("#game-screen > .browser-bar, #game-screen > .stream-stage, #game-screen > .game-hud, #game-screen > .message-region");
 const storyResultKicker = document.querySelector("#story-result-kicker");
 const storyResultTitle = document.querySelector("#story-result-title");
 const storyResultCopy = document.querySelector("#story-result-copy");
@@ -256,7 +258,21 @@ const storyMissed = document.querySelector("#story-missed");
 const storyWrong = document.querySelector("#story-wrong");
 const storyApparitionMissed = document.querySelector("#story-apparition-missed");
 const storyHealth = document.querySelector("#story-health");
-const storyResultDetails = document.querySelector("#story-result-details");
+const storyReviewTitle = document.querySelector("#story-review-title");
+const storyReviewFilter = document.querySelector("#story-review-filter");
+const storyReviewPost = document.querySelector("#story-review-post");
+const storyReviewEmpty = document.querySelector("#story-review-empty");
+const storyReviewProgress = document.querySelector("#story-review-progress");
+const storyReviewPostTitle = document.querySelector("#story-review-post-title");
+const storyReviewAuthor = document.querySelector("#story-review-author");
+const storyReviewBody = document.querySelector("#story-review-body");
+const storyReviewAction = document.querySelector("#story-review-action");
+const storyReviewAnswer = document.querySelector("#story-review-answer");
+const storyReviewVerdict = document.querySelector("#story-review-verdict");
+const storyReviewReason = document.querySelector("#story-review-reason");
+const storyReviewSync = document.querySelector("#story-review-sync");
+const storyReviewPrev = document.querySelector("#story-review-prev");
+const storyReviewNext = document.querySelector("#story-review-next");
 const storyContinue = document.querySelector("#story-continue");
 
 // 일시 안내, 방송 상태, 무한 모드 제한시간, 연결 괴이 위젯입니다.

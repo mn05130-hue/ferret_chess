@@ -136,6 +136,10 @@
   gap: 8px;
 }
 
+.chat-app[data-game-mode="story"] .viewer-actions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .kick-button,
 .suspect-button,
 .restart-button {

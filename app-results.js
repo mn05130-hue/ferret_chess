@@ -114,7 +114,7 @@ const ANOMALY_EVIDENCE_EXPLANATIONS = Object.freeze({
   PROPHECY: "아직 일어나지 않은 일을 알고 있었습니다.",
   OBSERVER: "게시판에서 공개하지 않은 공간 정보를 언급했습니다.",
   MEMORY: "이전 게시판 기록과 맞지 않는 기억을 말했습니다.",
-  MIMIC: "다른 작성자의 말투나 글를 흉내 냈습니다.",
+  MIMIC: "다른 작성자의 말투나 글을 흉내 냈습니다.",
   INTRUDER: "운영진 알림으로 위장했습니다.",
   GLITCH: "문자와 신호가 비정상적으로 붕괴했습니다."
 });
@@ -134,24 +134,75 @@ function getPostEvidenceSummary(post) {
     ? `${result} (동기화 오류로 깨진 화면은 판정에서 제외)` : result;
 }
 
-/**
- * 스토리 하루 결과의 세부 판정 한 줄을 상태 클래스와 함께 추가합니다.
- * @param {string} text 이상 차단·놓침·오판 등의 상세 문장
- * @param {string} className correct 또는 danger 같은 표시 클래스
- * @param {string} evidence 판정을 뒷받침하는 발화·유형 설명
- */
-function appendStoryResultDetail(text, className = "", evidence = "") {
-  const item = document.createElement("li");
-  item.className = className;
-  const label = document.createElement("span");
-  label.textContent = text;
-  item.append(label);
-  if (evidence) {
-    const detail = document.createElement("small");
-    detail.textContent = evidence;
-    item.append(detail);
+let storyReviewPosts = [];
+let storyReviewIndex = 0;
+let storyReviewErrorsOnly = false;
+
+function isStoryPostMistake(post) {
+  return post.anomalous !== post.deleted;
+}
+
+function prepareStoryReview(posts) {
+  storyReviewPosts = [
+    ...posts.filter(isStoryPostMistake),
+    ...posts.filter(post => !isStoryPostMistake(post))
+  ];
+  storyReviewIndex = 0;
+  storyReviewErrorsOnly = false;
+  renderStoryReview();
+}
+
+function getStoryReviewPosts() {
+  return storyReviewErrorsOnly ? storyReviewPosts.filter(isStoryPostMistake) : storyReviewPosts;
+}
+
+function renderStoryReview() {
+  const posts = getStoryReviewPosts();
+  const post = posts[storyReviewIndex];
+  storyReviewFilter.setAttribute("aria-pressed", String(storyReviewErrorsOnly));
+  storyReviewFilter.hidden = storyReviewPosts.length === 0;
+  storyReviewEmpty.hidden = Boolean(post);
+  storyReviewPost.hidden = !post;
+  storyReviewPrev.disabled = !post || storyReviewIndex === 0;
+  storyReviewNext.disabled = !post || storyReviewIndex === posts.length - 1;
+  if (!post) {
+    storyReviewEmpty.textContent = storyReviewErrorsOnly ? "오늘은 오답이 없습니다." : "오늘 올라온 글이 없습니다.";
+    return;
   }
-  storyResultDetails.append(item);
+
+  const mistake = isStoryPostMistake(post);
+  const type = post.anomalyType;
+  storyReviewProgress.textContent = `${storyReviewErrorsOnly ? "오답" : "전체 · 오답 먼저"} ${storyReviewIndex + 1} / ${posts.length}`;
+  storyReviewPostTitle.textContent = getPostTitle(post.originalBody);
+  storyReviewAuthor.textContent = `${post.author.name} · ${post.time}`;
+  storyReviewBody.textContent = post.originalBody;
+  storyReviewAction.textContent = post.deleted ? "삭제" : post.kept ? "유지" : "처리 안 함";
+  storyReviewAnswer.textContent = post.anomalous ? "삭제" : "유지";
+  storyReviewVerdict.textContent = mistake
+    ? (post.anomalous ? "놓친 이상 글" : "정상 글 오삭제")
+    : (post.anomalous ? "이상 글 삭제 성공" : "정상 글 유지");
+  storyReviewVerdict.classList.toggle("is-mistake", mistake);
+  storyReviewReason.textContent = post.anomalous
+    ? `${FERRET_CHAT_RULES.ANOMALY_TYPE_LABELS[type] || "이상 게시글"} · ${ANOMALY_EVIDENCE_EXPLANATIONS[type] || "비정상적인 내용이 확인됐습니다."}`
+    : "원문에 삭제할 만한 이상 징후가 없었습니다.";
+  storyReviewSync.hidden = !post.corruptedDuringPlay;
+}
+
+function toggleStoryReviewFilter() {
+  storyReviewErrorsOnly = !storyReviewErrorsOnly;
+  storyReviewIndex = 0;
+  renderStoryReview();
+}
+
+function moveStoryReview(step) {
+  const index = storyReviewIndex + step;
+  if (index < 0 || index >= getStoryReviewPosts().length) return;
+  storyReviewIndex = index;
+  renderStoryReview();
+  if (document.activeElement?.disabled) {
+    const availableButton = step > 0 ? storyReviewPrev : storyReviewNext;
+    availableButton.focus({ preventScroll: true });
+  }
 }
 
 /**
@@ -166,6 +217,7 @@ function resetStoryNightReveal() {
   storyNightOverlay.setAttribute("aria-hidden", "true");
   storyNightCard.setAttribute("aria-hidden", "true");
   storyContinue.disabled = true;
+  storyReviewBackground.forEach(element => { element.inert = false; });
 }
 
 /**
@@ -174,16 +226,18 @@ function resetStoryNightReveal() {
  */
 function beginStoryNightReveal(hasWrongAnswer) {
   resetStoryNightReveal();
+  storyReviewBackground.forEach(element => { element.inert = true; });
   storyNightOverlay.classList.toggle("is-wrong", hasWrongAnswer);
   void storyNightOverlay.offsetWidth;
   storyNightOverlay.classList.add("open");
   storyNightOverlay.setAttribute("aria-hidden", "false");
 
   const revealResults = () => {
+    storyNightCard.scrollTop = 0;
     storyNightOverlay.classList.add("results-visible");
     storyNightCard.setAttribute("aria-hidden", "false");
     storyContinue.disabled = false;
-    storyContinue.focus();
+    storyReviewTitle.focus();
   };
 
   const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -193,7 +247,8 @@ function beginStoryNightReveal(hasWrongAnswer) {
       playStaticScare();
     }, 1800);
   }
-  storyRevealTimer = window.setTimeout(revealResults, RESULT_REVEAL_DELAY_MS);
+  if (reducedMotion) revealResults();
+  else storyRevealTimer = window.setTimeout(revealResults, RESULT_REVEAL_DELAY_MS);
 }
 
 /**
@@ -201,6 +256,7 @@ function beginStoryNightReveal(hasWrongAnswer) {
  */
 function finishStoryDay() {
   if (gameMode !== GAME_MODES.STORY || stageReviewOpen || gameOver) return;
+  const endedEarly = health === 0;
   stageReviewOpen = true;
   stopGuidedTutorialPractice();
   clearAnomalyChatEffect();
@@ -231,14 +287,16 @@ function finishStoryDay() {
   remainingAnomalies = 0;
   health = outcome.health;
   score = outcome.score;
-  if (damage > 0) {
+  if (damage > 0 && !endedEarly) {
     lastDamageReason = missedToday.length > 0 ? "missed" : "wrong-kick";
   }
   updateHud();
 
   storyResultKicker.textContent = `DAY ${String(currentStage).padStart(2, "0")} · MODERATION LOG`;
   storyResultTitle.textContent = `${currentStage}일차 운영 결과`;
-  if (damage === 0 && dayMissedApparitions > 0) {
+  if (endedEarly) {
+    storyResultCopy.textContent = "정상 상태에서 복구를 눌러 순찰이 일찍 끝났습니다. 지금까지 올라온 글을 한 건씩 확인할 수 있습니다.";
+  } else if (damage === 0 && dayMissedApparitions > 0) {
     storyResultCopy.textContent = "동기화 오류가 있었지만 게시글 삭제로 잃은 체력은 없습니다.";
   } else if (damage === 0) {
     storyResultCopy.textContent = "오늘의 판단은 정확했습니다. 체력을 잃지 않고 순찰을 마쳤습니다.";
@@ -254,42 +312,24 @@ function finishStoryDay() {
   storyWrong.textContent = String(wrongToday.length);
   storyApparitionMissed.textContent = String(dayMissedApparitions);
   storyHealth.textContent = String(health);
-  storyResultDetails.replaceChildren();
-  caughtToday.forEach(post => {
-    recordDiscoveredAnomaly(post.author.anomalyPermission);
-    appendStoryResultDetail(
-      `이상 글 삭제 · ${post.author.name}`,
-      "correct",
-      getPostEvidenceSummary(post)
-    );
-  });
-  missedToday.forEach(post => appendStoryResultDetail(
-    `놓친 이상 글 · ${post.author.name}`,
-    "danger",
-    getPostEvidenceSummary(post)
-  ));
-  wrongToday.forEach(post => appendStoryResultDetail(
-    `정상 글 오삭제 · ${post.author.name}`,
-    "danger",
-    getPostEvidenceSummary(post)
-  ));
-  if (dayBanishedApparitions) appendStoryResultDetail(`게시판 복구 성공 · ${dayBanishedApparitions}회`, "correct");
-  if (dayMissedApparitions) appendStoryResultDetail(`동기화 끊김 · 화면 오염 ${dayMissedApparitions}회`, "danger");
-  if (!storyResultDetails.childElementCount) appendStoryResultDetail("오늘 기록에는 판정할 글이 없습니다.");
+  caughtToday.forEach(post => recordDiscoveredAnomaly(post.author.anomalyPermission));
+  prepareStoryReview(posts);
 
   if (health === 0) storyContinue.textContent = "최종 결과 보기";
   else if (currentStage === STORY_TOTAL_DAYS) storyContinue.textContent = "7일 생존 결과 보기";
   else storyContinue.textContent = `${currentStage + 1}일차 시작`;
 
   prepareResultMusic(damage > 0 ? "storyWrong" : "storyCorrect");
-  beginStoryNightReveal(damage > 0);
+  beginStoryNightReveal(damage > 0 || endedEarly);
 }
 
 /**
  * 하루 결과 뒤 게임 종료, 최종 승리, 다음 날 시작 중 알맞은 흐름으로 이동합니다.
  */
 function continueFromStoryResult() {
+  if (!stageReviewOpen || storyContinue.disabled) return;
   resetStoryNightReveal();
+  storyReviewPosts = [];
 
   if (health === 0) {
     stageReviewOpen = false;

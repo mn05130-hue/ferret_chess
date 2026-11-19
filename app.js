@@ -25,6 +25,7 @@ messageList.addEventListener("click", event => {
 newMessageButton.addEventListener("click", () => scrollToLatest("smooth"));
 panelClose.addEventListener("click", closeViewerPanel);
 suspectButton.addEventListener("click", toggleSelectedPostSuspect);
+keepPostButton.addEventListener("click", toggleKeepSelectedPost);
 kickButton.addEventListener("click", deleteSelectedPost);
 reconnectButton.addEventListener("click", reconnectStreamConnection);
 titleMusicButton.addEventListener("click", () => {
@@ -66,6 +67,9 @@ gameRetry.addEventListener("click", startGame);
 gameRestart.addEventListener("click", () => showTitle());
 stageContinue.addEventListener("click", continueFromStageResult);
 storyContinue.addEventListener("click", continueFromStoryResult);
+storyReviewFilter.addEventListener("click", toggleStoryReviewFilter);
+storyReviewPrev.addEventListener("click", () => moveStoryReview(-1));
+storyReviewNext.addEventListener("click", () => moveStoryReview(1));
 
 // 모달 바깥 영역을 누르면 시청자 패널만 닫고 게임은 계속 진행합니다.
 viewerBackdrop.addEventListener("click", event => {

@@ -295,7 +295,7 @@ function reconnectStreamConnection() {
     connectionStatus.textContent = "좋음 · 오판";
 
     if (health === 0) {
-      if (gameMode === GAME_MODES.STORY) endGame();
+      if (gameMode === GAME_MODES.STORY) finishStoryDay();
       else finishStage({
         success: false,
         title: "불필요한 복구",
