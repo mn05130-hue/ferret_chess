@@ -1,23 +1,24 @@
 "use strict";
 
 /*
- * 플레이 중 시간 제한을 담당합니다.
- * 스토리 모드에서는 실제 경과 시간을 오후 7시~오전 2시로 환산하고, 무한 모드에서는
- * 이상 채팅별 대응 시간을 셉니다. 별도의 방송 화면 괴이는 작은 와이파이 위젯으로만
- * 알리며, 좋음→보통→약함→끊김 네 단계와 실제 출현/만료 여부로 성공·오판을 판정합니다.
+ * 두 모드에 공통 라운드 시계를 사용하고, 스토리에서는 게임 내 시각도 갱신합니다.
+ * 연결 괴이는 별도 타이머로 좋음→보통→약함→끊김 상태를 갱신합니다.
  */
-/**
- * 스토리 시계 interval을 중지하고 마지막 tick 기준값을 제거합니다.
- */
-function stopStoryClock() {
-  window.clearInterval(storyClockInterval);
-  storyClockInterval = undefined;
+function stopRoundClock() {
+  window.clearInterval(roundClockInterval);
+  roundClockInterval = undefined;
+}
+
+function getRoundDurationMs() {
+  return gameMode === GAME_MODES.STORY ? storyDayDurationMs : ROUND_DURATION_MS;
+}
+
+function getRoundRemainingMs() {
+  return Math.max(0, getRoundDurationMs() - roundElapsedMs);
 }
 
 /**
- * 실제 경과 시간을 오후 7시부터 오전 2시까지 30분 단위의 게임 내 시각으로 변환합니다.
- * @param {number} elapsedMs 이번 하루가 시작된 뒤 흐른 실제 밀리초
- * @returns {string} 오전/오후와 시:분으로 구성한 게임 시각
+ * 라운드의 경과 시간을 오후 7시부터 오전 2시까지 30분 단위로 환산합니다.
  */
 function getStoryClockMinutes(elapsedMs) {
   const progress = Math.min(1, Math.max(0, elapsedMs / storyDayDurationMs));
@@ -38,122 +39,58 @@ function formatStoryTime(elapsedMs) {
   return `${period} ${hour12}:${String(minute).padStart(2, "0")}`;
 }
 
-/**
- * 계산된 게임 시각이 이전 30분 구간과 달라졌을 때만 HUD와 접근성 라벨을 갱신합니다.
- */
-function renderStoryClock() {
-  const nextTime = formatStoryTime(storyElapsedMs);
-  if (storyClock.textContent === nextTime) return;
-  storyClock.textContent = nextTime;
-  storyClock.setAttribute("aria-label", `현재 순찰 시간 ${nextTime}`);
+function renderRoundClock() {
+  const seconds = Math.ceil(getRoundRemainingMs() / 1000);
+  const minutes = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const remainder = String(seconds % 60).padStart(2, "0");
+  const display = `${minutes}:${remainder}`;
+  if (roundSeconds.textContent !== display) roundSeconds.textContent = display;
+  roundTimer.classList.toggle("is-low", seconds <= 10);
+
+  if (gameMode !== GAME_MODES.STORY) return;
+  const storyTime = formatStoryTime(roundElapsedMs);
+  if (storyClock.textContent === storyTime) return;
+  storyClock.textContent = storyTime;
+  storyClock.setAttribute("aria-label", `현재 순찰 시간 ${storyTime}`);
 }
 
-/**
- * 프레임 사이 실제 경과량을 누적하고 하루 길이에 도달하면 하루 판정을 시작합니다.
- */
-function updateStoryClock() {
+function shouldPauseRound() {
+  return document.hidden || gameOver || stageReviewOpen || tutorialOpen;
+}
+
+/** 경과 시간을 반영하고 이번 라운드에서 입력을 처리할 수 있는지 반환합니다. */
+function updateRoundClock() {
   const now = performance.now();
-  if (document.hidden || gameOver || stageReviewOpen || tutorialOpen || gameMode !== GAME_MODES.STORY) {
-    storyLastTick = now;
-    return;
-  }
+  const elapsed = Math.max(0, now - roundLastTick);
+  roundLastTick = now;
+  if (shouldPauseRound()) return false;
 
-  storyElapsedMs += Math.max(0, now - storyLastTick);
-  storyLastTick = now;
-  if (storyElapsedMs >= storyDayDurationMs) {
-    storyElapsedMs = storyDayDurationMs;
-    renderStoryClock();
-    stopStoryClock();
-    finishStoryDay();
-    return;
+  const duration = getRoundDurationMs();
+  roundElapsedMs = Math.min(duration, roundElapsedMs + elapsed);
+  renderRoundClock();
+  if (roundElapsedMs === duration) {
+    if (gameMode === GAME_MODES.STORY) finishStoryDay();
+    else finishEndlessRound();
+    return false;
   }
-  renderStoryClock();
+  return true;
+}
+
+function startRoundClock() {
+  roundLastTick = performance.now();
+  renderRoundClock();
+  roundClockInterval = window.setInterval(updateRoundClock, 100);
 }
 
 /**
- * 스토리 하루의 시간을 초기화하고 일정 간격으로 시각 갱신을 예약합니다.
- */
-function startStoryClock() {
-  stopStoryClock();
-  storyElapsedMs = 0;
-  storyLastTick = performance.now();
-  renderStoryClock();
-  storyClockInterval = window.setInterval(updateStoryClock, 200);
-}
-
-/**
- * 문서 표시 여부와 모달 상태를 기준으로 채팅 엔진과 스토리 시계의 진행을 맞춥니다.
+ * 문서 표시 여부와 도움말 상태를 기준으로 엔진과 타이머의 진행을 맞춥니다.
  */
 function syncEnginePause() {
-  chatEngine?.setPaused(document.hidden || gameOver || stageReviewOpen || tutorialOpen);
+  chatEngine?.setPaused(shouldPauseRound());
   syncAmbientHorrorSfx();
   const now = performance.now();
-  storyLastTick = now;
-  threatLastTick = now;
+  roundLastTick = now;
   apparitionLastTick = now;
-}
-
-/**
- * 무한 모드 제한시간 interval과 대상 시청자를 해제하고 신호 문구를 복원합니다.
- */
-function clearThreatCountdown(restoreSignal = true) {
-  window.clearInterval(threatInterval);
-  threatInterval = undefined;
-  pendingThreatPostId = null;
-  threatRemainingMs = 0;
-  threatTimer.hidden = true;
-  postThreat.hidden = true;
-  if (restoreSignal) updateStreamState(chatApp.dataset.directorState || "AMBIENT");
-}
-
-/**
- * 실제 경과 시간을 제한시간에서 차감하고 0이 되면 이상 신호 침투를 처리합니다.
- */
-function updateThreatCountdown() {
-  const now = performance.now();
-  if (document.hidden || gameOver || stageReviewOpen || tutorialOpen) {
-    threatLastTick = now;
-    return;
-  }
-
-  threatRemainingMs -= Math.max(0, now - threatLastTick);
-  threatLastTick = now;
-  renderThreatTime();
-  if (threatRemainingMs <= 0) expireThreat();
-}
-
-function renderThreatTime() {
-  const seconds = (Math.max(0, threatRemainingMs) / 1000).toFixed(1);
-  threatSeconds.textContent = seconds;
-  postThreatSeconds.textContent = `${seconds}초`;
-}
-
-/**
- * 스테이지 상승에 따라 감소하되 최소값 이하로 내려가지 않는 제한시간을 계산합니다.
- * @returns {number} 현재 스테이지에서 허용하는 대응 시간(밀리초)
- */
-function getStageGraceMs() {
-  return Math.max(
-    MIN_ANOMALY_GRACE_MS,
-    BASE_ANOMALY_GRACE_MS - (currentStage - 1) * STAGE_GRACE_STEP_MS
-  );
-}
-
-/**
- * 새 이상 시청자를 제한시간 대상으로 지정하고 HUD 타이머를 시작합니다.
- * @param {string} postId 제한시간 안에 삭제해야 하는 게시글 ID
- */
-function startThreatCountdown(postId) {
-  if (gameMode === GAME_MODES.STORY || pendingThreatPostId || gameOver || stageReviewOpen) return;
-  const graceMs = getStageGraceMs();
-  pendingThreatPostId = postId;
-  threatRemainingMs = graceMs;
-  threatLastTick = performance.now();
-  renderThreatTime();
-  postThreat.hidden = false;
-  threatTimer.hidden = false;
-  streamSignal.textContent = "게시글 삭제 제한 시간";
-  threatInterval = window.setInterval(updateThreatCountdown, 100);
 }
 
 /**
@@ -201,6 +138,12 @@ function clearStreamApparition() {
   window.clearTimeout(apparitionSpawnTimer);
   apparitionSpawnTimer = undefined;
   resetConnectionWidget();
+}
+
+function clearRoundTimers() {
+  stopRoundClock();
+  clearStreamApparition();
+  clearAnomalyChatEffect();
 }
 
 /**
@@ -284,7 +227,7 @@ function expireStreamApparition() {
  * 재연결 버튼은 실제 괴이 연결이면 복구하고, 정상 연결에서 누르면 오판으로 체력을 감소시킵니다.
  */
 function reconnectStreamConnection() {
-  if (gameOver || stageReviewOpen || tutorialOpen) return;
+  if (!updateRoundClock()) return;
   if (!apparitionActive) {
     const outcome = FERRET_CHAT_RULES.getFalseReconnectOutcome();
     health = Math.max(0, health + outcome.healthDelta);

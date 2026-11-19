@@ -2,10 +2,15 @@
 
 /*
  * 판정과 결과 화면 전환을 담당합니다.
- * 무한 모드는 이상 채팅을 처리하는 즉시 한 스테이지 결과를 공개하지만, 스토리 모드는
- * 오전 2시까지 선택을 숨긴 뒤 정상 오판·이상 미처리·연결 실패를 한꺼번에 집계합니다.
+ * 라운드가 끝나면 결과를 공개합니다. 스토리 모드는 오전 2시에 정상 글 오삭제와
+ * 이상 글 미처리를 한꺼번에 판정하고 연결 실패도 기록합니다.
  * 결과 카드는 검은 화면 대기 후 공개되며 오답일 때만 정전기 공포 연출을 추가합니다.
  */
+function setResultOverlayOpen(overlay, isOpen) {
+  overlay.classList.toggle("open", isOpen);
+  overlay.setAttribute("aria-hidden", String(!isOpen));
+}
+
 /**
  * 일반 스테이지/최종 결과의 예약 공개를 취소하고 대기 클래스를 제거합니다.
  */
@@ -57,11 +62,9 @@ function triggerScreenInterference(type) {
 function finishStage({ success, title, copy, evidence = "" }) {
   if (stageReviewOpen || gameOver) return;
   stageReviewOpen = true;
-  clearAnomalyChatEffect();
-  clearThreatCountdown(false);
-  clearStreamApparition();
+  clearRoundTimers();
   streamSignal.textContent = "스테이지 정산 중";
-  closeViewerPanel();
+  closePostPanel();
   syncEnginePause();
   prepareResultMusic(success ? "endlessClear" : "endlessFailed");
 
@@ -79,22 +82,29 @@ function finishStage({ success, title, copy, evidence = "" }) {
 
   const gameEnded = health === 0;
   stageContinue.textContent = gameEnded ? "최종 결과 보기" : "다음 스테이지";
-  stageOverlay.classList.add("open");
-  stageOverlay.setAttribute("aria-hidden", "false");
+  setResultOverlayOpen(stageOverlay, true);
   beginStandardResultReveal(stageOverlay, stageCard, [stageContinue], stageContinue);
 }
 
 /**
- * 제한시간이 끝난 이상 시청자를 침투 처리하고 체력·점수·화면 간섭을 적용합니다.
+ * 무한 모드는 라운드 종료까지 올라온 이상 게시글을 처리했는지 확인합니다.
  */
-function expireThreat() {
-  const post = boardPosts.get(pendingThreatPostId);
-  if (!post || post.deleted || stageReviewOpen || gameOver) {
-    clearThreatCountdown();
+function finishEndlessRound() {
+  if (stageReviewOpen || gameOver) return;
+  const post = [...boardPosts.values()].find(candidate => candidate.anomalous);
+  remainingAnomalies = 0;
+  if (!post || post.deleted) {
+    updateHud();
+    finishStage({
+      success: true,
+      title: post ? "이상 게시글 삭제" : "순찰 완료",
+      copy: post ? `${post.author.name}의 이상 게시글을 삭제하고 순찰을 마쳤습니다.`
+        : "이번 라운드에 이상 게시글이 올라오지 않았습니다.",
+      evidence: post ? getPostEvidenceSummary(post) : ""
+    });
     return;
   }
 
-  remainingAnomalies -= 1;
   missedAnomalies += 1;
   const outcome = FERRET_CHAT_RULES.getMissedAnomalyOutcome();
   health = Math.max(0, health + outcome.healthDelta);
@@ -105,7 +115,7 @@ function expireThreat() {
   finishStage({
     success: false,
     title: "이상 게시글 삭제 실패",
-    copy: `${post.author.name}의 이상 게시글을 제한시간 안에 삭제하지 못해 체력이 1 감소했습니다.`,
+    copy: `${post.author.name}의 이상 게시글을 라운드가 끝날 때까지 삭제하지 못해 체력이 1 감소했습니다.`,
     evidence: getPostEvidenceSummary(post)
   });
 }
@@ -250,13 +260,10 @@ function finishStoryDay() {
   const endedEarly = health === 0;
   stageReviewOpen = true;
   stopGuidedTutorialPractice();
-  clearAnomalyChatEffect();
-  stopStoryClock();
-  clearThreatCountdown(false);
-  clearStreamApparition();
+  clearRoundTimers();
   chatEngine?.stop();
   stopAmbientHorrorSfx();
-  closeViewerPanel();
+  closePostPanel();
   streamSignal.textContent = "순찰 종료 · 판정 중";
 
   const posts = [...boardPosts.values()];
@@ -315,6 +322,55 @@ function finishStoryDay() {
 }
 
 /**
+ * 모든 진행 시스템을 중단하고 누적 결과에 맞는 최종 게임오버/승리 카드를 구성합니다.
+ */
+function endGame() {
+  gameOver = true;
+  stageReviewOpen = false;
+  if (tutorialOpen) closeTutorial();
+  stopGuidedTutorialPractice();
+  clearStandardResultReveal();
+  clearRoundTimers();
+  chatEngine?.stop();
+  stopAmbientHorrorSfx();
+  closePostPanel();
+  setResultOverlayOpen(stageOverlay, false);
+  resetStoryNightReveal();
+
+  if (gameMode === GAME_MODES.ENDLESS) recordEndlessProgress(score, currentStage);
+
+  const storyMode = gameMode === GAME_MODES.STORY;
+  prepareResultMusic(storyMode && storyVictory ? "victory" : "gameOver");
+  if (storyMode && storyVictory) {
+    resultKicker.textContent = "SEVEN NIGHTS SURVIVED";
+    resultTitle.textContent = "새벽의 관리자가 되었습니다";
+    resultCopy.textContent = `일주일 동안 게시판을 지켰습니다. 이상 게시글 ${caughtAnomalies}건을 삭제했습니다.`;
+  } else {
+    resultKicker.textContent = storyMode
+      ? "BOARD LOST BEFORE DAWN"
+      : dailyChallengeActive ? "DAILY SIGNAL DESTROYED" : "SIGNAL DESTROYED";
+    if (lastDamageReason === "wrong-kick") {
+      resultTitle.textContent = "게시판 운영이 중단됐습니다";
+      resultCopy.textContent = `정상 게시글을 반복해서 삭제해 체력을 모두 잃었습니다. 총 오판 ${wrongKicks}회.`;
+    } else if (lastDamageReason === "false-reconnect") {
+      resultTitle.textContent = "스스로 신호를 끊었습니다";
+      resultCopy.textContent = `정상 상태에서 반복해서 복구를 눌러 체력을 모두 잃었습니다. 총 ${falseReconnects}회 오판했습니다.`;
+    } else if (lastDamageReason === "apparition") {
+      resultTitle.textContent = "끊어진 화면 너머에 남았습니다";
+      resultCopy.textContent = `게시판 동기화를 잘못 조작해 체력을 모두 잃었습니다. 총 ${missedApparitions}회 실패했습니다.`;
+    } else {
+      resultTitle.textContent = "이상 게시글을 놓쳤습니다";
+      resultCopy.textContent = `이상 게시글 ${missedAnomalies}건을 놓쳐 체력을 모두 잃었습니다.`;
+    }
+  }
+  finalScore.textContent = `${String(score).padStart(4, "0")}점`;
+  finalStage.textContent = String(currentStage);
+  finalProgressLabel.textContent = storyMode ? "생존 일차" : "도달 스테이지";
+  setResultOverlayOpen(gameOverlay, true);
+  beginStandardResultReveal(gameOverlay, resultCard, [gameRetry, gameRestart], gameRestart);
+}
+
+/**
  * 하루 결과 뒤 게임 종료, 최종 승리, 다음 날 시작 중 알맞은 흐름으로 이동합니다.
  */
 function continueFromStoryResult() {
@@ -345,8 +401,8 @@ function continueFromStoryResult() {
  * 무한 모드 결과 뒤 체력이 남으면 다음 스테이지를 시작하고 아니면 최종 결과를 엽니다.
  */
 function continueFromStageResult() {
-  stageOverlay.classList.remove("open");
-  stageOverlay.setAttribute("aria-hidden", "true");
+  if (!stageReviewOpen || stageContinue.disabled || !stageOverlay.classList.contains("open")) return;
+  setResultOverlayOpen(stageOverlay, false);
 
   if (health === 0) {
     stageReviewOpen = false;

@@ -84,10 +84,9 @@
 .game-screen .stream-stage .game-audio-controls {
   top: 0;
 }
-.game-screen .stream-stage .threat-timer {
+.game-screen .stream-stage .round-timer {
   top: 36px;
   left: 8px;
-  translate: none;
 }
 .game-screen .stream-stage .stream-lower-third {
   right: auto;

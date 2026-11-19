@@ -46,20 +46,17 @@ const VIEWER_STYLES = [
 /*
  * 게임 규칙 상수입니다. 시간 값의 단위는 이름이 MS로 끝나면 밀리초입니다.
  * - 이상 시청자 수와 모드별 난이도 단계는 game-rules.js에서 관리합니다.
- * - BASE/MIN_ANOMALY_GRACE_MS: 무한 모드 이상 채팅의 최초/최소 대응 시간
- * - STAGE_GRACE_STEP_MS: 스테이지마다 대응 시간에서 차감하는 값
+ * - ROUND_DURATION_MS: 한 라운드의 실제 진행 시간
  * - MAX_MESSAGES: DOM에 남겨 두는 채팅 메시지 최대 개수
  * - MAX_HEALTH: 새 게임 시작 체력
  */
-const BASE_ANOMALY_GRACE_MS = 20000;
-const MIN_ANOMALY_GRACE_MS = 6000;
-const STAGE_GRACE_STEP_MS = 1000;
-const MAX_MESSAGES = 100;
+const ROUND_DURATION_MS = 60000;
+const MAX_MESSAGES = 256;
 const MAX_HEALTH = 5;
 
 /*
  * 스토리 시간 규칙입니다.
- * 실제 140초(DEFAULT_STORY_DAY_DURATION_MS)를 게임 속 7시간으로 환산합니다.
+ * 라운드의 실제 60초를 게임 속 7시간으로 환산합니다.
  * STORY_CLOCK_STEP_MINUTES는 HUD 시각이 한 번에 진행하는 게임 속 시간이며,
  * URL의 storyDayMs 값으로 테스트용 하루 길이만 바꿀 수 있습니다.
  */
@@ -67,7 +64,6 @@ const STORY_TOTAL_DAYS = 7;
 const STORY_START_MINUTES = 19 * 60;
 const STORY_DURATION_MINUTES = 7 * 60;
 const STORY_CLOCK_STEP_MINUTES = 30;
-const DEFAULT_STORY_DAY_DURATION_MS = 140000;
 
 /*
  * 방송 화면 연결 괴이와 결과 연출 시간입니다.
@@ -194,22 +190,20 @@ const recordBestStage = document.querySelector("#record-best-stage");
 const recordStoryClears = document.querySelector("#record-story-clears");
 const recordDiscoveredTypes = document.querySelector("#record-discovered-types");
 
-// 닉네임 클릭으로 여는 시청자 기록 및 강퇴 모달입니다.
-const viewerBackdrop = document.querySelector("#viewer-backdrop");
-const viewerName = document.querySelector("#viewer-name");
+// 게시글 상세 화면과 글 처리 버튼입니다.
+const postDetailBackdrop = document.querySelector("#viewer-backdrop");
+const postDetailTitle = document.querySelector("#viewer-name");
 const postAuthor = document.querySelector("#post-author");
 const postBody = document.querySelector("#post-body");
 const postCommentsHeading = document.querySelector("#post-comments-heading");
 const postComments = document.querySelector("#post-comments");
 const postSyncWarning = document.querySelector("#post-sync-warning");
-const postThreat = document.querySelector("#post-threat");
-const postThreatSeconds = document.querySelector("#post-threat-seconds");
 const postHistoryEmpty = document.querySelector("#post-history-empty");
-const viewerHistory = document.querySelector("#viewer-history");
-const panelClose = document.querySelector("#panel-close");
+const postAuthorHistory = document.querySelector("#viewer-history");
+const closePostButton = document.querySelector("#panel-close");
 const suspectButton = document.querySelector("#suspect-button");
 const keepPostButton = document.querySelector("#keep-post");
-const kickButton = document.querySelector("#kick-button");
+const deletePostButton = document.querySelector("#kick-button");
 
 // 최초 스토리 진입과 도움말 버튼에서 공유하는 단계형 튜토리얼입니다.
 const tutorialBackdrop = document.querySelector("#tutorial-backdrop");
@@ -281,11 +275,11 @@ const storyReviewPrev = document.querySelector("#story-review-prev");
 const storyReviewNext = document.querySelector("#story-review-next");
 const storyContinue = document.querySelector("#story-continue");
 
-// 일시 안내, 방송 상태, 무한 모드 제한시간, 연결 괴이 위젯입니다.
+// 일시 안내, 게시판 상태, 라운드 시계, 연결 괴이 위젯입니다.
 const toast = document.querySelector("#toast");
 const streamSignal = document.querySelector("#stream-signal");
-const threatTimer = document.querySelector("#threat-timer");
-const threatSeconds = document.querySelector("#threat-seconds");
+const roundTimer = document.querySelector("#round-timer");
+const roundSeconds = document.querySelector("#round-seconds");
 const connectionWidget = document.querySelector("#connection-widget");
 const connectionStatus = document.querySelector("#connection-status");
 const reconnectButton = document.querySelector("#reconnect-button");
@@ -331,57 +325,42 @@ const NICKNAME_EASTER_EGGS = Object.freeze({
 const PLAYER_NICKNAME_STORAGE_KEY = "ferret-chess-player-nickname";
 
 // URL 파라미터는 재현 가능한 테스트(seed)와 빠른 스토리 테스트(storyDayMs)를 지원합니다.
-const seedParameter = new URLSearchParams(window.location.search).get("seed");
+const searchParams = new URLSearchParams(window.location.search);
+const seedParameter = searchParams.get("seed");
 const fixedSeed = seedParameter !== null && /^\d+$/.test(seedParameter) ? Number(seedParameter) >>> 0 : null;
-let activeSeedOverride = fixedSeed;
-let dailyChallengeActive = false;
-const storyDayDurationParameter = new URLSearchParams(window.location.search).get("storyDayMs");
+const storyDayDurationParameter = searchParams.get("storyDayMs");
 const parsedStoryDayDuration = Number(storyDayDurationParameter);
 const storyDayDurationMs = storyDayDurationParameter !== null
   && /^\d+$/.test(storyDayDurationParameter)
   && Number.isFinite(parsedStoryDayDuration)
   ? Math.max(1000, parsedStoryDayDuration)
-  : DEFAULT_STORY_DAY_DURATION_MS;
+  : ROUND_DURATION_MS;
 
-
-// 하루의 90% 안에 모든 이상 시청자가 등장하도록 여유를 둡니다.
-const anomalyArrivalMaxMs = Math.floor(
-  storyDayDurationMs * 0.9 / FERRET_CHAT_RULES.MAX_STORY_ANOMALIES
-);
-
-TUNING.anomalyArrivalIntervalMs[0] = Math.min(
-  TUNING.anomalyArrivalIntervalMs[0],
-  Math.floor(anomalyArrivalMaxMs * 0.6)
-);
-TUNING.anomalyArrivalIntervalMs[1] = Math.min(
-  TUNING.anomalyArrivalIntervalMs[1],
-  anomalyArrivalMaxMs
-);
-
-/*
- * 한 게임 전체에서 유지되는 핵심 상태입니다.
- * - viewers/myNickname: 현재 스테이지 시청자 목록과 플레이어 이름
- * - health/score/currentStage: 체력, 누적 점수, 현재 스테이지 또는 일차
- * - caught/missed/wrong: 최종 결과에 표시할 누적 판정 통계
- * - selectedPostId: 기록 모달에서 현재 선택한 게시글
- * - gameMode/gameOver/stageReviewOpen: 화면 입력과 타이머를 막는 진행 상태
- */
-let viewers = [];
+// 모드, 진행도, 누적 판정
 let myNickname = "";
-let health = MAX_HEALTH;
-let remainingAnomalies = FERRET_CHAT_RULES.ENDLESS_ANOMALIES_PER_STAGE;
-let score = 0;
+let gameMode = GAME_MODES.ENDLESS;
+let activeSeedOverride = fixedSeed;
+let dailyChallengeActive = false;
+let gameOver = false;
+let stageReviewOpen = false;
 let currentStage = 1;
+let health = MAX_HEALTH;
+let score = 0;
 let caughtAnomalies = 0;
 let missedAnomalies = 0;
 let wrongKicks = 0;
+let storyVictory = false;
+let lastDamageReason = "missed";
+
+// 현재 라운드의 작성자, 게시글, 선택 상태
+let viewers = [];
+let remainingAnomalies = FERRET_CHAT_RULES.ENDLESS_ANOMALIES_PER_STAGE;
 const boardPosts = new Map();
 const publishedAnomalyAuthors = new Set();
 let selectedPostId = null;
 let postPanelTrigger = null;
-let gameMode = GAME_MODES.ENDLESS;
-let gameOver = false;
-let stageReviewOpen = false;
+
+// 도움말과 첫날 실습
 let tutorialOpen = false;
 let tutorialStepIndex = 0;
 let tutorialReturnFocus = null;
@@ -389,25 +368,14 @@ let tutorialOpenedAutomatically = false;
 let tutorialPracticeActive = false;
 let tutorialPracticeNormalViewerId = null;
 let tutorialPracticeProgress = { normalLog: false, anomalyCatches: 0, reconnect: false };
-/*
- * 무한 모드 제한시간 및 공통 실행 자원입니다.
- * pendingThreatPostId는 현재 추적 중인 게시글의 ID이고, 나머지 Timer/Interval 값은
- * 화면을 바꾸거나 게임을 재시작할 때 반드시 해제해야 하는 브라우저 예약 ID입니다.
- */
-let pendingThreatPostId = null;
-let threatRemainingMs = 0;
-let chatEngine = null;
-let toastTimer;
-let threatInterval;
-let threatLastTick = 0;
-let interferenceTimer;
+
+// 채팅 엔진과 라운드 시계
 let currentSeed = 0;
-// 스토리 시계의 interval, 누적 실제 시간, 직전 tick, 7일 생존 여부입니다.
-let storyClockInterval;
-let storyElapsedMs = 0;
-let storyLastTick = 0;
-let storyVictory = false;
-let lastDamageReason = "missed";
+let chatEngine = null;
+let roundClockInterval;
+let roundElapsedMs = 0;
+let roundLastTick = 0;
+
 /*
  * 상단 연결 괴이 상태입니다.
  * active는 연결 괴이가 출현했음을, expired는 복구 시간이 지나 끊김이 됐음을 뜻합니다.
@@ -427,6 +395,8 @@ let missedApparitions = 0;
 let dayBanishedApparitions = 0;
 let dayMissedApparitions = 0;
 // 화면 전환·결과 공개·공포 효과음·채팅 흔들림이 중복 실행되지 않게 보관하는 자원입니다.
+let toastTimer;
+let interferenceTimer;
 let entryTransitionTimer;
 let storyRevealTimer;
 let storyScareTimer;

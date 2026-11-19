@@ -110,11 +110,6 @@
   80% { translate: 2px 0; }
 }
 
-/* 무한 모드 대응 제한시간의 붉은 테두리를 맥동시킵니다. */
-@keyframes threat-pulse {
-  50% { border-color: #7b232d; box-shadow: 0 0 5px #e3263922; }
-}
-
 /* 정상 시청자 강퇴 때 불규칙 모자이크가 번쩍인 뒤 완전히 사라집니다. */
 @keyframes mosaic-interference {
   0% { opacity: 0; background-position: 0 0; }

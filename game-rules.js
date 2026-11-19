@@ -33,6 +33,10 @@ const FERRET_CHAT_RULES = (() => {
     return STORY_ANOMALIES_BY_DAY[index];
   }
 
+  function getPostRate(stage) {
+    return Math.min(3, 1 + (clampStage(stage) - 1) * .2);
+  }
+
   function getAnomalyLevel(mode, stage) {
     const progress = clampStage(stage);
     if (mode === "story") {
@@ -113,6 +117,7 @@ const FERRET_CHAT_RULES = (() => {
     ANOMALY_TYPE_LABELS,
     SCORE,
     getAnomalyCount,
+    getPostRate,
     getAnomalyLevel,
     getAnomalyPermissions,
     getViewerKickOutcome,

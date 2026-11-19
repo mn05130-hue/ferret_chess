@@ -172,7 +172,7 @@ HorrorChatEngine = class HorrorChatEngineDiagnostics extends HorrorChatEngine {
       state: this.state,
       queueLength: this.queue.length,
       anomalySchedule: {
-        arrivalIntervalMs: [...TUNING.anomalyArrivalIntervalMs],
+        arrivalIntervalMs: [...this.anomalyArrivalIntervalMs],
         nextArrivalAt: this.nextAnomalyArrivalAt,
         baseIntervalMs: [...TUNING.anomalyIntervalMs],
         glitchChance: TUNING.glitchChance,

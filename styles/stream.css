@@ -577,39 +577,33 @@
   font-size: 8px;
 }
 
-/* 무한 모드의 오염 제한시간은 중앙 상단에서 점멸해 즉각적인 행동을 유도합니다. */
-.threat-timer {
+/* 두 모드의 남은 시간. 마지막 10초에는 경고색을 사용합니다. */
+.round-timer {
   position: absolute;
   z-index: 5;
   top: 8px;
   left: 50%;
-  min-width: 128px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 9px;
-  translate: -50% 0;
-  border: 1px solid #ff4c5c;
-  border-radius: 5px;
-  padding: 4px 7px;
-  color: #ff8993;
-  background: #21080de8;
-  box-shadow: 0 0 16px #e3263947;
-  font-family: ui-monospace, "Cascadia Mono", monospace;
-  font-size: 7px;
-  font-weight: 900;
-  letter-spacing: .05em;
-  animation: threat-pulse 900ms steps(2) infinite;
+  border: 1px solid var(--rose-line, var(--line));
+  border-radius: 8px;
+  padding: 4px 9px;
+  color: var(--ink, var(--text));
+  background: var(--paper, var(--surface));
+  font-size: .8125rem;
+  font-weight: 700;
 }
 
-.threat-timer[hidden] {
-  display: none;
+.round-timer strong {
+  font-size: .9375rem;
+  font-variant-numeric: tabular-nums;
 }
 
-.threat-timer strong {
-  color: #fff;
-  font-size: 11px;
-  letter-spacing: 0;
+.round-timer.is-low {
+  border-color: #d16379;
+  color: #ffc3cd;
+  background: #411c29;
 }
 
 .chat-app[data-director-state="TENSE"] .stream-stage,

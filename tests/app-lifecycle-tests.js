@@ -13,7 +13,7 @@ function assert(name, condition, detail = "") {
   if (!condition) failures += 1;
 }
 
-frame.addEventListener("load", () => {
+frame.addEventListener("load", async () => {
   try {
     const appWindow = frame.contentWindow;
     const appDocument = frame.contentDocument;
@@ -23,6 +23,8 @@ frame.addEventListener("load", () => {
 
     const api = appWindow.horrorChatGame;
     assert("무한 모드 HUD와 종료 조건이 이상 글 1건으로 시작한다", api.state().remainingAnomalies === 1);
+    assert("무한 모드 라운드는 60초로 시작한다",
+      api.state().roundRemainingMs === 60000 && appDocument.querySelector("#round-seconds").textContent === "01:00");
     assert("첫 시작에는 실행 중인 채팅 엔진이 정확히 하나다", api.lifecycle().activeEngineCount === 1);
 
     const firstTitle = appDocument.querySelector(".post-title");
@@ -87,6 +89,49 @@ frame.addEventListener("load", () => {
     assert("끊긴 연결은 추가 체력 피해 없이 좋음 상태로 복구된다",
       api.apparition().stage === "good" && api.state().health === disconnectedHealth);
 
+    const advanceRound = elapsed => appWindow.eval(`roundLastTick = performance.now() - ${elapsed}; updateRoundClock();`);
+    const publishAnomaly = () => appWindow.eval(`(() => {
+      for (let ticks = 0; ticks < 240 && publishedAnomalyAuthors.size === 0; ticks += 1) chatEngine.tick();
+      return [...boardPosts.values()].find(post => post.anomalous)?.id;
+    })()`);
+    api.restart();
+    const firstRound = api.debug();
+    const anomalyId = publishAnomaly();
+    appDocument.querySelector(`[data-post-id="${anomalyId}"] .post-title`).click();
+    appDocument.querySelector("#kick-button").click();
+    const stageOverlay = appDocument.querySelector("#stage-overlay");
+    assert("이상 글을 일찍 삭제해도 라운드는 계속된다",
+      api.state().score === 150 && api.state().remainingAnomalies === 0
+        && api.lifecycle().roundClockActive && !stageOverlay.classList.contains("open"));
+
+    advanceRound(api.state().roundRemainingMs - 500);
+    assert("60초 전에는 판정을 시작하지 않는다",
+      !stageOverlay.classList.contains("open") && appDocument.querySelector("#round-seconds").textContent === "00:01");
+    advanceRound(1000);
+    assert("60초가 지나면 이상 글 처리 결과가 확정된다",
+      !api.lifecycle().roundClockActive && stageOverlay.classList.contains("open")
+        && appDocument.querySelector("#stage-result-kicker").textContent === "STAGE 01 CLEAR");
+
+    await new Promise(resolve => window.setTimeout(resolve, 1100));
+    appDocument.querySelector("#stage-continue").click();
+    const secondRound = api.debug();
+    assert("두 번째 라운드는 60초를 다시 시작하고 글 생성 및 이상 글 등장 간격을 단축한다",
+      api.state().currentStage === 2 && api.state().roundRemainingMs === 60000
+        && secondRound.difficulty > firstRound.difficulty
+        && secondRound.anomalySchedule.arrivalIntervalMs[1] < firstRound.anomalySchedule.arrivalIntervalMs[1]);
+    publishAnomaly();
+    const beforeMiss = api.state();
+    advanceRound(60000);
+    advanceRound(1000);
+    assert("종료 시까지 올라온 이상 글을 미처리하면 체력과 점수가 한 번 감소한다",
+      api.state().health === beforeMiss.health - 1 && api.state().score === beforeMiss.score - 100
+        && appDocument.querySelector("#stage-result-kicker").textContent === "STAGE 02 FAILED");
+
+    appDocument.querySelector("#game-restart").click();
+    appDocument.querySelector("#daily-start").click();
+    assert("오늘의 고정 시드도 60초 라운드를 시작한다",
+      api.state().dailyChallenge && api.state().roundRemainingMs === 60000);
+
     appDocument.querySelector("#game-restart").click();
     appDocument.querySelector("#story-start").click();
     const storyState = api.state();
@@ -96,6 +141,12 @@ frame.addEventListener("load", () => {
     assert("모드 전환 뒤에도 엔진 하나와 스토리 시계 하나만 실행된다",
       storyLifecycle.activeEngineCount === 1 && storyLifecycle.storyClockActive === true,
       JSON.stringify(storyLifecycle));
+    assert("스토리 첫날도 오후 7시부터 60초로 시작한다",
+      storyState.roundRemainingMs === 60000 && appDocument.querySelector("#story-clock").textContent === "오후 7:00");
+    advanceRound(60000);
+    assert("스토리 라운드는 60초 후 오전 2시 결과를 연다",
+      !api.lifecycle().roundClockActive && appDocument.querySelector("#story-clock").textContent === "오전 2:00"
+        && appDocument.querySelector("#story-night-overlay").classList.contains("open"));
   } catch (error) {
     assert("테스트 페이지 실행", false, error.message);
   }

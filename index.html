@@ -84,11 +84,11 @@
         <p class="title-copy">자유게시판에 섞여 들어온 이상 게시글을 찾아 삭제하세요.</p>
         <div class="title-mode-buttons" aria-label="게임 모드 선택">
           <button class="title-start-button story-start-button" id="story-start" type="button">
-            <span><strong>스토리 모드</strong><small>7일 동안 생존</small></span>
+            <span><strong>스토리 모드</strong><small>7일 · 하루 60초</small></span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
           </button>
           <button class="title-start-button endless-start-button" id="game-start" type="button">
-            <span><strong>무한 모드</strong><small>최대한 오래 생존하십시오</small></span>
+            <span><strong>무한 모드</strong><small>60초 안에 이상 글 삭제</small></span>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
           </button>
           <button class="title-start-button daily-start-button" id="daily-start" type="button">
@@ -162,9 +162,9 @@
       <div class="stream-lower-third">
         <span class="signal-status" id="stream-signal">게시판 운영 중</span>
       </div>
-      <div class="threat-timer" id="threat-timer" hidden aria-live="polite">
-        <span>삭제 제한 시간</span>
-        <strong><span id="threat-seconds">20.0</span>s</strong>
+      <div class="round-timer" id="round-timer" role="timer" aria-labelledby="round-timer-label">
+        <span id="round-timer-label">남은 시간</span>
+        <strong id="round-seconds">01:00</strong>
       </div>
       <audio id="game-music" preload="metadata" loop></audio>
     </section>
@@ -215,7 +215,6 @@
       <section class="viewer-panel" role="dialog" aria-modal="true" aria-labelledby="viewer-name">
         <button class="panel-close" id="panel-close" type="button" aria-label="닫기">×</button>
         <p class="panel-kicker" id="post-author"></p>
-        <p class="post-threat" id="post-threat" hidden>삭제 제한 시간 <strong id="post-threat-seconds"></strong></p>
         <h2 id="viewer-name"></h2>
         <p class="post-body" id="post-body"></p>
         <p class="post-threat" id="post-sync-warning" role="status" hidden>본문을 확인하려면 창을 닫고 게시판 동기화를 복구하세요.</p>
@@ -376,6 +375,7 @@
   <script src="app-survival.js"></script>
   <script src="app-tutorial.js"></script>
   <script src="app-results.js"></script>
+  <script src="app-moderation.js"></script>
   <script src="app-game.js"></script>
   <script src="app.js"></script>
 </body>

@@ -19,6 +19,7 @@ class HorrorChatEngine {
     this.seed = Number(options.seed) >>> 0;
     this.random = new SeededRandom(this.seed);
     this.difficulty = Math.min(3, Math.max(1, Number(options.difficulty) || 1));
+    this.anomalyArrivalIntervalMs = options.anomalyArrivalIntervalMs || TUNING.anomalyArrivalIntervalMs;
     this.anomalyLevel = Math.min(
       TUNING.maxAnomalyLevel,
       Math.max(1, Math.floor(Number(options.anomalyLevel) || 1))
@@ -240,7 +241,7 @@ class HorrorChatEngine {
       return;
     }
 
-    const wait = delay ?? this.random.range(...TUNING.anomalyArrivalIntervalMs);
+    const wait = delay ?? this.random.range(...this.anomalyArrivalIntervalMs);
     this.nextAnomalyArrivalAt = this.simTime + wait;
     this.enqueue({
       intent: "CHAT",

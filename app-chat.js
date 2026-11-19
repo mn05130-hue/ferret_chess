@@ -394,7 +394,7 @@ function maybeTriggerAnomalyChatEffect(random = Math.random) {
 }
 
 /**
- * 엔진 발화를 기록·렌더링하고 이상 대사 변환 및 무한 모드 제한시간을 연결합니다.
+ * 엔진 발화를 게시글로 표시하고 이상 게시글의 순간 효과를 실행합니다.
  * @param {object} message 엔진이 전달한 화자·본문·상태·괴이 메타데이터
  */
 function handleEngineMessage(message) {
@@ -412,7 +412,7 @@ function handleEngineMessage(message) {
   const story = gameMode === GAME_MODES.STORY;
   const now = new Date();
   const date = story
-    ? new Date(Date.UTC(2026, 10, currentStage + Math.floor(getStoryClockMinutes(storyElapsedMs) / 1440)))
+    ? new Date(Date.UTC(2026, 10, currentStage + Math.floor(getStoryClockMinutes(roundElapsedMs) / 1440)))
       .toISOString().slice(0, 10)
     : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   const header = createBoardHeader({
@@ -428,7 +428,7 @@ function handleEngineMessage(message) {
     body,
     originalBody: body,
     comments: createBoardComments(thread.comments, header.nickname, random),
-    time: story ? formatStoryTime(storyElapsedMs)
+    time: story ? formatStoryTime(roundElapsedMs)
       : now.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
     anomalous: Boolean(evidence),
     bodyEvidence: evidence?.reason,
@@ -443,7 +443,6 @@ function handleEngineMessage(message) {
   if (post.anomalous) {
     publishedAnomalyAuthors.add(viewer.id);
     maybeTriggerAnomalyChatEffect();
-    if (gameMode === GAME_MODES.ENDLESS) startThreatCountdown(post.id);
   }
 }
 
@@ -469,7 +468,10 @@ function updateHud() {
   stageDisplay.textContent = String(currentStage);
   healthDisplay.textContent = String(health);
   healthDisplay.setAttribute("aria-label", `체력 ${health}`);
-  if (!storyMode) storyClock.textContent = dailyChallengeActive ? "오늘" : "∞";
+  if (!storyMode) {
+    storyClock.textContent = dailyChallengeActive ? "오늘" : "∞";
+    storyClock.removeAttribute("aria-label");
+  }
 }
 
 /**

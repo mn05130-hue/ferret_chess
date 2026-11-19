@@ -13,8 +13,8 @@
 7. [새 게임과 스테이지 시작](#7-새-게임과-스테이지-시작)
 8. [채팅 엔진 파일별 역할](#8-채팅-엔진-파일별-역할)
 9. [채팅 한 줄이 만들어지는 순서](#9-채팅-한-줄이-만들어지는-순서)
-10. [사용자 채팅 순서](#10-사용자-채팅-순서)
-11. [시청자 기록과 강퇴](#11-시청자-기록과-강퇴)
+10. [게시글 등록](#10-게시글-등록)
+11. [게시글 상세와 판정](#11-게시글-상세와-판정)
 12. [무한 모드 흐름](#12-무한-모드-흐름)
 13. [스토리 모드 흐름](#13-스토리-모드-흐름)
 14. [방송 연결 괴이](#14-방송-연결-괴이)
@@ -69,13 +69,16 @@ index.html + styles/*.css
             12. app-config.js
             13. app-progress.js
             14. app-assets.js
-            15. app-chat.js
-            16. app-audio.js
-            17. app-survival.js
-            18. app-tutorial.js
-            19. app-results.js
-            20. app-game.js
-            21. app.js
+            15. board-evidence.js
+            16. board-threads.js
+            17. app-chat.js
+            18. app-audio.js
+            19. app-survival.js
+            20. app-tutorial.js
+            21. app-results.js
+            22. app-moderation.js
+            23. app-game.js
+            24. app.js
 ```
 
 `chat-engine.js`는 완성된 `HorrorChatEngine` 클래스를 `window.HorrorChatEngine`으로 공개합니다. `app-game.js`의 `startStage()`는 이 공개 클래스로 실제 채팅 엔진 인스턴스를 만듭니다.
@@ -266,7 +269,7 @@ new window.HorrorChatEngine(...)
         ↓
 chatEngine.start()
         ↓
-모드별 안내 및 시계/제한시간 준비
+모드별 안내 및 60초 라운드 시계 시작
         ↓
 scheduleStreamApparition(true)
 ```
@@ -395,10 +398,9 @@ findRejection()
 8. `getAnomalyPresentation()`이 `gli-*` 붕괴형과 나머지 전용 유형을 구분합니다.
 9. 예언·관찰·기억·모방·침입형은 원문을 유지하고, 붕괴형만 `createUnknownChatText()`로 난독화합니다.
 10. `handleEngineMessage()`가 유형별 판별 클래스를 적용하고 실제 이상 채팅마다 30% 확률로 흔들림 또는 정전기 효과를 재생합니다.
-11. 무한 모드이면 `startThreatCountdown(viewer)`가 즉시 시작됩니다.
-12. 스토리 모드이면 즉시 제한시간을 만들지 않고 오전 2시에 판정합니다.
+11. 두 모드 모두 라운드 시작부터 공통 제한시간을 사용합니다. 스토리 모드에서는 이 시간이 끝나는 시점이 오전 2시입니다.
 
-이 과정에서는 이상 채팅 자체 외에 별도의 시스템 메시지나 토스트를 추가하지 않습니다. 플레이어는 깨진 채팅 모양과 무한 모드의 기존 제한시간 UI만 보고 판단합니다.
+이 과정에서는 이상 채팅 자체 외에 별도의 시스템 메시지나 토스트를 추가하지 않습니다. 플레이어는 게시글 본문을 확인해 라운드 제한시간까지 처리합니다.
 
 연결 괴이를 8초 동안 복구하지 않아 `끊김`이 된 경우에는 실제 이상 여부와 관계없이 이후 자동 채팅이 같은 깨진 문자로 표시됩니다. 이때 `viewer.anomalous` 값은 바뀌지 않으므로 정상 시청자를 차단하면 오판으로 처리됩니다. 이상 메시지 스타일은 배지와 닉네임의 원래 색을 유지하고 채팅 본문에만 글리치 효과를 적용합니다.
 
@@ -410,73 +412,34 @@ findRejection()
 - 위쪽 기록을 읽고 있으면 위치를 유지하고 `새 메시지 보기` 버튼을 표시합니다.
 - `MAX_MESSAGES`를 초과하면 가장 오래된 메시지부터 제거합니다.
 
-## 10. 사용자 채팅 순서
+## 10. 게시글 등록
 
-`#message-form` 제출 이벤트는 다음 순서로 처리됩니다.
+엔진의 `onMessage` 콜백은 `app-chat.js`의 `handleEngineMessage()`로 전달됩니다. 글의 메타데이터와 본문, 댓글을 구성해 `boardPosts`에 등록하고, 목록에는 `createPostRow()`로 만든 행을 추가합니다.
 
-1. 빈 문자열, 게임 종료, 결과 모달 상태를 검사합니다.
-2. 입력한 닉네임으로 사용자 전용 viewer 객체를 만듭니다.
-3. `createMessage(..., true)`로 `data-own-message="true"` 메시지를 만듭니다.
-4. 메시지를 추가하고 입력창을 비웁니다.
-5. 전송 버튼 상태와 이모지 패널을 초기화합니다.
+## 11. 게시글 상세와 판정
 
-사용자 메시지는 자동 채팅 엔진으로 다시 전달되지 않으며 점수와 판정에도 영향을 주지 않습니다. 다만 연결 끊김 상태에서는 다른 채팅과 마찬가지로 화면에서만 깨진 문자로 변환됩니다.
-
-## 11. 시청자 기록과 강퇴
-
-채팅 닉네임 버튼을 누르면 다음 순서가 실행됩니다.
-
-```text
-messageList click
-        ↓
-openViewerPanel(viewerId)
-        ↓
-최근 viewer.history 렌더링
-        ↓
-chatEngine.observeViewer(viewerId)
-        ↓
-강제 퇴장 버튼
-        ↓
-kickSelectedViewer()
-```
-
-`markViewerAsKicked()`는 과거 메시지를 삭제하지 않습니다. 대신 `.blinded-message`를 추가하고 본문을 블라인드 문구로 바꿔 플레이어가 이미 처리한 대상을 다시 선택하지 못하게 합니다.
-
-### 무한 모드 강퇴
-
-- 이상 시청자이면 점수와 정답 수를 올리고 스테이지 성공 여부를 검사합니다.
-- 정상 시청자이면 체력과 점수를 깎고 오답 간섭 효과를 재생합니다.
-- 판정 결과가 즉시 공개됩니다.
-
-### 스토리 모드 강퇴
-
-- 시청자는 즉시 비활성화되지만 정답 여부는 알려 주지 않습니다.
-- 강퇴 결과는 `kickedByPlayer`에만 기록합니다.
-- 오전 2시에 `finishStoryDay()`가 모든 강퇴를 한꺼번에 판정합니다.
+1. 목록에서 글 제목을 누르면 `app.js`의 클릭 이벤트가 게시글 ID를 `openPostPanel()`에 전달합니다.
+2. `app-moderation.js`의 `renderPostDetail()`이 본문과 댓글, 작성자의 다른 글을 표시합니다.
+3. 의심 표시는 목록 행과 상세 버튼에 반영합니다. 스토리 모드에서는 정상으로 판단한 글에 유지 표시도 남길 수 있습니다.
+4. `deleteSelectedPost()`는 선택한 글을 목록에서 제거합니다. 무한 모드는 점수와 체력에 즉시 반영하고, 스토리 모드는 `finishStoryDay()`에서 삭제 결정을 일괄 판정합니다.
 
 ## 12. 무한 모드 흐름
 
-이상 채팅이 나타나면 `startThreatCountdown()`이 호출됩니다.
+1. `startRoundClock()`이 라운드마다 60초 카운트다운을 시작합니다.
+2. 이상 게시글을 삭제하면 즉시 점수를 얻고 남은 시간 동안 순찰을 계속합니다.
+3. 시간이 0이 되면 `finishEndlessRound()`가 라운드를 판정하고 미처리한 이상 게시글에 대해 체력과 점수를 차감합니다.
+4. 체력이 남으면 `continueFromStageResult()`가 다음 라운드를 시작합니다. 체력이 소진되면 `endGame()`으로 이동합니다.
 
-1. `getStageGraceMs()`가 현재 스테이지 제한시간을 계산합니다.
-2. `#threat-timer`가 표시됩니다.
-3. `updateThreatCountdown()`이 실제 경과 시간을 차감합니다.
-4. 제한시간 안에 해당 시청자를 강퇴하면 정답 처리됩니다.
-5. 시간이 0이 되면 `expireThreat()`가 실행됩니다.
-6. 체력이 남으면 계속 진행하고, 0이면 `endGame()`으로 이동합니다.
-7. 모든 이상 시청자를 처리하면 `finishStage()`가 결과 배경을 열고 현재 설정인 10초 뒤 결과 카드를 공개합니다.
-8. 계속 버튼을 누르면 `continueFromStageResult()`가 다음 스테이지를 시작합니다.
-
-스테이지가 올라갈수록 제한시간은 `STAGE_GRACE_STEP_MS`만큼 줄어들지만 `MIN_ANOMALY_GRACE_MS`보다 짧아지지 않습니다.
+글 생성 속도는 `FERRET_CHAT_RULES.getPostRate()`에서 1배로 시작해 라운드마다 0.2씩 올라 최대 3배가 됩니다. 일반 글이 더 자주 올라오고 이상 글의 첫 등장 간격도 줄어듭니다. 오늘의 고정 시드에도 같은 규칙을 적용합니다.
 
 ## 13. 스토리 모드 흐름
 
-한 날은 실제 기본값 `DEFAULT_STORY_DAY_DURATION_MS` 동안 진행되며 게임 내 시간은 오후 7시부터 오전 2시까지 흐릅니다. HUD 시각은 `STORY_CLOCK_STEP_MINUTES`에 따라 30분 단위로만 바뀝니다.
+한 날은 기본 60초(`ROUND_DURATION_MS`) 동안 진행되며 게임 내 시간은 오후 7시부터 오전 2시까지 흐릅니다. HUD 시각은 `STORY_CLOCK_STEP_MINUTES`에 따라 30분 단위로만 바뀝니다.
 
 ```text
-startStoryClock()
+startRoundClock()
         ↓
-updateStoryClock()
+updateRoundClock()
         ↓
 formatStoryTime()
         ↓
@@ -660,27 +623,29 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 
 ### `app-survival.js`
 
-- 스토리 시계: `stopStoryClock`, `formatStoryTime`, `renderStoryClock`, `updateStoryClock`, `startStoryClock`
-- 일시정지: `syncEnginePause`
-- 이상 채팅 제한시간: `clearThreatCountdown`, `updateThreatCountdown`, `getStageGraceMs`, `startThreatCountdown`
-- 연결 괴이: `getApparitionDelay`, `resetConnectionWidget`, `clearStreamApparition`, `scheduleStreamApparition`, `spawnStreamApparition`, `weakenStreamConnection`, `startConnectionMosaic`, `expireStreamApparition`, `reconnectStreamConnection`, `settleActiveApparitionAsMissed`
+- 라운드 시계: `startRoundClock`, `updateRoundClock`, `getRoundRemainingMs`, `renderRoundClock`
+- 일시정지와 타이머 정리: `syncEnginePause`, `clearRoundTimers`
+- 연결 괴이: `scheduleStreamApparition`, `spawnStreamApparition`, `updateApparitionClock`, `expireStreamApparition`, `reconnectStreamConnection`
 
 ### `app-results.js`
 
 - 결과 지연: `clearStandardResultReveal`, `beginStandardResultReveal`
 - 화면 간섭: `triggerScreenInterference`
-- 무한 모드: `finishStage`, `expireThreat`, `continueFromStageResult`
-- 스토리 모드: `appendStoryResultDetail`, `resetStoryNightReveal`, `beginStoryNightReveal`, `finishStoryDay`, `continueFromStoryResult`
+- 무한 모드: `finishStage`, `finishEndlessRound`, `continueFromStageResult`
+- 스토리 모드와 복기: `finishStoryDay`, `beginStoryNightReveal`, `renderStoryReview`, `continueFromStoryResult`
+- 최종 결과: `endGame`
+
+### `app-moderation.js`
+
+- 글 상세: `openPostPanel`, `renderPostDetail`, `closePostPanel`
+- 글 처리: `toggleSelectedPostSuspect`, `toggleKeepSelectedPost`, `deleteSelectedPost`
 
 ### `app-game.js`
 
 - 첫 진입: `showEntryScreen`, `enterTitleFromEntry`
 - 화면 전환: `showTitle`, `enterGame`
-- 시청자 판정: `openViewerPanel`, `closeViewerPanel`, `markViewerAsKicked`, `kickSelectedViewer`
-- 게임 종료: `endGame`
-- 입력 보조: `updateComposerState`, `insertAtCursor`, `closeEmojiPanel`
 - 개발 API: `exposeDebugApi`
-- 게임 시작: `createStageSeed`, `startStage`, `startGame`
+- 게임 시작: `startGame`, `startStage`, `createStageSeed`, `createStageChatEngine`
 
 ### `app.js`
 
@@ -740,7 +705,7 @@ range 입력 → `applyVolume()` → `<audio>.volume`과 `<output>` 갱신 → `
 |---|---|
 | 기본 체력 | `app-config.js`의 `MAX_HEALTH` |
 | 모드·일차별 이상 시청자 수 | `game-rules.js`의 `STORY_ANOMALIES_BY_DAY`, `ENDLESS_ANOMALIES_PER_STAGE` |
-| 이상 채팅 제한시간 | `BASE_ANOMALY_GRACE_MS`, `MIN_ANOMALY_GRACE_MS`, `STAGE_GRACE_STEP_MS` |
+| 라운드 시간과 글 생성 속도 | `ROUND_DURATION_MS`, `FERRET_CHAT_RULES.getPostRate()` |
 | 스토리 총 일수 | `STORY_TOTAL_DAYS`, `STORY_DAY_INTROS` |
 | 스토리 하루 실제 길이 | `DEFAULT_STORY_DAY_DURATION_MS` |
 | 스토리 시계 표시 간격 | `STORY_CLOCK_STEP_MINUTES` |

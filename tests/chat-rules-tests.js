@@ -25,6 +25,10 @@ test("스토리 일차별 이상 시청자 수는 2,2,3,3,4,4,5다", () => {
   );
 });
 
+test("글 생성 속도 배율은 라운드마다 0.2씩 올라 최대 3배가 된다", () => {
+  assertEqual([1, 2, 7, 11, 999].map(FERRET_CHAT_RULES.getPostRate), [1, 1.2, 2.2, 3, 3]);
+});
+
 test("스토리 이상도는 1,1,2,2,3,4,5로 상승한다", () => {
   assertEqual(
     Array.from({ length: 7 }, (_, index) => FERRET_CHAT_RULES.getAnomalyLevel("story", index + 1)),

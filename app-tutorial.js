@@ -9,7 +9,7 @@ const TUTORIAL_STEPS = Object.freeze([
     example: "의심 표시 → 기록 확인 → 글 삭제" },
   { title: "게시판 복구", copy: "상태가 보통 또는 약함으로 떨어지면 복구하세요. 끊긴 뒤에는 정상 글도 깨져 보입니다.",
     example: "좋음 → 보통 → 약함 → 끊김" },
-  { title: "첫날 목표", copy: "첫날에는 이상 게시글 두 건이 올라옵니다. 오전 2시에 내 처리와 정답을 글 한 건씩 비교할 수 있습니다.",
+  { title: "첫날 목표", copy: "첫날에는 이상 게시글 두 건이 올라옵니다. 60초가 지나 오전 2시가 되면 내 처리와 정답을 비교할 수 있습니다.",
     example: "1일차 · 이상 글 두 건" }
 ]);
 
@@ -47,7 +47,6 @@ function closeTutorial({ completed = false } = {}) {
   if (shouldStartPractice) startGuidedTutorialPractice();
   else if (completed) markTutorialCompleted();
   syncEnginePause();
-  storyLastTick = performance.now();
   tutorialReturnFocus?.focus?.();
   tutorialReturnFocus = null;
 }
