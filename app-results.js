@@ -61,7 +61,6 @@ function finishStage({ success, title, copy, evidence = "" }) {
   clearThreatCountdown(false);
   clearStreamApparition();
   streamSignal.textContent = "스테이지 정산 중";
-  closeEmojiPanel();
   closeViewerPanel();
   syncEnginePause();
   prepareResultMusic(success ? "endlessClear" : "endlessFailed");
@@ -89,36 +88,34 @@ function finishStage({ success, title, copy, evidence = "" }) {
  * 제한시간이 끝난 이상 시청자를 침투 처리하고 체력·점수·화면 간섭을 적용합니다.
  */
 function expireThreat() {
-  const viewer = pendingThreat;
-  if (!viewer?.active || stageReviewOpen || gameOver) {
+  const post = boardPosts.get(pendingThreatPostId);
+  if (!post || post.deleted || stageReviewOpen || gameOver) {
     clearThreatCountdown();
     return;
   }
 
-  viewer.active = false;
   remainingAnomalies -= 1;
   missedAnomalies += 1;
   const outcome = FERRET_CHAT_RULES.getMissedAnomalyOutcome();
   health = Math.max(0, health + outcome.healthDelta);
   lastDamageReason = "missed";
   score = Math.max(0, score + outcome.scoreDelta);
-  markViewerAsKicked(viewer, "이상 신호에 잠식되어 연결이 끊겼습니다.");
   updateHud();
   triggerScreenInterference("color");
   finishStage({
     success: false,
-    title: "이상 신호 추적 실패",
-    copy: `${viewer.name}의 이상 채팅을 제한시간 안에 처리하지 못해 체력이 1 감소했습니다.`,
-    evidence: getViewerEvidenceSummary(viewer)
+    title: "이상 게시글 삭제 실패",
+    copy: `${post.author.name}의 이상 게시글을 제한시간 안에 삭제하지 못해 체력이 1 감소했습니다.`,
+    evidence: getPostEvidenceSummary(post)
   });
 }
 
 const ANOMALY_EVIDENCE_EXPLANATIONS = Object.freeze({
   PROPHECY: "아직 일어나지 않은 일을 알고 있었습니다.",
-  OBSERVER: "방송에서 공개하지 않은 공간 정보를 언급했습니다.",
-  MEMORY: "이전 방송 기록과 맞지 않는 기억을 말했습니다.",
-  MIMIC: "정상 시청자의 말투나 발화를 흉내 냈습니다.",
-  INTRUDER: "시스템 알림처럼 위장해 방송에 개입했습니다.",
+  OBSERVER: "게시판에서 공개하지 않은 공간 정보를 언급했습니다.",
+  MEMORY: "이전 게시판 기록과 맞지 않는 기억을 말했습니다.",
+  MIMIC: "다른 작성자의 말투나 글를 흉내 냈습니다.",
+  INTRUDER: "운영진 알림으로 위장했습니다.",
   GLITCH: "문자와 신호가 비정상적으로 붕괴했습니다."
 });
 
@@ -127,30 +124,14 @@ function truncateEvidenceText(text, maximum = 54) {
   return normalized.length > maximum ? `${normalized.slice(0, maximum - 1)}…` : normalized;
 }
 
-/**
- * 판정 대상의 실제 엔진 메타데이터를 사람이 이해할 수 있는 한 줄 근거로 바꿉니다.
- * 연결 끊김으로 화면에서만 오염된 문장은 이상 판정 근거에서 제외합니다.
- */
-function getViewerEvidenceSummary(viewer) {
-  const evidence = Array.isArray(viewer?.evidenceHistory) ? viewer.evidenceHistory : [];
-  const connectionCorrupted = Boolean(viewer?.connectionHistoryCorrupted)
-    || evidence.some(entry => entry.connectionCorrupted);
-  if (viewer?.anomalous) {
-    const type = viewer.anomalyPermission || evidence.find(entry => entry.actualAnomaly)?.anomalyType || "GLITCH";
-    const label = FERRET_CHAT_RULES.ANOMALY_TYPE_LABELS[type] || "이상 연결";
-    const decisive = [...evidence].reverse().find(entry => entry.actualAnomaly && !entry.connectionCorrupted);
-    const quote = truncateEvidenceText(decisive?.originalText || decisive?.text);
-    const explanation = ANOMALY_EVIDENCE_EXPLANATIONS[type] || "정상 기록과 다른 신호가 확인됐습니다.";
-    const core = quote ? `${label} · “${quote}” · ${explanation}` : `${label} · ${explanation}`;
-    return connectionCorrupted ? `${core} (연결 끊김 오염 문장은 판정에서 제외)` : core;
-  }
-
-  const normalRecord = [...evidence].reverse().find(entry => !entry.actualAnomaly && !entry.connectionCorrupted);
-  const quote = truncateEvidenceText(normalRecord?.originalText || normalRecord?.text);
-  const core = quote
-    ? `정상 기록 · “${quote}” · 이상 메타데이터가 없는 이전 발화였습니다.`
-    : "정상 기록 · 확인된 발화에서 이상 메타데이터가 발견되지 않았습니다.";
-  return connectionCorrupted ? `${core} (깨져 보인 문장은 연결 끊김에 의한 화면 오염)` : core;
+function getPostEvidenceSummary(post) {
+  const quote = truncateEvidenceText(post.originalBody);
+  const type = post.anomalyType;
+  const result = post.anomalous
+    ? `${FERRET_CHAT_RULES.ANOMALY_TYPE_LABELS[type] || "이상 게시글"} · “${quote}” · ${ANOMALY_EVIDENCE_EXPLANATIONS[type] || "비정상적인 내용이 확인됐습니다."}`
+    : `정상 게시글 · “${quote}”`;
+  return post.corruptedDuringPlay
+    ? `${result} (동기화 오류로 깨진 화면은 판정에서 제외)` : result;
 }
 
 /**
@@ -229,14 +210,13 @@ function finishStoryDay() {
   clearStreamApparition();
   chatEngine?.stop();
   stopAmbientHorrorSfx();
-  closeEmojiPanel();
   closeViewerPanel();
-  streamSignal.textContent = "방송 종료 · 판정 중";
+  streamSignal.textContent = "순찰 종료 · 판정 중";
 
-  const kickedViewers = viewers.filter(viewer => viewer.kickedByPlayer);
-  const caughtToday = kickedViewers.filter(viewer => viewer.anomalous);
-  const wrongToday = kickedViewers.filter(viewer => !viewer.anomalous);
-  const missedToday = viewers.filter(viewer => viewer.anomalous && !viewer.kickedByPlayer);
+  const posts = [...boardPosts.values()];
+  const caughtToday = posts.filter(post => post.anomalous && post.deleted);
+  const wrongToday = posts.filter(post => !post.anomalous && post.deleted);
+  const missedToday = posts.filter(post => post.anomalous && !post.deleted);
   const outcome = FERRET_CHAT_RULES.calculateStoryDayOutcome({
     caught: caughtToday.length,
     missed: missedToday.length,
@@ -257,16 +237,16 @@ function finishStoryDay() {
   }
   updateHud();
 
-  storyResultKicker.textContent = `DAY ${String(currentStage).padStart(2, "0")} · BROADCAST CLOSED`;
-  storyResultTitle.textContent = `${currentStage}일차 방송 결과`;
+  storyResultKicker.textContent = `DAY ${String(currentStage).padStart(2, "0")} · MODERATION LOG`;
+  storyResultTitle.textContent = `${currentStage}일차 운영 결과`;
   if (damage === 0 && dayMissedApparitions > 0) {
-    storyResultCopy.textContent = "연결이 끊겨 채팅이 오염됐지만 시청자 판정으로 체력을 잃지는 않았습니다.";
+    storyResultCopy.textContent = "동기화 오류가 있었지만 게시글 삭제로 잃은 체력은 없습니다.";
   } else if (damage === 0) {
-    storyResultCopy.textContent = "오늘의 판단은 정확했습니다. 체력을 잃지 않고 방송을 종료했습니다.";
+    storyResultCopy.textContent = "오늘의 판단은 정확했습니다. 체력을 잃지 않고 순찰을 마쳤습니다.";
   } else {
     const reasons = [];
-    if (missedToday.length) reasons.push(`이상 시청자 ${missedToday.length}명 놓침`);
-    if (wrongToday.length) reasons.push(`정상 시청자 ${wrongToday.length}명 오판`);
+    if (missedToday.length) reasons.push(`이상 글 ${missedToday.length}건 놓침`);
+    if (wrongToday.length) reasons.push(`정상 글 ${wrongToday.length}건 오삭제`);
     storyResultCopy.textContent = `${reasons.join(", ")}으로 체력이 ${appliedDamage} 감소했습니다.`;
   }
 
@@ -276,27 +256,27 @@ function finishStoryDay() {
   storyApparitionMissed.textContent = String(dayMissedApparitions);
   storyHealth.textContent = String(health);
   storyResultDetails.replaceChildren();
-  caughtToday.forEach(viewer => {
-    recordDiscoveredAnomaly(viewer.anomalyPermission);
+  caughtToday.forEach(post => {
+    recordDiscoveredAnomaly(post.author.anomalyPermission);
     appendStoryResultDetail(
-      `이상 연결 차단 성공 · ${viewer.name}`,
+      `이상 글 삭제 · ${post.author.name}`,
       "correct",
-      getViewerEvidenceSummary(viewer)
+      getPostEvidenceSummary(post)
     );
   });
-  missedToday.forEach(viewer => appendStoryResultDetail(
-    `놓친 이상 시청자 · ${viewer.name}`,
+  missedToday.forEach(post => appendStoryResultDetail(
+    `놓친 이상 글 · ${post.author.name}`,
     "danger",
-    getViewerEvidenceSummary(viewer)
+    getPostEvidenceSummary(post)
   ));
-  wrongToday.forEach(viewer => appendStoryResultDetail(
-    `정상 시청자 오판 · ${viewer.name}`,
+  wrongToday.forEach(post => appendStoryResultDetail(
+    `정상 글 오삭제 · ${post.author.name}`,
     "danger",
-    getViewerEvidenceSummary(viewer)
+    getPostEvidenceSummary(post)
   ));
-  if (dayBanishedApparitions) appendStoryResultDetail(`방송 연결 복구 성공 · ${dayBanishedApparitions}회`, "correct");
-  if (dayMissedApparitions) appendStoryResultDetail(`연결 끊김 발생 · 채팅 오염 ${dayMissedApparitions}회`, "danger");
-  if (!storyResultDetails.childElementCount) appendStoryResultDetail("오늘 기록에는 판정할 연결이 없습니다.");
+  if (dayBanishedApparitions) appendStoryResultDetail(`게시판 복구 성공 · ${dayBanishedApparitions}회`, "correct");
+  if (dayMissedApparitions) appendStoryResultDetail(`동기화 끊김 · 화면 오염 ${dayMissedApparitions}회`, "danger");
+  if (!storyResultDetails.childElementCount) appendStoryResultDetail("오늘 기록에는 판정할 글이 없습니다.");
 
   if (health === 0) storyContinue.textContent = "최종 결과 보기";
   else if (currentStage === STORY_TOTAL_DAYS) storyContinue.textContent = "7일 생존 결과 보기";

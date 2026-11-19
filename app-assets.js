@@ -30,18 +30,6 @@ function applyImageAsset(image, configuredPath) {
 }
 
 /**
- * 방송 연결 상태에 맞춰 기본 캐릭터와 연결 끊김 캐릭터를 교체합니다.
- * @param {boolean} disconnected true이면 연결 끊김 전용 캐릭터를 사용함
- * @returns {boolean} 표시할 유효한 캐릭터 경로가 적용됐는지 여부
- */
-function applyStreamCharacterState(disconnected = false) {
-  const configuredPath = disconnected
-    ? ASSET_CONFIG.stream?.disconnectedCharacter
-    : ASSET_CONFIG.stream?.character;
-  return applyImageAsset(streamCharacter, configuredPath);
-}
-
-/**
  * 상대 경로를 현재 문서 기준 절대 URL로 바꿔 CSS url() 값으로 안전하게 감쌉니다.
  * @param {unknown} configuredPath assetconfig.js의 배경 이미지 경로
  * @returns {string} CSS 사용자 정의 속성에 넣을 url("...") 또는 none
@@ -60,23 +48,7 @@ function createCssAssetUrl(configuredPath) {
  * 최초 앱 초기화 때 로고·타이틀·방송·결과 화면의 이미지 경로를 한꺼번에 적용합니다.
  */
 function applyVisualAssets() {
-  entryLogo.classList.remove("is-asset-ready");
-  if (applyImageAsset(entryLogo, ASSET_CONFIG.entry?.logo)) {
-    // src 없이 파싱된 img에서 입장 애니메이션이 먼저 끝나지 않도록 경로 적용 뒤 시작 클래스를 붙입니다.
-    void entryLogo.offsetWidth;
-    entryLogo.classList.add("is-asset-ready");
-  }
-  applyStreamCharacterState(false);
-  const disconnectedCharacterPath = normalizeVisualAssetPath(ASSET_CONFIG.stream?.disconnectedCharacter);
-  if (disconnectedCharacterPath) {
-    // 실제 끊김 순간에 GIF가 늦게 나타나지 않도록 초기화 때 미리 받아 둡니다.
-    const disconnectedCharacterPreload = new Image();
-    disconnectedCharacterPreload.src = disconnectedCharacterPath;
-  }
   const backgroundAssets = [
-    ["--asset-title-background", ASSET_CONFIG.title?.background],
-    ["--asset-stream-background", ASSET_CONFIG.stream?.background],
-    ["--asset-stream-disconnected-background", ASSET_CONFIG.stream?.disconnectedBackground],
     ["--asset-stage-result-waiting", ASSET_CONFIG.results?.stage?.waitingBackground],
     ["--asset-stage-result-revealed", ASSET_CONFIG.results?.stage?.revealedBackground],
     ["--asset-story-result-waiting", ASSET_CONFIG.results?.storyDay?.waitingBackground],

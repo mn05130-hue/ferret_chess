@@ -69,7 +69,6 @@ function showTitle(shouldFocus = true) {
   chatEngine?.stop();
   chatEngine = null;
   chatApp.classList.remove("interference-mosaic", "interference-color", "wrong-kick", "corrupted-chat-hit");
-  closeEmojiPanel();
   closeViewerPanel();
   stageOverlay.classList.remove("open");
   stageOverlay.setAttribute("aria-hidden", "true");
@@ -107,83 +106,56 @@ function enterGame(mode = GAME_MODES.ENDLESS, options = {}) {
   prepareGameMusic();
 }
 
-/**
- * 활성 시청자를 찾아 최근 발화 이력을 모달에 렌더링하고 강퇴 대상을 지정합니다.
- * @param {string} viewerId 메시지 요소에 저장된 시청자 고유 ID
- */
-function openViewerPanel(viewerId) {
-  if (gameOver || stageReviewOpen || tutorialOpen) return;
-  const viewer = viewers.find(candidate => candidate.id === viewerId && candidate.active);
-  if (!viewer) return;
-  selectedViewerId = viewerId;
-  viewerName.textContent = viewer.name;
-  viewerName.style.color = viewer.color;
+function renderPostDetail(post) {
+  const body = getPostBody(post);
+  viewerName.textContent = getPostTitle(body);
+  postBody.textContent = body;
+  postAuthor.textContent = `${post.author.name} · ${post.time}`;
   viewerHistory.replaceChildren();
-  viewer.history.slice(-6).forEach(text => {
+  post.author.history.slice(-6).reverse().forEach(text => {
     const item = document.createElement("li");
-    item.textContent = text;
+    item.textContent = apparitionActive && apparitionExpired
+      ? createUnknownChatText(text, post.author) : text;
     viewerHistory.append(item);
   });
-  chatEngine?.observeViewer(viewerId);
-  notifyTutorialViewerObserved(viewer);
+}
+
+function openPostPanel(postId, trigger) {
+  if (gameOver || stageReviewOpen || tutorialOpen) return;
+  const post = boardPosts.get(postId);
+  if (!post || post.deleted) return;
+  selectedPostId = postId;
+  postPanelTrigger = trigger;
+  renderPostDetail(post);
+  chatEngine?.observeViewer(post.author.id);
+  notifyTutorialViewerObserved(post.author);
   viewerBackdrop.classList.add("open");
   viewerBackdrop.setAttribute("aria-hidden", "false");
-  suspectButton.setAttribute("aria-pressed", String(viewer.suspected));
-  suspectButton.textContent = viewer.suspected ? "의심 해제" : "의심 표시";
-  kickButton.focus();
+  suspectButton.setAttribute("aria-pressed", String(post.suspected));
+  suspectButton.textContent = post.suspected ? "의심 해제" : "의심 표시";
+  panelClose.focus();
 }
 
-/**
- * 선택된 시청자를 해제하고 기록 모달을 접근성 트리에서도 닫습니다.
- */
 function closeViewerPanel() {
-  selectedViewerId = null;
+  const wasOpen = selectedPostId !== null;
+  selectedPostId = null;
   viewerBackdrop.classList.remove("open");
   viewerBackdrop.setAttribute("aria-hidden", "true");
+  if (wasOpen) {
+    const focusTarget = postPanelTrigger?.isConnected ? postPanelTrigger : messageList;
+    focusTarget.focus({ preventScroll: true });
+  }
+  postPanelTrigger = null;
 }
 
-/**
- * 선택한 계정을 차단하지 않고 채팅에서 다시 찾기 쉽도록 의심 상태만 전환합니다.
- */
-function toggleSelectedViewerSuspect() {
+function toggleSelectedPostSuspect() {
   if (gameOver || stageReviewOpen || tutorialOpen) return;
-  const viewer = viewers.find(candidate => candidate.id === selectedViewerId && candidate.active);
-  if (!viewer) return;
-  viewer.suspected = !viewer.suspected;
-  document.querySelectorAll(`.message[data-viewer-id="${viewer.id}"]`).forEach(message => {
-    message.classList.toggle("suspected-message", viewer.suspected);
-  });
-  suspectButton.setAttribute("aria-pressed", String(viewer.suspected));
-  suspectButton.textContent = viewer.suspected ? "의심 해제" : "의심 표시";
-  showToast(viewer.suspected
-    ? `${viewer.name} 계정을 의심 목록에 표시했습니다.`
-    : `${viewer.name} 계정의 의심 표시를 해제했습니다.`);
-}
-
-/**
- * 강퇴된 시청자의 기존 메시지를 블라인드 문구로 바꾸고 재선택할 수 없게 합니다.
- * @param {object} viewer 비활성화된 시청자 객체
- * @param {string} replacementText 기존 발화 대신 표시할 블라인드 안내문
- */
-function markViewerAsKicked(viewer, replacementText = "블라인드 처리 된 시청자입니다.") {
-  viewer.suspected = false;
-  document.querySelectorAll(`.message[data-viewer-id="${viewer.id}"]`).forEach(message => {
-    message.classList.add("blinded-message");
-    message.classList.remove("corrupted-message", "suspected-message");
-    message.removeAttribute("data-viewer-id");
-
-    const messageText = message.querySelector(".message-text");
-    if (messageText) {
-      messageText.textContent = replacementText;
-      messageText.removeAttribute("data-echo");
-    }
-
-    const username = message.querySelector(".username");
-    if (username) {
-      username.disabled = true;
-      username.removeAttribute("data-viewer-id");
-    }
-  });
+  const post = boardPosts.get(selectedPostId);
+  if (!post || post.deleted) return;
+  post.suspected = !post.suspected;
+  messageList.querySelector(`[data-post-id="${post.id}"]`)?.classList.toggle("suspected-message", post.suspected);
+  suspectButton.setAttribute("aria-pressed", String(post.suspected));
+  suspectButton.textContent = post.suspected ? "의심 해제" : "의심 표시";
 }
 
 /**
@@ -213,23 +185,23 @@ function endGame() {
   if (storyMode && storyVictory) {
     resultKicker.textContent = "SEVEN NIGHTS SURVIVED";
     resultTitle.textContent = "새벽의 관리자가 되었습니다";
-    resultCopy.textContent = `매일 새벽 2시까지 방송을 지켜냈습니다. 이상 연결 ${caughtAnomalies}개를 차단했습니다.`;
+    resultCopy.textContent = `일주일 동안 게시판을 지켰습니다. 이상 게시글 ${caughtAnomalies}건을 삭제했습니다.`;
   } else {
     resultKicker.textContent = storyMode
-      ? "BROADCAST LOST BEFORE DAWN"
+      ? "BOARD LOST BEFORE DAWN"
       : dailyChallengeActive ? "DAILY SIGNAL DESTROYED" : "SIGNAL DESTROYED";
     if (lastDamageReason === "wrong-kick") {
-      resultTitle.textContent = "빈 채팅방만 남았습니다";
-      resultCopy.textContent = `정상 시청자를 반복해서 오판해 체력을 모두 잃었습니다. 총 오판 ${wrongKicks}회.`;
+      resultTitle.textContent = "게시판 운영이 중단됐습니다";
+      resultCopy.textContent = `정상 게시글을 반복해서 삭제해 체력을 모두 잃었습니다. 총 오판 ${wrongKicks}회.`;
     } else if (lastDamageReason === "false-reconnect") {
       resultTitle.textContent = "스스로 신호를 끊었습니다";
-      resultCopy.textContent = `정상 연결을 반복해서 재설정해 체력을 모두 잃었습니다. 총 ${falseReconnects}회 오판했습니다.`;
+      resultCopy.textContent = `정상 상태에서 반복해서 복구를 눌러 체력을 모두 잃었습니다. 총 ${falseReconnects}회 오판했습니다.`;
     } else if (lastDamageReason === "apparition") {
       resultTitle.textContent = "끊어진 화면 너머에 남았습니다";
-      resultCopy.textContent = `약해진 방송 연결을 복구하지 못해 체력을 모두 잃었습니다. 총 ${missedApparitions}회 실패했습니다.`;
+      resultCopy.textContent = `게시판 동기화를 잘못 조작해 체력을 모두 잃었습니다. 총 ${missedApparitions}회 실패했습니다.`;
     } else {
-      resultTitle.textContent = "문 밖의 시청자를 놓쳤습니다";
-      resultCopy.textContent = `${missedAnomalies}개의 이상 신호를 놓쳐 체력을 모두 잃었습니다.`;
+      resultTitle.textContent = "이상 게시글을 놓쳤습니다";
+      resultCopy.textContent = `이상 게시글 ${missedAnomalies}건를 놓쳐 체력을 모두 잃었습니다.`;
     }
   }
   finalScore.textContent = `${String(score).padStart(4, "0")}점`;
@@ -240,94 +212,53 @@ function endGame() {
   beginStandardResultReveal(gameOverlay, resultCard, [gameRetry, gameRestart], gameRestart);
 }
 
-/**
- * 선택 시청자를 비활성화하고 모드에 따라 즉시 판정하거나 하루 종료까지 결과를 숨깁니다.
- */
-function kickSelectedViewer() {
+function deleteSelectedPost() {
   if (gameOver || stageReviewOpen || tutorialOpen) return;
-  const viewer = viewers.find(candidate => candidate.id === selectedViewerId && candidate.active);
-  if (!viewer) return;
-  viewer.active = false;
-  viewer.kickedByPlayer = true;
-  markViewerAsKicked(viewer);
+  const post = boardPosts.get(selectedPostId);
+  if (!post || post.deleted) return;
+  post.deleted = true;
+  messageList.querySelector(`[data-post-id="${post.id}"]`)?.remove();
   closeViewerPanel();
 
   if (gameMode === GAME_MODES.STORY) {
-    notifyTutorialViewerKicked(viewer);
-    appendSystemMessage(`${viewer.name}의 연결을 차단했습니다. 판정은 오전 2시에 공개됩니다.`);
-    showToast("차단을 기록했습니다. 결과는 방송 종료 후 공개됩니다.");
+    notifyTutorialPostDeleted(post);
+    appendSystemMessage("게시글을 삭제했습니다. 판정은 오전 2시에 공개됩니다.");
     return;
   }
 
-  if (viewer.anomalous) {
-    const outcome = FERRET_CHAT_RULES.getViewerKickOutcome(true);
+  const outcome = FERRET_CHAT_RULES.getViewerKickOutcome(post.anomalous);
+  score = Math.max(0, score + outcome.scoreDelta);
+
+  if (post.anomalous) {
     remainingAnomalies -= 1;
     caughtAnomalies += 1;
-    score = Math.max(0, score + outcome.scoreDelta);
-    recordDiscoveredAnomaly(viewer.anomalyPermission);
-    appendSystemMessage(`${viewer.name}의 비정상 연결을 차단했습니다.`);
-    showToast("이상 신호를 발견했습니다. +150점");
+    recordDiscoveredAnomaly(post.author.anomalyPermission);
     updateHud();
     finishStage({
       success: true,
-      title: "이상 시청자 차단",
-      copy: `${viewer.name}의 채팅 기록에서 이상 징후를 찾아 연결을 성공적으로 차단했습니다.`,
-      evidence: getViewerEvidenceSummary(viewer)
+      title: "이상 게시글 삭제",
+      copy: `${post.author.name}의 이상 게시글을 삭제했습니다.`,
+      evidence: getPostEvidenceSummary(post)
     });
-  } else {
-    const outcome = FERRET_CHAT_RULES.getViewerKickOutcome(false);
-    health = Math.max(0, health + outcome.healthDelta);
-    wrongKicks += 1;
-    lastDamageReason = "wrong-kick";
-    score = Math.max(0, score + outcome.scoreDelta);
-    appendSystemMessage(`${viewer.name}은 정상 시청자였습니다. 체력이 감소합니다.`, true);
-    showToast("정상 시청자를 잘못 퇴장시켜 체력이 1 감소했습니다.");
-    triggerScreenInterference("mosaic");
-    chatApp.classList.remove("wrong-kick");
-    requestAnimationFrame(() => chatApp.classList.add("wrong-kick"));
-    window.setTimeout(() => chatApp.classList.remove("wrong-kick"), 300);
-    updateHud();
-    if (health === 0) {
-      finishStage({
-        success: false,
-        title: "체력 소진",
-        copy: "정상 시청자를 반복해서 잘못 차단해 체력을 모두 잃었습니다.",
-        evidence: getViewerEvidenceSummary(viewer)
-      });
-    }
+    return;
+  }
+
+  health = Math.max(0, health + outcome.healthDelta);
+  wrongKicks += 1;
+  lastDamageReason = "wrong-kick";
+  appendSystemMessage("정상 게시글을 삭제해 체력이 1 감소했습니다.", true);
+  triggerScreenInterference("mosaic");
+  updateHud();
+  if (health === 0) {
+    finishStage({
+      success: false,
+      title: "체력 소진",
+      copy: "정상 게시글을 반복해서 삭제해 체력을 모두 잃었습니다.",
+      evidence: getPostEvidenceSummary(post)
+    });
   }
 }
 
-/**
- * 입력값 존재 여부를 composer 클래스에 반영해 전송 버튼 시각 상태를 바꿉니다.
- */
-function updateComposerState() {
-  messageForm.classList.toggle("has-text", messageInput.value.trim().length > 0);
-}
-
-/**
- * 현재 커서와 선택 범위를 보존하면서 이모지 문자열을 입력창에 삽입합니다.
- * @param {string} value 입력창에 삽입할 이모지 또는 짧은 채팅 문자열
- */
-function insertAtCursor(value) {
-  const start = messageInput.selectionStart ?? messageInput.value.length;
-  const end = messageInput.selectionEnd ?? start;
-  messageInput.setRangeText(value, start, end, "end");
-  messageInput.focus();
-  updateComposerState();
-}
-
-/**
- * 이모지 선택창을 닫고 aria-expanded를 false로 맞춥니다.
- */
-function closeEmojiPanel() {
-  emojiPanel.hidden = true;
-  emojiButton.setAttribute("aria-expanded", "false");
-}
-
-/**
- * 개발 검증용 엔진 상태·이벤트·괴이·재시작 기능을 window.horrorChatGame에 공개합니다.
- */
 function exposeDebugApi() {
   window.horrorChatGame = {
     seed: currentSeed,
@@ -415,7 +346,10 @@ function startStage() {
   viewers = createViewers(currentSeed, remainingAnomalies);
   dayBanishedApparitions = 0;
   dayMissedApparitions = 0;
-  selectedViewerId = null;
+  boardPosts.clear();
+  publishedAnomalyAuthors.clear();
+  storyElapsedMs = 0;
+  newMessageButton.hidden = true;
   gameOver = false;
   stageReviewOpen = false;
   gameScreen.inert = false;
@@ -429,7 +363,6 @@ function startStage() {
   updateHud();
   chatApp.dataset.directorState = "AMBIENT";
   updateStreamState("AMBIENT");
-  streamViewerCount.textContent = (1200 + currentSeed % 401).toLocaleString("ko-KR");
   apparitionRandom = createRoundRandom((currentSeed ^ 0xa5317e29) >>> 0);
 
   const deterministicEpoch = activeSeedOverride === null
@@ -457,11 +390,11 @@ function startStage() {
 
   if (gameMode === GAME_MODES.STORY) {
     appendSystemMessage(`${currentStage}일차 · 오후 7:00. ${STORY_DAY_INTROS[currentStage - 1]}`);
-    appendSystemMessage("차단 결과는 숨겨지며 오전 2시에 한꺼번에 공개됩니다.");
+    appendSystemMessage("삭제 결과는 오전 2시에 한꺼번에 공개됩니다.");
     startStoryClock();
   } else {
     const graceSeconds = (getStageGraceMs() / 1000).toFixed(1).replace(".0", "");
-    appendSystemMessage(`${dailyChallengeActive ? "오늘의 도전 · " : ""}스테이지 ${currentStage} 시작. 이상 채팅은 ${graceSeconds}초 안에 처리하세요.`);
+    appendSystemMessage(`${dailyChallengeActive ? "오늘의 도전 · " : ""}스테이지 ${currentStage} 시작. 이상 게시글은 등장 후 ${graceSeconds}초 안에 삭제하세요.`);
   }
   requestAnimationFrame(() => scrollToLatest());
   exposeDebugApi();
@@ -500,9 +433,6 @@ function startGame() {
   lastDamageReason = "missed";
   chatApp.dataset.gameMode = gameMode;
   chatApp.classList.remove("interference-mosaic", "interference-color", "wrong-kick");
-  rewardButton.classList.remove("claimed");
-  rewardButton.disabled = false;
-  rewardLabel.textContent = "100 받기";
   gameOverlay.classList.remove("open");
   gameOverlay.setAttribute("aria-hidden", "true");
   resetStoryNightReveal();

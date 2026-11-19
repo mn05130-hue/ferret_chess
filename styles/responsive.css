@@ -54,3 +54,46 @@
     transition-duration: 1ms !important;
   }
 }
+
+/* 게시판에서 목록에 화면 높이를 우선 배정합니다. */
+.game-screen {
+  grid-template-rows: 46px auto 42px minmax(0, 1fr);
+}
+.game-screen:has(.browser-bar.collapsed) {
+  grid-template-rows: 12px auto 42px minmax(0, 1fr);
+}
+.game-screen .stream-stage {
+  height: 100px;
+  background: linear-gradient(155deg, #172b25, #0b1110);
+}
+.board-heading {
+  margin: 0;
+  color: #eef5ed;
+  font-size: 1.05rem;
+}
+.board-wordmark, .board-title {
+  margin: 0;
+  font-size: clamp(2rem, 9vw, 2.8rem);
+  color: #e6f4eb;
+}
+
+.game-screen .stream-stage .connection-widget {
+  inset: auto 8px 7px auto;
+  width: min(148px, 48%);
+}
+.game-screen .stream-stage .game-audio-controls {
+  top: 0;
+}
+.game-screen .stream-stage .threat-timer {
+  top: 36px;
+  left: 8px;
+  translate: none;
+}
+.game-screen .stream-stage .stream-lower-third {
+  right: auto;
+  max-width: 48%;
+}
+.viewer-panel {
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+}

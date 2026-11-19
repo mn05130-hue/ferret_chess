@@ -62,7 +62,7 @@ class HorrorChatEngine {
     this.recentSignatures = [];
     this.recentSemanticMessages = [];
     // 템플릿 슬롯의 현재 장면 기본값이며 emitEvent가 새 정보로 갱신합니다.
-    this.scene = { topic: "어제 얘기", food: "치킨", thing: "마이크", day: "어제" };
+    this.scene = { topic: "어제 올라온 추천 글", food: "치킨", thing: "검색창", day: "어제" };
     // 개발용 통계는 게임 규칙에 영향을 주지 않고 getDebugSnapshot에서만 공개합니다.
     this.debug = {
       speakerSelections: [],

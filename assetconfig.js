@@ -11,26 +11,6 @@
  * - 배경 음악 파일은 bgmconfig.js에서, 짧은 효과음 파일은 soundEffects에서 설정합니다.
  */
 const ASSET_CONFIG = Object.freeze({
-  // 닉네임을 입력하는 최초 접속 화면의 상단 로고입니다.
-  entry: Object.freeze({
-    logo: "assets/splash-logo.png"
-  }),
-
-  // 게임 모드를 고르는 타이틀 화면 전체 배경입니다.
-  title: Object.freeze({
-    background: "assets/gudok-bangsong-cover.png"
-  }),
-
-  // 실제 방송 영상 영역의 기본/연결 끊김 배경과 그 위에 겹쳐지는 캐릭터입니다.
-  stream: Object.freeze({
-    background: "assets/gameScrenn.png",
-    // 연결이 끊긴 동안 표시할 방송 화면입니다.
-    disconnectedBackground: "assets/gameScrenn_abnormal.png",
-    character: "assets/beorjji-emotion-gif-pack/beorjji-idle-smooth.gif",
-    // 연결이 끊긴 동안 표시할 캐릭터입니다.
-    disconnectedCharacter: "assets\\beojji_horror_stage_overlay.gif"
-  }),
-
   // 실제 게임 진행 중 무작위로 재생할 짧은 공포 효과음입니다.
   soundEffects: Object.freeze({
     ambientHorror: Object.freeze([

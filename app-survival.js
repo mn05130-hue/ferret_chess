@@ -41,7 +41,7 @@ function renderStoryClock() {
   const nextTime = formatStoryTime(storyElapsedMs);
   if (storyClock.textContent === nextTime) return;
   storyClock.textContent = nextTime;
-  storyClock.setAttribute("aria-label", `현재 방송 시간 ${nextTime}`);
+  storyClock.setAttribute("aria-label", `현재 순찰 시간 ${nextTime}`);
 }
 
 /**
@@ -92,7 +92,7 @@ function syncEnginePause() {
 function clearThreatCountdown(restoreSignal = true) {
   window.clearInterval(threatInterval);
   threatInterval = undefined;
-  pendingThreat = null;
+  pendingThreatPostId = null;
   threatRemainingMs = 0;
   threatTimer.hidden = true;
   if (restoreSignal) updateStreamState(chatApp.dataset.directorState || "AMBIENT");
@@ -127,17 +127,17 @@ function getStageGraceMs() {
 
 /**
  * 새 이상 시청자를 제한시간 대상으로 지정하고 HUD 타이머를 시작합니다.
- * @param {object} viewer 이번 제한시간 안에 차단해야 하는 활성 시청자
+ * @param {string} postId 제한시간 안에 삭제해야 하는 게시글 ID
  */
-function startThreatCountdown(viewer) {
-  if (gameMode === GAME_MODES.STORY || pendingThreat || gameOver || stageReviewOpen || tutorialOpen || !viewer.active) return;
+function startThreatCountdown(postId) {
+  if (gameMode === GAME_MODES.STORY || pendingThreatPostId || gameOver || stageReviewOpen) return;
   const graceMs = getStageGraceMs();
-  pendingThreat = viewer;
+  pendingThreatPostId = postId;
   threatRemainingMs = graceMs;
   threatLastTick = performance.now();
   threatSeconds.textContent = (graceMs / 1000).toFixed(1);
   threatTimer.hidden = false;
-  streamSignal.textContent = "이상 신호 추적 중";
+  streamSignal.textContent = "게시글 삭제 제한 시간";
   threatInterval = window.setInterval(updateThreatCountdown, 100);
 }
 
@@ -158,10 +158,9 @@ function setConnectionStage(stage) {
   connectionWidget.classList.remove("is-good", "is-normal", "is-weak", "is-disconnected");
   connectionWidget.classList.add(`is-${stage.key}`);
   connectionWidget.dataset.connectionStage = stage.key;
-  applyStreamCharacterState(FERRET_CHAT_RULES.isDisconnectedConnectionStage(stage.key));
-  connectionWidget.setAttribute("aria-label", `방송 연결 상태: ${stage.label}`);
+  connectionWidget.setAttribute("aria-label", `게시판 동기화 상태: ${stage.label}`);
   connectionStatus.textContent = stage.label;
-  reconnectButton.setAttribute("aria-label", `방송 재연결 · 현재 상태 ${stage.label}`);
+  reconnectButton.setAttribute("aria-label", `게시판 복구 · 현재 상태 ${stage.label}`);
 }
 
 /**
@@ -291,7 +290,8 @@ function expireStreamApparition() {
   // 끊김은 별도의 공포 연출을 사용하므로 직전 단계의 모자이크를 즉시 제거합니다.
   chatApp.classList.remove("connection-pixelated");
   chatApp.classList.add("connection-lost");
-  corruptVisibleMessagesForConnectionLoss();
+  refreshPostPresentation();
+  triggerCorruptedChatPulse();
   setConnectionStage(CONNECTION_STAGES.DISCONNECTED);
   prepareAnomalyMusic("disconnected");
   missedApparitions += 1;
@@ -313,15 +313,15 @@ function reconnectStreamConnection() {
     connectionWidget.classList.remove("is-false-reconnect");
     void connectionWidget.offsetWidth;
     connectionWidget.classList.add("is-false-reconnect");
-    connectionWidget.setAttribute("aria-label", "방송 연결 상태: 좋음, 불필요한 재연결");
+    connectionWidget.setAttribute("aria-label", "게시판 동기화 상태: 좋음, 불필요한 복구");
     connectionStatus.textContent = "좋음 · 오판";
 
     if (health === 0) {
       if (gameMode === GAME_MODES.STORY) endGame();
       else finishStage({
         success: false,
-        title: "불필요한 재연결",
-        copy: "정상 연결을 반복해서 재설정해 체력을 모두 잃었습니다."
+        title: "불필요한 복구",
+        copy: "정상 상태에서 반복해서 복구를 눌러 체력을 모두 잃었습니다."
       });
       return;
     }
@@ -336,6 +336,7 @@ function reconnectStreamConnection() {
 
   const recoveredInTime = !apparitionExpired;
   resetConnectionWidget();
+  refreshPostPresentation();
   prepareGameplayMusicForCurrentStage();
   if (recoveredInTime) {
     banishedApparitions += 1;

@@ -11,8 +11,8 @@ const NICKNAME_ADJECTIVES = [
   "행복한", "졸린", "재빠른", "유쾌한", "반짝이는", "집중한","야무진",
 ];
 const NICKNAME_NOUNS = [
-  "뉴비", "유저", "스트리머", "게이머", "시청자", "랭커",
-  "챌린저", "방송인", "플레이어", "구독자", "매니저", "클립러", "족쩨비", "시바견",
+  "뉴비", "유저", "산책러", "게이머", "눈팅러", "랭커",
+  "챌린저", "사진러", "플레이어", "야행성", "수집가", "독서가", "족쩨비", "시바견",
 ];
 
 /*
@@ -118,13 +118,13 @@ const CONNECTION_STAGES = Object.freeze({
 
 // 배열 인덱스 0~6이 각각 1~7일차 시작 시스템 메시지에 대응합니다.
 const STORY_DAY_INTROS = Object.freeze([
-  "첫 방송입니다. 낯선 시청자들의 기록을 확인하며 새벽 2시까지 버티세요.",
-  "어제 차단된 계정과 닮은 이름들이 다시 접속하기 시작했습니다.",
-  "채팅 사이에 방송에서 말하지 않은 기억이 섞여 들어옵니다.",
-  "자정이 가까워질수록 모니터 바깥에서 알림음이 들립니다.",
-  "시청자 수는 줄지 않는데 채팅창의 사람들은 하나씩 사라집니다.",
-  "종료 버튼이 사라졌습니다. 오늘도 새벽 2시까지 송출을 유지해야 합니다.",
-  "마지막 밤입니다. 이 방송에 남아 있는 이상 연결을 찾아내세요."
+  "첫 야간 근무입니다. 수상한 글을 찾아 오전 2시까지 게시판을 관리하세요.",
+  "어제 삭제한 글과 같은 제목이 다시 올라오기 시작했습니다.",
+  "기록에 없는 사건을 기억한다는 글이 보입니다.",
+  "자정이 가까워질수록 알림이 오기 전에 그 내용을 아는 회원이 늘어납니다.",
+  "게시글 번호가 건너뛰기 시작했습니다. 빈 번호에 글이 있었던 걸까요?",
+  "삭제한 적 없는 글에 운영자 삭제 기록이 남았습니다.",
+  "마지막 밤입니다. 게시판에 남은 이상 게시글을 찾아내세요."
 ]);
 /*
  * GLITCH 괴이 또는 연결 끊김 상태의 문장을 만드는 토큰 재료입니다.
@@ -132,7 +132,6 @@ const STORY_DAY_INTROS = Object.freeze([
  */
 const UNKNOWN_CHAT_TOKENS = Object.freeze([
   "ㄱ▤ɯ", "踰꾩컡諛⑹", "踰꾩컡", "ì¶”ì²", "ƒ ë“œë ¤ìš”", "R▥ɯ", "4444444", "RG이▤ɯ",
-  "GGG▤ɯ", "방̶̢̨̛̝̩̭͚̻̦̟͇͕̝̼̺̭̩̥͙̭̥̺̪͓̗̟̝͈͈̻̦͔̞̹́̑̓͂̉͌́̔̄̽̾̋̓̐͊̈́̉̓̄̕̕͘͜͝ͅ송̶̧͙͔͇̝͎̯̋̚을̴̧̧̨̧͕͎̙̖̰̙̖͇͔̬͉̥̜͇̱̦̗̱̳̹̯̮̲͓̻̝͎̖̳̰͉̓̊̈́̒͜͝봐̶̛̬̗̂̃̍̍̎̔̐̐̆̏̐̍̓̏͂͋̀͆͊̿͆͌̿̎̕͝͝주̶̡̛̞̠̖͓̝̩̟̥̬̬͎͇̊̄세̸̡̧̡̛̭͙̲͙̺͈͚͍͖̲͓̺̣̟̤̟̞͈͚̣̘͕͈͉̌̇͊̿͊̐͋̏̽͛̓̀͂͗̋̋͐̐͊͐̈́̾̎̂̃̔̐̊̄ͅͅ요̴̡͖̎̏̎́̅͒͆̅̓̑͒̎̀̎͜", "ㅼ슂", "pps▥ɯ", "G…을▤ɯ", "R라▥ɯ", "RR그",
   "버̵̨̡̢̢̲͖̰̙̣͙͉͔̫̥̙̹͚̠͔͍̗͈͔̦͓̟̽̃͂͊̄̀͊̈́̃͋̈́̅̈́̉̽͗̌͘͘͜͜͝ͅ찌̶̡̪͖̼̯̯͓͓̼̻͉͖̠̪̻̙͈͇̖̱̼̬̫͇̫̺̝̰̮͕̃̾͊̏̏͌̓͑̉͛̋̏̓̚͘̚͝͝ͅͅ", "pp다▤ɯ", "JJ가▥ɯ", "버̶̡̼̹͇̦͇̼͉̣̫̰̲̦̟̰̟̬̟͕̙̤̘̖͖͔͕̫̻̬͕͂̄̀́̚͠ͅ찌̸̨͈͔̞̲̓̎͂̓̈́̈̄̒̅͋̿̌͋̎͛̀̈͊́̃̍́̃̍̉̑̇͘͜͝바̷̡̧̡̛̦̭̯͙̱͙͙̘̞̞͓͈̻̰̗̘̳͍̟͈̦̙̰̠͖̼̋͗̐͐́̎͒̇̈̂́̽͛̊́̑̾͜͜͠͝보̷̡̧̨̢̠̳͓̪̖̣̝͖̞̭̹̪̝̟̻̯̱̯̺̳͎̦̱̣̺̗̻͉̑̾̋͗̅̓̊͂͒͒͑͒͆͐͑̇̽̋̂͘͜͝͠͝͝", "ᚫ", "ȣ", "҂", "∴", "ƎƎ",
   "ㅿ", "▥ɯR", "J. JJ", "G…p", "R▤ɯR", "텛泥쒕", "ì°Œë°©ì†", "j▥ɯ"
 ]);
@@ -153,9 +152,6 @@ const gameStart = document.querySelector("#game-start");
 const dailyStart = document.querySelector("#daily-start");
 const storyStart = document.querySelector("#story-start");
 
-// assetconfig.js의 경로를 받을 첫 화면 로고와 방송 캐릭터 이미지입니다.
-const entryLogo = document.querySelector(".entry-logo");
-const streamCharacter = document.querySelector(".stream-character");
 
 // 진입 화면의 플레이어 닉네임 입력·오류 표시 요소입니다.
 const playerNicknameInput = document.querySelector("#player-nickname");
@@ -175,12 +171,6 @@ const gameVolumeValue = document.querySelector("#game-volume-value");
 
 // 실시간 채팅 목록과 입력기, 이모지·보상·새 메시지 조작 요소입니다.
 const messageList = document.querySelector("#message-list");
-const messageForm = document.querySelector("#message-form");
-const messageInput = document.querySelector("#message-input");
-const emojiButton = document.querySelector("#emoji-button");
-const emojiPanel = document.querySelector("#emoji-panel");
-const rewardButton = document.querySelector("#reward-button");
-const rewardLabel = document.querySelector("#reward-label");
 const newMessageButton = document.querySelector("#new-message-button");
 
 // 가상 주소창과 접기 버튼입니다.
@@ -207,6 +197,8 @@ const recordDiscoveredTypes = document.querySelector("#record-discovered-types")
 // 닉네임 클릭으로 여는 시청자 기록 및 강퇴 모달입니다.
 const viewerBackdrop = document.querySelector("#viewer-backdrop");
 const viewerName = document.querySelector("#viewer-name");
+const postAuthor = document.querySelector("#post-author");
+const postBody = document.querySelector("#post-body");
 const viewerHistory = document.querySelector("#viewer-history");
 const panelClose = document.querySelector("#panel-close");
 const suspectButton = document.querySelector("#suspect-button");
@@ -266,7 +258,6 @@ const storyContinue = document.querySelector("#story-continue");
 
 // 일시 안내, 방송 상태, 무한 모드 제한시간, 연결 괴이 위젯입니다.
 const toast = document.querySelector("#toast");
-const streamViewerCount = document.querySelector("#stream-viewer-count");
 const streamSignal = document.querySelector("#stream-signal");
 const threatTimer = document.querySelector("#threat-timer");
 const threatSeconds = document.querySelector("#threat-seconds");
@@ -280,11 +271,11 @@ const screenInterference = document.querySelector("#screen-interference");
  * 키는 TUNING.intervals/stateIntents와 같고 값은 방송 하단의 stream-signal에 표시합니다.
  */
 const STREAM_STATE_LABELS = {
-  AMBIENT: " ",
-  TENSE: "",
-  BURST: "",
-  AFTERMATH: "",
-  LULL: "미약한 신호"
+  AMBIENT: "게시판 운영 중",
+  TENSE: "활동 증가",
+  BURST: "새 글 급증",
+  AFTERMATH: "활동 증가",
+  LULL: "새 글 없음"
 };
 
 /*
@@ -303,7 +294,7 @@ const AUDIO_SETTINGS = Object.freeze({
  * 닉네임은 앞뒤 공백과 영문 대소문자를 무시해 비교하며, 새 항목은 같은 형식으로 추가할 수 있습니다.
  */
 const NICKNAME_EASTER_EGGS = Object.freeze({
-  "버찌": "그 이름은 이미 방송 안에 있습니다.",
+  "버찌": "그 이름은 이미 삭제 기록에 있습니다.",
   "너나비": "왕큰왕왕큰.",
   "치쿠사마": "선샌니",
   "모나": "뱀파이어가 입장했습니다.",
@@ -347,7 +338,7 @@ TUNING.anomalyArrivalIntervalMs[1] = Math.min(
  * - viewers/myNickname: 현재 스테이지 시청자 목록과 플레이어 이름
  * - health/score/currentStage: 체력, 누적 점수, 현재 스테이지 또는 일차
  * - caught/missed/wrong: 최종 결과에 표시할 누적 판정 통계
- * - selectedViewerId: 기록 모달에서 현재 선택한 강퇴 후보
+ * - selectedPostId: 기록 모달에서 현재 선택한 게시글
  * - gameMode/gameOver/stageReviewOpen: 화면 입력과 타이머를 막는 진행 상태
  */
 let viewers = [];
@@ -359,7 +350,10 @@ let currentStage = 1;
 let caughtAnomalies = 0;
 let missedAnomalies = 0;
 let wrongKicks = 0;
-let selectedViewerId = null;
+const boardPosts = new Map();
+const publishedAnomalyAuthors = new Set();
+let selectedPostId = null;
+let postPanelTrigger = null;
 let gameMode = GAME_MODES.ENDLESS;
 let gameOver = false;
 let stageReviewOpen = false;
@@ -372,10 +366,10 @@ let tutorialPracticeNormalViewerId = null;
 let tutorialPracticeProgress = { normalLog: false, anomalyCatches: 0, reconnect: false };
 /*
  * 무한 모드 제한시간 및 공통 실행 자원입니다.
- * pendingThreat는 현재 추적 중인 시청자이고, 나머지 Timer/Interval 값은
+ * pendingThreatPostId는 현재 추적 중인 게시글의 ID이고, 나머지 Timer/Interval 값은
  * 화면을 바꾸거나 게임을 재시작할 때 반드시 해제해야 하는 브라우저 예약 ID입니다.
  */
-let pendingThreat = null;
+let pendingThreatPostId = null;
 let threatRemainingMs = 0;
 let chatEngine = null;
 let toastTimer;

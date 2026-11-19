@@ -1,31 +1,16 @@
 "use strict";
 
 const TUTORIAL_STEPS = Object.freeze([
-  Object.freeze({
-    title: "시청자 기록 확인",
-    copy: "채팅 닉네임을 누르면 그 시청자의 최근 기록을 볼 수 있습니다. 한 문장보다 반복되는 말투와 서로 맞지 않는 기억을 비교하세요.",
-    example: "닉네임 선택 → 최근 기록 비교"
-  }),
-  Object.freeze({
-    title: "방송 밖 정보는 단서",
-    copy: "방 안의 작은 변화, 말하지 않은 과거, 아직 일어나지 않은 알림을 아는 시청자는 이상 연결일 가능성이 높습니다.",
-    example: "관찰형 단서 · “아까 네 뒤에 나 있었어”"
-  }),
-  Object.freeze({
-    title: "의심 표시 후 관찰",
-    copy: "확신이 없다면 바로 강퇴하지 말고 ‘의심 표시’를 사용하세요. 표시된 계정은 채팅에서 강조되며 나중에 다시 기록을 확인할 수 있습니다.",
-    example: "의심 → 추가 관찰 → 강제 퇴장"
-  }),
-  Object.freeze({
-    title: "연결 상태 복구",
-    copy: "연결이 보통 또는 약함으로 바뀌었을 때 재연결하세요. 좋음 상태에서 누르면 오판이며, 끊긴 뒤에는 정상 채팅도 오염돼 보입니다.",
-    example: "좋음 → 보통 → 약함 → 끊김"
-  }),
-  Object.freeze({
-    title: "첫날 목표",
-    copy: "첫날에는 명백한 이상 시청자 2명만 등장합니다. 차단 결과는 오전 2시에 근거와 함께 공개되며, 이후 날짜에는 단서가 점점 교묘해집니다.",
-    example: "1일차 · 이상 연결 2명 · 결과에서 근거 확인"
-  })
+  { title: "게시글 읽기", copy: "제목을 눌러 본문과 작성자의 최근 기록을 확인하세요.",
+    example: "제목 선택 → 본문과 작성자 기록 비교" },
+  { title: "이상한 단서 찾기", copy: "아직 올라오지 않은 공지를 인용하거나, 공개한 적 없는 정보를 아는 글을 찾아보세요.",
+    example: "“곧 공지 제목이 ‘문을 열어’로 바뀔 거야.”" },
+  { title: "의심 표시와 글 삭제", copy: "애매한 글은 의심 표시로 남겨 두세요. 삭제는 열어 본 글 한 건에만 적용됩니다.",
+    example: "의심 표시 → 기록 확인 → 글 삭제" },
+  { title: "게시판 복구", copy: "상태가 보통 또는 약함으로 떨어지면 복구하세요. 끊긴 뒤에는 정상 글도 깨져 보입니다.",
+    example: "좋음 → 보통 → 약함 → 끊김" },
+  { title: "첫날 목표", copy: "첫날에는 이상 게시글 두 건이 올라옵니다. 삭제 결과는 오전 2시에 공개됩니다.",
+    example: "1일차 · 이상 글 두 건" }
 ]);
 
 function renderTutorialStep() {
@@ -86,16 +71,16 @@ function renderGuidedTutorialObjective() {
   if (!tutorialPracticeActive) return;
   const normalViewer = viewers.find(viewer => viewer.id === tutorialPracticeNormalViewerId);
   let step = 4;
-  let copy = "두 번째 이상 시청자는 근거를 비교해 직접 판단하세요.";
+  let copy = "두 번째 이상 글은 근거를 비교해 직접 판단하세요.";
   if (!tutorialPracticeProgress.normalLog) {
     step = 1;
-    copy = `${normalViewer?.name || "표시된 정상 계정"}의 닉네임을 눌러 이전 기록을 확인하세요.`;
+    copy = `${normalViewer?.name || "표시된 정상 계정"}의 게시글을 열어 작성자 기록을 확인하세요.`;
   } else if (tutorialPracticeProgress.anomalyCatches < 1) {
     step = 2;
-    copy = "방송 밖 정보를 노골적으로 말하는 첫 이상 시청자를 찾아 차단하세요.";
+    copy = "공개되지 않은 정보를 아는 첫 이상 게시글을 찾아 삭제하세요.";
   } else if (!tutorialPracticeProgress.reconnect) {
     step = 3;
-    copy = "연결 상태가 ‘보통’ 또는 ‘약함’일 때 재연결 버튼을 누르세요.";
+    copy = "연결 상태가 ‘보통’ 또는 ‘약함’일 때 복구 버튼을 누르세요.";
   }
   tutorialObjectiveProgress.textContent = `실습 ${step}/4`;
   tutorialObjectiveCopy.textContent = copy;
@@ -125,8 +110,8 @@ function notifyTutorialViewerObserved(viewer) {
   renderGuidedTutorialObjective();
 }
 
-function notifyTutorialViewerKicked(viewer) {
-  if (!tutorialPracticeActive || !viewer?.anomalous) return;
+function notifyTutorialPostDeleted(post) {
+  if (!tutorialPracticeActive || !post.anomalous) return;
   tutorialPracticeProgress.anomalyCatches += 1;
   if (tutorialPracticeProgress.anomalyCatches === 1 && !tutorialPracticeProgress.reconnect && !apparitionActive) {
     spawnStreamApparition();

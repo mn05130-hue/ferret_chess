@@ -94,12 +94,8 @@ function createViewers(seed, anomalyCount) {
     name: createNickname(usedNicknames, random),
     anomalous: anomalySlots.has(index),
     history: [],
-    evidenceHistory: [],
-    connectionHistoryCorrupted: false,
-    suspected: false,
     active: !anomalySlots.has(index),
     pendingArrival: anomalySlots.has(index),
-    kickedByPlayer: false,
     ...style
   }));
   return createdViewers;
@@ -262,68 +258,46 @@ function triggerCorruptedChatPulse() {
 /**
  * 연결이 완전히 끊긴 순간 현재 화면에 보이는 일반 채팅도 판정값 변경 없이 깨진 문자로 바꿉니다.
  */
-function corruptVisibleMessagesForConnectionLoss() {
-  messageList.querySelectorAll(".message:not(.system-message):not(.blinded-message)").forEach((item, index) => {
-    if (item.classList.contains("ciphered-message")) return;
-    const messageText = item.querySelector(".message-text");
-    if (!messageText) return;
-    const viewer = viewers.find(candidate => candidate.id === item.dataset.viewerId)
-      || { id: `connection-${index}`, history: [] };
-    viewer.connectionHistoryCorrupted = true;
-    const displayedText = createUnknownChatText(messageText.textContent, viewer);
-    messageText.textContent = displayedText;
-    item.classList.add("corrupted-message", "ciphered-message");
-  });
-  triggerCorruptedChatPulse();
+function refreshPostPresentation() {
+  const disconnected = apparitionActive && apparitionExpired;
+  for (const row of messageList.querySelectorAll("[data-post-id]")) {
+    const post = boardPosts.get(row.dataset.postId);
+    row.classList.toggle("corrupted-message", disconnected || post.ciphered);
+    row.querySelector(".post-title").textContent = getPostTitle(getPostBody(post));
+  }
+  const post = boardPosts.get(selectedPostId);
+  if (post) renderPostDetail(post);
 }
 
-/**
- * 시청자 배지·닉네임·본문과 판정 메타데이터를 포함하는 안전한 li DOM 요소를 생성합니다.
- * textContent만 사용하므로 채팅 문자열은 HTML로 실행되지 않습니다.
- * @param {object} viewer 배지·색·닉네임·식별자를 가진 화자
- * @param {string} text 화면에 쓸 채팅 본문
- * @param {boolean} ownMessage 플레이어 본인의 메시지인지 여부
- * @param {object} metadata 이상 유형, 오염, 의도, 디렉터 상태 등의 표시 정보
- * @returns {HTMLLIElement} 아직 DOM에 추가하지 않은 메시지 요소
- */
-function createMessage(viewer, text, ownMessage = false, metadata = {}) {
-  const item = document.createElement("li");
-  item.className = "message";
-  if (viewer?.suspected) item.classList.add("suspected-message");
-  if (metadata.corrupted) item.classList.add("corrupted-message");
-  if (metadata.ciphered) item.classList.add("ciphered-message");
-  if (metadata.anomalyType) {
-    const anomalyType = String(metadata.anomalyType).replace(/[^a-z-]/g, "") || "unknown";
-    item.classList.add("anomaly-message", `anomaly-${anomalyType}`);
-    item.dataset.anomalyType = anomalyType;
-  }
-  if (ownMessage) item.dataset.ownMessage = "true";
-  if (viewer?.id) item.dataset.viewerId = viewer.id;
-  if (metadata.intent) item.dataset.intent = metadata.intent;
-  if (metadata.state) item.dataset.directorState = metadata.state;
+function getPostBody(post) {
+  if (!(apparitionActive && apparitionExpired) || post.ciphered) return post.body;
+  post.corruptedDuringPlay = true;
+  post.corruptedBody ??= createUnknownChatText(post.body, post.author);
+  return post.corruptedBody;
+}
 
-  const badge = document.createElement("span");
-  badge.className = `badge ${viewer?.badgeClass || ""}`;
-  badge.setAttribute("aria-hidden", "true");
-  badge.textContent = viewer?.badge || "";
+function getPostTitle(body) {
+  const firstSentence = body.trim().split(/(?<=[.!?])\s+|\n/, 1)[0];
+  return firstSentence.length > 34 ? firstSentence.slice(0, 33) + "…" : firstSentence;
+}
 
-  const copy = document.createElement("span");
-  copy.className = "message-copy";
+function createPostRow(post) {
+  const row = document.createElement("li");
+  row.className = "message board-post";
+  row.classList.toggle("corrupted-message", post.ciphered || (apparitionActive && apparitionExpired));
+  row.dataset.postId = post.id;
 
-  const username = document.createElement("button");
-  username.type = "button";
-  username.className = "username";
-  username.style.color = viewer?.color || "#66d5b2";
-  username.textContent = viewer?.name || myNickname;
-  if (viewer?.id && !ownMessage) username.dataset.viewerId = viewer.id;
-  else username.disabled = true;
+  const title = document.createElement("button");
+  title.className = "post-title";
+  title.type = "button";
+  title.textContent = getPostTitle(getPostBody(post));
 
-  const messageText = document.createElement("span");
-  messageText.className = "message-text";
-  messageText.textContent = text;
-  copy.append(username, messageText);
-  item.append(badge, copy);
-  return item;
+  const metadata = document.createElement("span");
+  metadata.className = "post-metadata";
+  metadata.textContent = `${post.author.name} · ${post.time}`;
+
+  row.append(title, metadata);
+  return row;
 }
 
 /**
@@ -366,7 +340,8 @@ function appendElement(element, behavior = "smooth") {
   messageList.append(element);
 
   while (messageList.childElementCount > MAX_MESSAGES) {
-    const firstMessage = messageList.firstElementChild;
+    // Keep unresolved targets within reach even when the board is busy.
+    const firstMessage = [...messageList.children].find(row => !boardPosts.get(row.dataset.postId)?.anomalous);
     const removedHeight = firstMessage.getBoundingClientRect().height;
     firstMessage.remove();
     if (!wasNearLatest) messageList.scrollTop = Math.max(0, messageList.scrollTop - removedHeight);
@@ -415,36 +390,40 @@ function maybeTriggerAnomalyChatEffect(random = Math.random) {
  */
 function handleEngineMessage(message) {
   const { viewer, text, historyOnly, behavior } = message;
-  const anomalyPresentation = getAnomalyPresentation(message);
-  const { isActualAnomaly } = anomalyPresentation;
-  // 연결 끊김 상태에서는 실제 판정값을 건드리지 않고 정상 채팅도 화면에서만 오염시킵니다.
-  const isConnectionCorruption = !historyOnly && apparitionActive && apparitionExpired;
-  const isCorruptedMessage = isActualAnomaly || isConnectionCorruption;
-  const usesCipherText = anomalyPresentation.usesCipherText || isConnectionCorruption;
-  const displayedText = usesCipherText ? createUnknownChatText(text, viewer) : text;
-  viewer.history.push(displayedText);
+  const presentation = getAnomalyPresentation(message);
+  const body = presentation.usesCipherText ? createUnknownChatText(text, viewer) : text;
+  viewer.history.push(body);
   if (viewer.history.length > 10) viewer.history.shift();
-  viewer.evidenceHistory ??= [];
-  viewer.evidenceHistory.push({
-    text: displayedText,
-    originalText: text,
-    actualAnomaly: isActualAnomaly,
-    connectionCorrupted: isConnectionCorruption,
-    anomalyType: anomalyPresentation.type || viewer.anomalyPermission || ""
-  });
-  if (viewer.evidenceHistory.length > 10) viewer.evidenceHistory.shift();
-  if (historyOnly) return;
-  appendElement(createMessage(viewer, displayedText, false, {
-    ...message,
-    corrupted: isCorruptedMessage,
-    ciphered: usesCipherText,
-    anomalyType: anomalyPresentation.type
-  }), behavior);
-  if (isConnectionCorruption) triggerCorruptedChatPulse();
 
-  if (isActualAnomaly) {
+  // Repeat anomaly messages add clues to the author history. Only the first is a target post.
+  const selectedPost = boardPosts.get(selectedPostId);
+  if (historyOnly || (presentation.isActualAnomaly && publishedAnomalyAuthors.has(viewer.id))) {
+    if (selectedPost?.author === viewer) renderPostDetail(selectedPost);
+    return;
+  }
+
+  const post = {
+    id: String(boardPosts.size + 1),
+    author: viewer,
+    body,
+    originalBody: text,
+    time: gameMode === GAME_MODES.STORY
+      ? formatStoryTime(storyElapsedMs)
+      : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
+    anomalous: presentation.isActualAnomaly,
+    anomalyType: presentation.type?.toUpperCase(),
+    ciphered: presentation.usesCipherText,
+    suspected: false,
+    deleted: false
+  };
+  boardPosts.set(post.id, post);
+  appendElement(createPostRow(post), behavior);
+  if (selectedPost?.author === viewer) renderPostDetail(selectedPost);
+
+  if (post.anomalous) {
+    publishedAnomalyAuthors.add(viewer.id);
     maybeTriggerAnomalyChatEffect();
-    if (gameMode === GAME_MODES.ENDLESS) startThreatCountdown(viewer);
+    if (gameMode === GAME_MODES.ENDLESS) startThreatCountdown(post.id);
   }
 }
 
@@ -463,8 +442,8 @@ function appendSystemMessage(text, danger = false) {
 function updateHud() {
   const storyMode = gameMode === GAME_MODES.STORY;
   progressLabel.textContent = storyMode ? "일차" : "스테이지";
-  timeStatLabel.textContent = storyMode ? "방송 시간" : "모드";
-  anomalyLabel.textContent = storyMode ? "판정" : "남은 이상 시청자";
+  timeStatLabel.textContent = storyMode ? "순찰 시간" : "모드";
+  anomalyLabel.textContent = storyMode ? "판정" : "남은 이상 글";
   anomalyDisplay.textContent = storyMode ? "?" : String(remainingAnomalies);
   scoreDisplay.textContent = String(score).padStart(4, "0");
   stageDisplay.textContent = String(currentStage);

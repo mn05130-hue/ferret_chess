@@ -17,32 +17,15 @@ entryForm.addEventListener("submit", event => {
   enterTitleFromEntry();
 });
 
-// 채팅 닉네임을 클릭하면 해당 시청자의 최근 발화 기록을 엽니다.
 messageList.addEventListener("click", event => {
-  const username = event.target.closest(".username[data-viewer-id]");
-  if (username) openViewerPanel(username.dataset.viewerId);
+  const title = event.target.closest(".post-title");
+  if (title) openPostPanel(title.closest("[data-post-id]").dataset.postId, title);
 });
 
-// 사용자가 작성한 채팅은 엔진 시청자와 구분되는 ownMessage로 렌더링합니다.
-messageForm.addEventListener("submit", event => {
-  event.preventDefault();
-  const text = messageInput.value.trim();
-  if (!text || gameOver || stageReviewOpen || tutorialOpen) return;
-  const myViewer = { id: "player", name: myNickname, badge: "🐹", badgeClass: "robot", color: "#66d5b2", history: [] };
-  const connectionCorrupted = apparitionActive && apparitionExpired;
-  const displayedText = connectionCorrupted ? createUnknownChatText(text, myViewer) : text;
-  appendElement(createMessage(myViewer, displayedText, true, { corrupted: connectionCorrupted }));
-  messageInput.value = "";
-  updateComposerState();
-  closeEmojiPanel();
-});
-
-// 게임 중 자주 쓰는 단일 동작 버튼과 음량 입력을 대응 함수에 연결합니다.
-messageInput.addEventListener("input", updateComposerState);
 newMessageButton.addEventListener("click", () => scrollToLatest("smooth"));
 panelClose.addEventListener("click", closeViewerPanel);
-suspectButton.addEventListener("click", toggleSelectedViewerSuspect);
-kickButton.addEventListener("click", kickSelectedViewer);
+suspectButton.addEventListener("click", toggleSelectedPostSuspect);
+kickButton.addEventListener("click", deleteSelectedPost);
 reconnectButton.addEventListener("click", reconnectStreamConnection);
 titleMusicButton.addEventListener("click", () => {
   if (titleMusic.paused) playTitleMusic();
@@ -89,30 +72,6 @@ viewerBackdrop.addEventListener("click", event => {
   if (event.target === viewerBackdrop) closeViewerPanel();
 });
 
-// 이모지 패널은 접근성 상태 aria-expanded와 hidden 값을 항상 함께 갱신합니다.
-emojiButton.addEventListener("click", () => {
-  const willOpen = emojiPanel.hidden;
-  emojiPanel.hidden = !willOpen;
-  emojiButton.setAttribute("aria-expanded", String(willOpen));
-  if (willOpen) emojiPanel.querySelector("button")?.focus();
-});
-
-emojiPanel.addEventListener("click", event => {
-  const button = event.target.closest("button");
-  if (!button) return;
-  insertAtCursor(button.textContent);
-  closeEmojiPanel();
-});
-
-// 보상은 한 게임에서 한 번만 수령할 수 있도록 버튼 자체를 비활성화합니다.
-rewardButton.addEventListener("click", () => {
-  if (rewardButton.classList.contains("claimed")) return;
-  rewardButton.classList.add("claimed");
-  rewardButton.disabled = true;
-  rewardLabel.textContent = "받기 완료";
-  showToast("통나무 파워 100개를 받았습니다.");
-});
-
 // 사용자가 최신 메시지 근처로 돌아오면 불필요한 새 메시지 버튼을 숨깁니다.
 messageList.addEventListener("scroll", () => {
   if (isNearLatest()) newMessageButton.hidden = true;
@@ -125,21 +84,11 @@ collapseButton.addEventListener("click", () => {
   requestAnimationFrame(() => scrollToLatest());
 });
 
-// 아직 별도 화면이 없는 보조 메뉴는 토스트로 현재 동작 결과를 안내합니다.
-document.querySelector(".address-menu").addEventListener("click", () => showToast(`채팅 시드: ${currentSeed}`));
-document.querySelector("#support-button").addEventListener("click", () => showToast("지금은 후원할 수 없습니다."));
-document.querySelector("#voice-button").addEventListener("click", () => showToast("알 수 없는 잡음이 들립니다…"));
-document.querySelector("#chat-tab").addEventListener("click", () => scrollToLatest("smooth"));
 helpButton.addEventListener("click", () => {
   openTutorial();
 });
 tutorialNext.addEventListener("click", advanceTutorial);
 tutorialSkip.addEventListener("click", () => closeTutorial());
-
-// 패널 외부 클릭과 Escape 키를 공통 닫기 동작으로 처리합니다.
-document.addEventListener("pointerdown", event => {
-  if (!emojiPanel.hidden && !emojiPanel.contains(event.target) && !emojiButton.contains(event.target)) closeEmojiPanel();
-});
 
 document.addEventListener("keydown", event => {
   if (event.key === "Escape") {
@@ -147,7 +96,6 @@ document.addEventListener("keydown", event => {
       closeTutorial();
       return;
     }
-    closeEmojiPanel();
     closeViewerPanel();
   }
 });
