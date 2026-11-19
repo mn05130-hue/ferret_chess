@@ -94,6 +94,7 @@
   max-width: 48%;
 }
 .viewer-panel {
+  min-height: min(360px, calc(100% - 24px));
   max-height: calc(100% - 24px);
   overflow-y: auto;
 }

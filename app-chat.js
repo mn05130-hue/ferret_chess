@@ -197,7 +197,7 @@ function hashText(value) {
  * @returns {string} 최대 네 줄로 구성한 화면용 난독화 문자열
  */
 function createUnknownChatText(text, viewer) {
-  const seed = hashText(`${currentSeed}:${viewer?.id || "unknown"}:${viewer?.history?.length || 0}:${text}`);
+  const seed = hashText(`${currentSeed}:${viewer?.id || "unknown"}:${text}`);
   const random = createRoundRandom(seed);
   const hangul = [...String(text)].filter(character => /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(character));
   const tokenCount = Math.max(17, Math.min(32, Math.ceil(String(text).length * 1.35)));
@@ -342,9 +342,8 @@ function appendElement(element, behavior = "smooth") {
   while (messageList.childElementCount > MAX_MESSAGES) {
     // Keep unresolved targets within reach even when the board is busy.
     const firstMessage = [...messageList.children].find(row => !boardPosts.get(row.dataset.postId)?.anomalous);
-    const removedHeight = firstMessage.getBoundingClientRect().height;
+    if (!firstMessage) break;
     firstMessage.remove();
-    if (!wasNearLatest) messageList.scrollTop = Math.max(0, messageList.scrollTop - removedHeight);
   }
 
   if (wasNearLatest) scrollToLatest(behavior);
@@ -392,18 +391,20 @@ function handleEngineMessage(message) {
   const { viewer, text, historyOnly, behavior } = message;
   const presentation = getAnomalyPresentation(message);
   const body = presentation.usesCipherText ? createUnknownChatText(text, viewer) : text;
-  viewer.history.push(body);
+  // Repeat anomaly messages add clues to the author history. Only the first is a target post.
+  const recordOnly = historyOnly || (presentation.isActualAnomaly && publishedAnomalyAuthors.has(viewer.id));
+  const postId = recordOnly ? null : String(boardPosts.size + 1);
+  viewer.history.push({ body, postId });
   if (viewer.history.length > 10) viewer.history.shift();
 
-  // Repeat anomaly messages add clues to the author history. Only the first is a target post.
   const selectedPost = boardPosts.get(selectedPostId);
-  if (historyOnly || (presentation.isActualAnomaly && publishedAnomalyAuthors.has(viewer.id))) {
+  if (recordOnly) {
     if (selectedPost?.author === viewer) renderPostDetail(selectedPost);
     return;
   }
 
   const post = {
-    id: String(boardPosts.size + 1),
+    id: postId,
     author: viewer,
     body,
     originalBody: text,

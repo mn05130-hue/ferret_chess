@@ -112,12 +112,15 @@ function renderPostDetail(post) {
   postBody.textContent = body;
   postAuthor.textContent = `${post.author.name} · ${post.time}`;
   viewerHistory.replaceChildren();
-  post.author.history.slice(-6).reverse().forEach(text => {
+  const records = post.author.history.filter(record => record.postId !== post.id
+    && !boardPosts.get(record.postId)?.deleted);
+  postHistoryEmpty.hidden = records.length > 0;
+  for (const record of records.slice(-6).reverse()) {
     const item = document.createElement("li");
     item.textContent = apparitionActive && apparitionExpired
-      ? createUnknownChatText(text, post.author) : text;
+      ? createUnknownChatText(record.body, post.author) : record.body;
     viewerHistory.append(item);
-  });
+  }
 }
 
 function openPostPanel(postId, trigger) {
@@ -133,7 +136,8 @@ function openPostPanel(postId, trigger) {
   viewerBackdrop.setAttribute("aria-hidden", "false");
   suspectButton.setAttribute("aria-pressed", String(post.suspected));
   suspectButton.textContent = post.suspected ? "의심 해제" : "의심 표시";
-  panelClose.focus();
+  viewerBackdrop.querySelector(".viewer-panel").scrollTop = 0;
+  panelClose.focus({ preventScroll: true });
 }
 
 function closeViewerPanel() {
@@ -293,7 +297,8 @@ function exposeDebugApi() {
         engineTimerActive: chatEngine?.timer != null,
         storyClockActive: storyClockInterval != null,
         threatTimerActive: threatInterval != null,
-        apparitionSpawnScheduled: apparitionSpawnTimer != null
+        apparitionSpawnScheduled: apparitionSpawnTimer != null,
+        apparitionTimerActive: apparitionInterval != null
       };
     },
     finishDay() {

@@ -206,7 +206,6 @@ function finishStoryDay() {
   clearAnomalyChatEffect();
   stopStoryClock();
   clearThreatCountdown(false);
-  settleActiveApparitionAsMissed();
   clearStreamApparition();
   chatEngine?.stop();
   stopAmbientHorrorSfx();

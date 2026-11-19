@@ -91,6 +91,15 @@ tutorialNext.addEventListener("click", advanceTutorial);
 tutorialSkip.addEventListener("click", () => closeTutorial());
 
 document.addEventListener("keydown", event => {
+  if (event.key === "Tab" && selectedPostId !== null && !tutorialOpen) {
+    const first = panelClose;
+    const last = kickButton;
+    const focusOutside = !viewerBackdrop.contains(document.activeElement);
+    if (focusOutside || document.activeElement === (event.shiftKey ? first : last)) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    }
+  }
   if (event.key === "Escape") {
     if (tutorialOpen) {
       closeTutorial();

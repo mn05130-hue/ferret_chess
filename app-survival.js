@@ -83,7 +83,10 @@ function startStoryClock() {
 function syncEnginePause() {
   chatEngine?.setPaused(document.hidden || gameOver || stageReviewOpen || tutorialOpen);
   syncAmbientHorrorSfx();
-  storyLastTick = performance.now();
+  const now = performance.now();
+  storyLastTick = now;
+  threatLastTick = now;
+  apparitionLastTick = now;
 }
 
 /**
@@ -95,6 +98,7 @@ function clearThreatCountdown(restoreSignal = true) {
   pendingThreatPostId = null;
   threatRemainingMs = 0;
   threatTimer.hidden = true;
+  postThreat.hidden = true;
   if (restoreSignal) updateStreamState(chatApp.dataset.directorState || "AMBIENT");
 }
 
@@ -110,8 +114,14 @@ function updateThreatCountdown() {
 
   threatRemainingMs -= Math.max(0, now - threatLastTick);
   threatLastTick = now;
-  threatSeconds.textContent = (Math.max(0, threatRemainingMs) / 1000).toFixed(1);
+  renderThreatTime();
   if (threatRemainingMs <= 0) expireThreat();
+}
+
+function renderThreatTime() {
+  const seconds = (Math.max(0, threatRemainingMs) / 1000).toFixed(1);
+  threatSeconds.textContent = seconds;
+  postThreatSeconds.textContent = `${seconds}초`;
 }
 
 /**
@@ -135,7 +145,8 @@ function startThreatCountdown(postId) {
   pendingThreatPostId = postId;
   threatRemainingMs = graceMs;
   threatLastTick = performance.now();
-  threatSeconds.textContent = (graceMs / 1000).toFixed(1);
+  renderThreatTime();
+  postThreat.hidden = false;
   threatTimer.hidden = false;
   streamSignal.textContent = "게시글 삭제 제한 시간";
   threatInterval = window.setInterval(updateThreatCountdown, 100);
@@ -167,13 +178,9 @@ function setConnectionStage(stage) {
  * 연결 관련 타이머와 작은 상단 위젯을 정상 와이파이 상태로 되돌립니다.
  */
 function resetConnectionWidget() {
-  window.clearTimeout(apparitionWeakTimer);
-  window.clearTimeout(apparitionMosaicTimer);
-  window.clearTimeout(apparitionExpireTimer);
+  window.clearInterval(apparitionInterval);
   window.clearTimeout(connectionFeedbackTimer);
-  apparitionWeakTimer = undefined;
-  apparitionMosaicTimer = undefined;
-  apparitionExpireTimer = undefined;
+  apparitionInterval = undefined;
   connectionFeedbackTimer = undefined;
   apparitionActive = false;
   apparitionExpired = false;
@@ -225,67 +232,38 @@ function spawnStreamApparition() {
   connectionWidget.classList.remove("is-false-reconnect");
   setConnectionStage(CONNECTION_STAGES.NORMAL);
   prepareAnomalyMusic("detected");
-  apparitionWeakTimer = window.setTimeout(
-    weakenStreamConnection,
-    APPARITION_LIFETIME_MS * APPARITION_WEAK_STAGE_RATIO
-  );
-  // 전체 제한시간의 마지막 2초에만 저해상도 모자이크를 켭니다.
-  apparitionMosaicTimer = window.setTimeout(
-    startConnectionMosaic,
-    Math.max(0, APPARITION_LIFETIME_MS - APPARITION_MOSAIC_DURATION_MS)
-  );
-  apparitionExpireTimer = window.setTimeout(expireStreamApparition, APPARITION_LIFETIME_MS);
+  apparitionElapsedMs = 0;
+  apparitionLastTick = performance.now();
+  apparitionInterval = window.setInterval(updateApparitionClock, 100);
   return true;
 }
 
-/**
- * 연결 괴이 대응 시간이 설정된 비율만큼 지나면 위젯을 3단계인 약함 상태로 악화시킵니다.
- */
-function weakenStreamConnection() {
-  if (!apparitionActive || apparitionExpired) return;
-  if (document.hidden || tutorialOpen) {
-    apparitionWeakTimer = window.setTimeout(weakenStreamConnection, 500);
-    return;
+function updateApparitionClock() {
+  const now = performance.now();
+  if (!document.hidden && !tutorialOpen) {
+    apparitionElapsedMs += Math.max(0, now - apparitionLastTick);
   }
-  apparitionWeakTimer = undefined;
-  setConnectionStage(CONNECTION_STAGES.WEAK);
+  apparitionLastTick = now;
+
+  if (apparitionElapsedMs >= APPARITION_LIFETIME_MS) {
+    expireStreamApparition();
+  } else if (apparitionElapsedMs >= APPARITION_LIFETIME_MS * APPARITION_WEAK_STAGE_RATIO) {
+    if (connectionWidget.dataset.connectionStage !== CONNECTION_STAGES.WEAK.key) {
+      setConnectionStage(CONNECTION_STAGES.WEAK);
+    }
+    if (apparitionElapsedMs >= APPARITION_LIFETIME_MS - APPARITION_MOSAIC_DURATION_MS) {
+      chatApp.classList.add("connection-pixelated");
+    }
+  }
 }
 
 /**
- * 연결이 끊기기 직전 마지막 구간에 방송 화면만 낮은 해상도처럼 깨뜨립니다.
- * 탭이 숨겨져 있으면 보이지 않는 동안 연출 시간이 소모되지 않도록 짧게 다시 확인합니다.
- */
-function startConnectionMosaic() {
-  if (!apparitionActive || apparitionExpired) return;
-  if (document.hidden || tutorialOpen) {
-    apparitionMosaicTimer = window.setTimeout(startConnectionMosaic, 500);
-    return;
-  }
-
-  apparitionMosaicTimer = undefined;
-  // 설정값이 바뀌어 약함 전환 시점이 늦어져도 모자이크 구간은 항상 약함으로 표시합니다.
-  if (connectionWidget.dataset.connectionStage !== CONNECTION_STAGES.WEAK) {
-    setConnectionStage(CONNECTION_STAGES.WEAK);
-  }
-  chatApp.classList.add("connection-pixelated");
-}
-
-/**
- * 제한시간 안에 재접속하지 못한 경우 한 번만 실패로 기록하고 위젯을 4단계인 끊김으로 유지합니다.
+ * 대응 시간을 넘긴 괴이를 한 번만 실패로 기록합니다.
  */
 function expireStreamApparition() {
-  if (!apparitionActive || apparitionExpired) return;
-  if (document.hidden || tutorialOpen) {
-    apparitionExpireTimer = window.setTimeout(expireStreamApparition, 1000);
-    return;
-  }
-
-  window.clearTimeout(apparitionWeakTimer);
-  window.clearTimeout(apparitionMosaicTimer);
-  window.clearTimeout(apparitionExpireTimer);
-  apparitionWeakTimer = undefined;
-  apparitionMosaicTimer = undefined;
-  apparitionExpireTimer = undefined;
+  if (!apparitionActive || apparitionExpired || document.hidden || tutorialOpen) return;
+  window.clearInterval(apparitionInterval);
+  apparitionInterval = undefined;
   apparitionExpired = true;
   // 끊김은 별도의 공포 연출을 사용하므로 직전 단계의 모자이크를 즉시 제거합니다.
   chatApp.classList.remove("connection-pixelated");
@@ -346,16 +324,4 @@ function reconnectStreamConnection() {
     notifyTutorialConnectionRecovered();
   }
   scheduleStreamApparition();
-}
-
-/**
- * 하루 또는 스테이지 종료 순간 복구하지 않은 연결을 중복 없이 실패로 확정합니다.
- */
-function settleActiveApparitionAsMissed() {
-  if (!apparitionActive) return;
-  if (!apparitionExpired) {
-    missedApparitions += 1;
-    dayMissedApparitions += 1;
-  }
-  resetConnectionWidget();
 }

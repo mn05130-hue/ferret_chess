@@ -32,3 +32,7 @@
 - `assetconfig.js`, `bgmconfig.js`: 결과 화면 이미지와 소리 설정
 
 `?seed=2026`으로 게시글 생성을 재현할 수 있습니다. 스토리 모드에서 `?seed=2026&storyDayMs=5000`을 사용하면 하루를 5초로 줄일 수 있습니다. 게임 중 브라우저 콘솔의 `window.horrorChatGame`으로 상태를 살펴볼 수 있습니다.
+
+## 검증 페이지
+
+로컬 서버에서 `tests/chat-rules-tests.html`과 `tests/app-lifecycle-tests.html`을 열면 점수 규칙과 게시판 흐름을 확인할 수 있습니다.

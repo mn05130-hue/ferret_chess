@@ -144,3 +144,9 @@
   overflow-wrap: anywhere;
   line-height: 1.55;
 }
+
+.post-threat {
+  margin: 0 0 8px;
+  color: #ffabb3;
+  font-size: .83rem;
+}

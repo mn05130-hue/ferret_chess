@@ -22,16 +22,37 @@ frame.addEventListener("load", () => {
     appDocument.querySelector("#game-start").click();
 
     const api = appWindow.horrorChatGame;
-    assert("무한 모드 HUD와 종료 조건이 이상 시청자 1명으로 시작한다", api.state().remainingAnomalies === 1);
+    assert("무한 모드 HUD와 종료 조건이 이상 글 1건으로 시작한다", api.state().remainingAnomalies === 1);
     assert("첫 시작에는 실행 중인 채팅 엔진이 정확히 하나다", api.lifecycle().activeEngineCount === 1);
 
-    const firstUsername = appDocument.querySelector(".username[data-viewer-id]");
-    firstUsername.click();
+    const firstTitle = appDocument.querySelector(".post-title");
+    const firstRow = firstTitle.closest("[data-post-id]");
+    const originalTitle = firstTitle.textContent;
+    firstTitle.click();
     appDocument.querySelector("#suspect-button").click();
-    assert("의심 표시는 선택 계정의 기존 채팅과 버튼 상태에 함께 반영된다",
-      appDocument.querySelector(`.message[data-viewer-id="${firstUsername.dataset.viewerId}"]`)?.classList.contains("suspected-message")
+    assert("의심 표시는 선택한 글과 버튼 상태에 함께 반영된다",
+      firstRow.classList.contains("suspected-message")
         && appDocument.querySelector("#suspect-button").getAttribute("aria-pressed") === "true");
+    const originalBody = appDocument.querySelector("#post-body").textContent;
+    const history = [...appDocument.querySelectorAll("#viewer-history li")];
+    assert("현재 글의 본문은 작성자 이력에 중복 표시하지 않는다", history.every(item => item.textContent !== originalBody));
     appDocument.querySelector("#panel-close").click();
+    assert("상세 화면을 닫으면 글 제목으로 초점이 돌아간다", appDocument.activeElement === firstTitle);
+
+    api.spawnApparition();
+    firstTitle.click();
+    api.missApparition();
+    assert("동기화가 끊기면 목록과 열린 글 본문이 깨진다",
+      firstTitle.textContent !== originalTitle && appDocument.querySelector("#post-body").textContent !== originalBody);
+    appDocument.querySelector("#reconnect-button").click();
+    assert("복구하면 목록과 열린 글 본문이 원문으로 돌아온다",
+      firstTitle.textContent === originalTitle && appDocument.querySelector("#post-body").textContent === originalBody);
+
+    const secondRow = appDocument.querySelectorAll(".board-post")[1];
+    const beforeDelete = api.state();
+    appDocument.querySelector("#kick-button").click();
+    assert("정상 글을 삭제하면 선택한 글만 사라지고 체력이 1 감소한다",
+      !firstRow.isConnected && secondRow.isConnected && api.state().health === beforeDelete.health - 1);
 
     appDocument.querySelector("#help-button").click();
     assert("게임 방법을 열면 채팅 엔진이 일시정지된다",
@@ -43,6 +64,7 @@ frame.addEventListener("load", () => {
     api.restart();
     api.restart();
     const lifecycle = api.lifecycle();
+    assert("재시작하면 이전 동기화 타이머가 정리된다", lifecycle.apparitionTimerActive === false);
     assert("연속 재시작 뒤에도 활성 채팅 엔진은 하나뿐이다", lifecycle.activeEngineCount === 1, JSON.stringify(lifecycle));
     assert("무한 모드에서 스토리 시계 interval은 남지 않는다", lifecycle.storyClockActive === false);
 
@@ -69,7 +91,7 @@ frame.addEventListener("load", () => {
     appDocument.querySelector("#story-start").click();
     const storyState = api.state();
     const storyLifecycle = api.lifecycle();
-    assert("스토리 첫날은 이상 시청자 2명으로 시작한다",
+    assert("스토리 첫날은 이상 글 2건으로 시작한다",
       storyState.mode === "story" && storyState.remainingAnomalies === 2);
     assert("모드 전환 뒤에도 엔진 하나와 스토리 시계 하나만 실행된다",
       storyLifecycle.activeEngineCount === 1 && storyLifecycle.storyClockActive === true,
