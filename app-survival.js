@@ -218,6 +218,7 @@ function expireStreamApparition() {
   refreshPostPresentation();
   triggerCorruptedChatPulse();
   setConnectionStage(CONNECTION_STAGES.DISCONNECTED);
+  updateStreamState();
   prepareAnomalyMusic("disconnected");
   missedApparitions += 1;
   dayMissedApparitions += 1;
@@ -261,6 +262,7 @@ function reconnectStreamConnection() {
 
   const recoveredInTime = !apparitionExpired;
   resetConnectionWidget();
+  updateStreamState();
   refreshPostPresentation();
   prepareGameplayMusicForCurrentStage();
   if (recoveredInTime) {

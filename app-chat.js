@@ -292,7 +292,7 @@ function createPostRow(post) {
   avatar.className = "post-avatar";
   avatar.setAttribute("aria-hidden", "true");
   avatar.textContent = Array.from(post.header.nickname)[0] || "·";
-  avatar.style.color = post.author.color;
+  avatar.style.setProperty("--avatar-color", post.author.color);
 
   const title = document.createElement("button");
   title.className = "post-title";
@@ -486,9 +486,13 @@ function showToast(message) {
 }
 
 /**
- * 채팅 디렉터의 내부 상태 코드를 방송 화면의 연결 상태 문구로 변환합니다.
+ * 연결이 끊기면 게시판 분위기보다 오염 상태를 먼저 표시합니다.
  * @param {string} state AMBIENT, TENSE, BURST, AFTERMATH, LULL 중 현재 상태
  */
-function updateStreamState(state) {
+function updateStreamState(state = chatApp.dataset.directorState) {
+  if (apparitionExpired) {
+    streamSignal.textContent = "게시글 오염 감지";
+    return;
+  }
   streamSignal.textContent = STREAM_STATE_LABELS[state] || STREAM_STATE_LABELS.AMBIENT;
 }

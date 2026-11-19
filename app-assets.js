@@ -48,6 +48,9 @@ function createCssAssetUrl(configuredPath) {
  * 최초 앱 초기화 때 로고·타이틀·방송·결과 화면의 이미지 경로를 한꺼번에 적용합니다.
  */
 function applyVisualAssets() {
+  document.querySelectorAll(".community-cover").forEach(image => {
+    applyImageAsset(image, ASSET_CONFIG.titleBackground);
+  });
   const backgroundAssets = [
     ["--asset-title-background", ASSET_CONFIG.titleBackground],
     ["--asset-stage-result-waiting", ASSET_CONFIG.results?.stage?.waitingBackground],

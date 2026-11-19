@@ -8,7 +8,7 @@
   <!-- 모바일 세로 화면과 노치 안전 영역을 기준으로 렌더링합니다. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#111214">
+  <meta name="theme-color" content="#fff9fb">
   <meta name="description" content="괴이한 글을 찾아 삭제하는 커뮤니티 운영 호러 게임">
   <title>심야 게시판</title>
   <!-- 기능별 스타일 파일. 아래 순서는 기존 cascade와 반응형 덮어쓰기를 보존합니다. -->
@@ -22,6 +22,7 @@
   <link rel="stylesheet" href="styles/viewport.css">
   <link rel="stylesheet" href="styles/story-results.css">
   <link rel="stylesheet" href="styles/responsive.css">
+  <link rel="stylesheet" href="styles/community.css">
 </head>
 <body>
   <!--
@@ -30,99 +31,102 @@
     inert는 게임 화면이 보이지 않을 때 내부 버튼과 입력란의 초점을 막습니다.
   -->
   <main class="chat-app" aria-label="심야 게시판">
+    <header class="community-masthead">
+      <div class="community-shell masthead-inner">
+        <span class="community-brand"><span class="community-emblem" aria-hidden="true">🍒</span><span>WITH <b>BUZZI</b></span></span>
+        <a class="community-source" href="https://cafe.naver.com/cherryweasel" target="_blank" rel="noopener noreferrer" aria-label="WITH BUZZI 팬카페 (새 탭)">팬카페</a>
+      </div>
+    </header>
     <!--
       브라우저의 오디오 자동 재생 제한을 해제하면서 플레이어 닉네임도 확정하는 첫 진입 화면입니다.
       버튼 클릭이나 입력창의 Enter 제출이 사용자 제스처가 되어 다음 타이틀 화면의 음악을 재생합니다.
     -->
     <section class="entry-screen" id="entry-screen" aria-labelledby="entry-title">
-      <p class="board-wordmark"><span class="forum-mark" aria-hidden="true"></span>심야 게시판</p>
-      <form class="entry-panel" id="entry-form" novalidate>
-        <p class="entry-alert"><span aria-hidden="true">●</span> 야간 운영자 접속</p>
-        <h1 class="entry-title" id="entry-title">운영자 닉네임을 입력하세요.</h1>
-        <p class="entry-copy">새벽 두 시까지 자유게시판을 관리하세요. 이상한 글이 올라오고 있습니다.</p>
-        <label class="player-nickname-field entry-nickname-field" for="player-nickname">
-          <span>운영자 닉네임</span>
-          <input id="player-nickname" type="text" maxlength="16" autocomplete="nickname" enterkeyhint="go" placeholder="닉네임을 입력하세요" aria-describedby="nickname-error" required>
-        </label>
-        <p class="nickname-error" id="nickname-error" role="status" aria-live="polite" hidden>타이틀로 이동하려면 닉네임을 입력하세요.</p>
-        <!-- app-config.js의 NICKNAME_EASTER_EGGS에 등록된 이름을 입력했을 때만 공개됩니다. -->
-        <p class="entry-easter-egg" id="nickname-easter-egg" role="status" aria-live="polite" hidden></p>
-        <button class="entry-gate" id="entry-gate" type="submit">
-          <span>타이틀 화면으로</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
-        </button>
-        <small class="entry-sound-hint">닉네임을 확정하면 소리와 함께 시작합니다.</small>
-      </form>
+      <div class="community-shell">
+        <img class="community-cover" src="assets/community/with-buzzi-banner.webp" width="1080" height="340" alt="WITH BUZZI 카페 배너">
+        <div class="community-content">
+          <form class="entry-panel community-card" id="entry-form" novalidate>
+            <p class="community-kicker"><span class="moon-mark" aria-hidden="true"></span>게시판 운영 공포</p>
+            <h1 class="entry-title" id="entry-title">심야 게시판</h1>
+            <p class="entry-copy">새벽 2시까지 자유게시판을 지켜주세요.<br> 평범한 글들 사이에 올라와서는 안 될 기록이 섞여 있습니다.</p>
+            <div class="entry-fields">
+              <label class="player-nickname-field" for="player-nickname">
+                <span>운영자 닉네임</span>
+                <input id="player-nickname" type="text" maxlength="16" autocomplete="nickname" enterkeyhint="go" placeholder="닉네임을 입력하세요" aria-describedby="nickname-error" required>
+              </label>
+              <button class="entry-gate" id="entry-gate" type="submit">접속하기</button>
+            </div>
+            <p class="nickname-error" id="nickname-error" role="status" aria-live="polite" hidden>타이틀로 이동하려면 닉네임을 입력하세요.</p>
+            <p class="entry-easter-egg" id="nickname-easter-egg" role="status" aria-live="polite" hidden></p>
+            <small class="entry-sound-hint">접속하면 배경음악이 재생됩니다.</small>
+          </form>
+          <aside class="community-card entry-guide" aria-labelledby="entry-guide-title">
+            <h2 id="entry-guide-title">운영 안내</h2>
+            <ul class="entry-guide-list">
+              <li><span class="guide-icon guide-story" aria-hidden="true">☾</span><div><strong>스토리 모드</strong><p>7일 · 하루 60초</p></div></li>
+              <li><span class="guide-icon guide-endless" aria-hidden="true">∞</span><div><strong>무한 모드</strong><p>60초 안에 이상 글 삭제</p></div></li>
+              <li><span class="guide-icon guide-daily" aria-hidden="true">✦</span><div><strong>오늘의 고정 시드</strong><p>모두가 같은 무한 스테이지에 도전</p></div></li>
+            </ul>
+          </aside>
+        </div>
+      </div>
     </section>
 
     <!-- 게임 시작 전 표시되는 타이틀, 닉네임 입력, 모드 선택 영역입니다. -->
     <section class="title-screen" id="title-screen" aria-labelledby="game-title" aria-hidden="true" hidden>
-      <div class="title-brand">
-        <span class="forum-mark" aria-hidden="true"></span>
-        운영자 센터
-      </div>
-      <!-- 자동 재생 제한을 고려해 사용자가 직접 타이틀 음악을 켜고 음량을 정합니다. -->
-      <div class="title-audio-controls" aria-label="타이틀 배경음악 설정">
-        <button class="title-music-button" id="title-music-button" type="button" aria-pressed="true" aria-label="타이틀 배경음악 재생">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M5 10v4h3l4 3V7L8 10H5Z"/>
-            <path class="music-wave" d="M15 9.2c.8.7 1.2 1.6 1.2 2.8s-.4 2.1-1.2 2.8M17.6 7c1.4 1.3 2.2 3 2.2 5s-.8 3.7-2.2 5"/>
-          </svg>
-          <span id="title-music-label">BGM 끄기</span>
-        </button>
-        <label class="volume-control title-volume-control">
-          <span class="sr-only">타이틀 배경음악 음량</span>
-          <input id="title-volume" type="range" min="0" max="100" step="1" value="15" aria-label="타이틀 배경음악 음량">
-          <output id="title-volume-value" for="title-volume">15%</output>
-        </label>
-      </div>
-      <audio id="title-music" preload="metadata" loop></audio>
-      <!-- 첫 화면에서 확정한 닉네임으로 스토리 또는 무한 모드 진입을 요청하는 핵심 메뉴입니다. -->
-      <div class="title-content">
-        <p class="title-alert"><span aria-hidden="true">●</span> 야간 운영자 접속</p>
-        <h1 class="board-title" id="game-title">심야 게시판</h1>
-        <p class="title-copy">자유게시판에 섞여 들어온 이상 게시글을 찾아 삭제하세요.</p>
-        <div class="title-mode-buttons" aria-label="게임 모드 선택">
-          <button class="title-start-button story-start-button" id="story-start" type="button">
-            <span><strong>스토리 모드</strong><small>7일 · 하루 60초</small></span>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
-          </button>
-          <button class="title-start-button endless-start-button" id="game-start" type="button">
-            <span><strong>무한 모드</strong><small>60초 안에 이상 글 삭제</small></span>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
-          </button>
-          <button class="title-start-button daily-start-button" id="daily-start" type="button">
-            <span><strong>오늘의 고정 시드</strong><small>모두가 같은 무한 스테이지에 도전</small></span>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
-          </button>
+      <div class="community-shell">
+        <img class="community-cover" src="assets/community/with-buzzi-banner.webp" width="1080" height="340" alt="WITH BUZZI 카페 배너">
+        <div class="community-content">
+          <div class="title-content community-card">
+            <p class="community-kicker"><span class="moon-mark" aria-hidden="true"></span>야간 운영자 접속</p>
+            <h1 class="board-title" id="game-title">순찰 모드 선택</h1>
+            <p class="title-copy">자유게시판에 섞여 들어온 이상 게시글을 찾아 삭제하세요.</p>
+            <div class="title-mode-buttons" role="group" aria-label="게임 모드 선택">
+              <button class="title-start-button story-start-button" id="story-start" type="button">
+                <span class="guide-icon guide-story" aria-hidden="true">☾</span><span><strong>스토리 모드</strong><small>7일 · 하루 60초</small></span>
+              </button>
+              <button class="title-start-button endless-start-button" id="game-start" type="button">
+                <span class="guide-icon guide-endless" aria-hidden="true">∞</span><span><strong>무한 모드</strong><small>60초 안에 이상 글 삭제</small></span>
+              </button>
+              <button class="title-start-button daily-start-button" id="daily-start" type="button">
+                <span class="guide-icon guide-daily" aria-hidden="true">✦</span><span><strong>오늘의 고정 시드</strong><small>모두가 같은 무한 스테이지에 도전</small></span>
+              </button>
+            </div>
+          </div>
+          <aside class="community-card title-sidebar" aria-labelledby="title-records-heading">
+            <h2 id="title-records-heading">나의 운영 기록</h2>
+            <dl class="title-records" aria-label="저장된 플레이 기록">
+              <div><dt>무한 최고 점수</dt><dd id="record-best-score">0</dd></div>
+              <div><dt>최고 스테이지</dt><dd id="record-best-stage">0</dd></div>
+              <div><dt>7일 생존</dt><dd id="record-story-clears">0</dd></div>
+              <div><dt>발견 유형</dt><dd id="record-discovered-types">0/5</dd></div>
+            </dl>
+            <div class="title-audio-controls" aria-label="타이틀 배경음악 설정">
+              <button class="title-music-button" id="title-music-button" type="button" aria-pressed="true" aria-label="타이틀 배경음악 재생">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 10v4h3l4 3V7L8 10H5Z"/>
+                  <path class="music-wave" d="M15 9.2c.8.7 1.2 1.6 1.2 2.8s-.4 2.1-1.2 2.8M17.6 7c1.4 1.3 2.2 3 2.2 5s-.8 3.7-2.2 5"/>
+                </svg>
+                <span id="title-music-label">BGM 끄기</span>
+              </button>
+              <label class="volume-control title-volume-control">
+                <span class="sr-only">타이틀 배경음악 음량</span>
+                <input id="title-volume" type="range" min="0" max="100" step="1" value="15" aria-label="타이틀 배경음악 음량">
+                <output id="title-volume-value" for="title-volume">15%</output>
+              </label>
+            </div>
+            <audio id="title-music" preload="metadata" loop></audio>
+          </aside>
         </div>
-        <div class="title-rules" aria-label="게임 목표">
-          <span>기록 확인</span>
-          <i aria-hidden="true"></i>
-          <span>이상 징후 탐색</span>
-          <i aria-hidden="true"></i>
-          <span>글 삭제</span>
-        </div>
-        <dl class="title-records" aria-label="저장된 플레이 기록">
-          <div><dt>무한 최고 점수</dt><dd id="record-best-score">0</dd></div>
-          <div><dt>최고 스테이지</dt><dd id="record-best-stage">0</dd></div>
-          <div><dt>7일 생존</dt><dd id="record-story-clears">0</dd></div>
-          <div><dt>발견 유형</dt><dd id="record-discovered-types">0/5</dd></div>
-        </dl>
       </div>
-      <p class="title-hint">이어폰을 착용하면 더 몰입해서 즐길 수 있습니다.</p>
     </section>
 
     <!-- 실제 플레이 화면입니다. 타이틀에서는 inert 상태로 두어 키보드 초점도 차단합니다. -->
     <div class="game-screen" id="game-screen" aria-hidden="true" inert>
     <!-- 가상 브라우저 주소창. 접으면 게시글 목록에 사용할 높이가 늘어납니다. -->
     <header class="browser-bar" aria-label="커뮤니티 주소">
-      <svg class="pin-icon" aria-hidden="true" viewBox="0 0 24 24">
-        <path d="m15.8 3.2 5 5-2 2-1-.35-3.45 3.45.35 2-1.4 1.4-2.65-2.65-5.3 5.3-1.4-1.4 5.3-5.3L6.6 10l1.4-1.4 2 .35 3.45-3.45-.35-1 2.7-1.3Z"/>
-      </svg>
-      <div class="address" title="midnight.example / 자유게시판">
-        <span>midnight.example / 자유게시판</span>
-      </div>
+      <span class="community-brand"><span class="community-emblem" aria-hidden="true">🍒</span><span>WITH <b>BUZZI</b></span></span>
+      <div class="address"><span>운영자 센터 / 자유게시판</span></div>
       <button class="collapse-button" type="button" aria-label="상단 바 접기">
         <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5.5 7.5 4.5 4.5 4.5-4.5"/></svg>
       </button>
@@ -171,6 +175,7 @@
 
     <!-- 두 모드가 공유하는 체력·진행도·시각·이상 게시글·점수 HUD입니다. -->
     <section class="game-hud" aria-label="게임 상태">
+      <h2 class="hud-title">운영 현황</h2>
       <div class="hud-stat stage-stat">
         <span id="progress-label">스테이지</span>
         <strong id="stage-display">1</strong>
@@ -197,7 +202,7 @@
     <!-- 게시글은 동적으로 추가되며 aria-live로 새 글을 알립니다. -->
     <section class="message-region" aria-labelledby="board-list-heading">
       <div class="forum-list-heading">
-        <h3 id="board-list-heading">전체 글</h3>
+        <h3 id="board-list-heading">전체 게시글</h3>
         <span>등록순</span>
       </div>
       <aside class="tutorial-objective" id="tutorial-objective" aria-live="polite" hidden>

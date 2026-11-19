@@ -25,23 +25,6 @@
   .bottom-nav {
     min-height: 42px;
   }
-
-  .title-screen {
-    padding-inline: 16px;
-  }
-
-  .title-copy {
-    margin-bottom: 11px;
-    font-size: 12px;
-  }
-
-  .title-content {
-    padding: 14px;
-  }
-
-  .title-hint {
-    margin-top: 9px;
-  }
 }
 
 /* 운영체제의 모션 감소 설정을 존중해 모든 전환 시간을 사실상 즉시 완료합니다. */

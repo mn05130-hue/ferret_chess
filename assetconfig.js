@@ -13,7 +13,7 @@
 const FORUM_ARCHIVE_BACKGROUND = "assets/community/forum-archive.webp";
 
 const ASSET_CONFIG = Object.freeze({
-  titleBackground: "assets/community/forum-cover.webp",
+  titleBackground: "assets/community/with-buzzi-banner.webp",
 
   // 실제 게임 진행 중 무작위로 재생할 짧은 공포 효과음입니다.
   soundEffects: Object.freeze({

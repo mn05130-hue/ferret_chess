@@ -20,7 +20,7 @@ function showEntryScreen() {
   stopTitleMusic();
   stopGameMusic();
   stopAmbientHorrorSfx();
-  requestAnimationFrame(() => playerNicknameInput.focus());
+  requestAnimationFrame(() => playerNicknameInput.focus({ preventScroll: true }));
 }
 
 /**
